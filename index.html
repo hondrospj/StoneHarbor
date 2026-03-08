@@ -4224,23 +4224,47 @@ function compressYearRanges(years){
 */
 function computeSparseYearsFromEvents(eventsNavd){
   const T = THRESH.NAVD88;
-  const byYear = new Map();
   const curYear = new Date().getFullYear();
 
-  for(const e of (eventsNavd || [])){
-    const ft = Number(e.ft);
-    if(!Number.isFinite(ft) || ft < T.minorLow) continue;
+  // Count qualifying flood events by year
+  const byYear = new Map();
+  let minYear = Infinity;
+  let maxYear = -Infinity;
 
+  for(const e of (eventsNavd || [])){
     const y = Number.isFinite(+e.y) ? +e.y : new Date(e.t).getUTCFullYear();
     if(!Number.isFinite(y) || y >= curYear) continue;
 
-    byYear.set(y, (byYear.get(y) || 0) + 1);
+    if(y < minYear) minYear = y;
+    if(y > maxYear) maxYear = y;
+
+    const ft = Number(e.ft);
+    if(!Number.isFinite(ft)) continue;
+
+    if(ft >= T.minorLow){
+      byYear.set(y, (byYear.get(y) || 0) + 1);
+    }else{
+      // still ensure year exists even if it has 0 qualifying floods
+      if(!byYear.has(y)) byYear.set(y, 0);
+    }
   }
 
-  const years = Array.from(byYear.keys()).sort((a,b)=>a-b);
+  if(!Number.isFinite(minYear) || !Number.isFinite(maxYear)) return [];
+
+  // Build a continuous year list so missing years count as zero
+  const years = [];
+  for(let y = minYear; y <= maxYear; y++){
+    if(y >= curYear) continue;
+    years.push(y);
+    if(!byYear.has(y)) byYear.set(y, 0);
+  }
+
   if(!years.length) return [];
 
-  const counts = years.map(y => byYear.get(y) || 0).sort((a,b)=>a-b);
+  const counts = years
+    .map(y => byYear.get(y) || 0)
+    .sort((a,b)=>a-b);
+
   const median = counts.length % 2
     ? counts[(counts.length - 1) / 2]
     : (counts[counts.length/2 - 1] + counts[counts.length/2]) / 2;
