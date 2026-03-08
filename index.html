@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title> Greenwich , NJ — Tidal Flooding Dashboard</title>
+  <title> Stone Harbor , NJ — Tidal Flooding Dashboard</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <!-- Leaflet (map) -->
@@ -921,8 +921,8 @@ a.brand *{
       </div>
 
       <div class="brandTitle">
-        <div class="kicker">USGS 01412150 ·  Greenwich , NJ</div>
-        <div class="name"> Greenwich  Tidal  Dashboard</div>
+        <div class="kicker">USGS 01412150 ·  Stone Harbor , NJ</div>
+        <div class="name"> Stone Harbor  Tidal  Dashboard</div>
       </div>
     </a>
 
@@ -1415,22 +1415,22 @@ const ALERT_POINT={lat:39.2325, lon:-75.0380};
 
 /* Top ten list (MLLW) — FIXED (shifted +2.10 ft from NAVD) */
 const TOP_TEN_MLLW = [
-  {date:"10-29-2012", ft:11.73},
-  {date:"12-11-1992", ft:9.43},
-  {date:"08-28-2011", ft:8.42},
-  {date:"03-06-1962", ft:7.73},
-  {date:"03-13-2010", ft:7.45},
-  {date:"01-13-2024", ft:7.35},
-  {date:"10-27-2018", ft:7.30},
-  {date:"12-23-2022", ft:7.29},
-  {date:"02-02-2021", ft:7.26},
-  {date:"01-24-2017", ft:7.18}
+  {date:"10-29-2012", ft:9.39},
+{date:"01-23-2016", ft:8.96},
+{date:"11-13-2009", ft:8.10},
+{date:"08-21-2025", ft:8.07},
+{date:"02-17-2003", ft:8.03},
+{date:"08-27-2011", ft:7.96},
+{date:"10-27-2018", ft:7.93},
+{date:"05-12-2008", ft:7.87},
+{date:"10-12-2025", ft:7.84},
+{date:"10-02-2015", ft:7.71}
 ];
 
     /* =========================
 MAP — Leaflet gauge map
 ========================= */
-const DEFAULT_GAUGE_ID = "01413038"; //  Greenwich  USGS
+const DEFAULT_GAUGE_ID = "01411360"; //  Stone Harbor  USGS
 const DEFAULT_GAUGE_ZOOM = 12;       // adjust if you want closer (13 = tighter)
 // Edit these whenever you want (lat/lon + label + link)
 const GAUGES = [
@@ -1523,7 +1523,7 @@ function ensureGaugeMap(){
     bounds.push([g.lat, g.lon]);
   }
 
-// Default view =  Greenwich  gauge
+// Default view =  Stone Harbor  gauge
 const def = GAUGES.find(g => String(g.id) === DEFAULT_GAUGE_ID);
 
 if(def){
