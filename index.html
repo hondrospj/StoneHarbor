@@ -1304,9 +1304,9 @@ const DATUMS = ["MLLW", "NAVD88", "MSL", "MHHW"]; // cycle order
 // From  table (Gauge Zero row): datum = MLLW + offset
 const OFFSET_FROM_MLLW = {
   MLLW:   0.00,
-  NAVD88: -3.27,
-  MSL:    -3.15,
-  MHHW:   -6.43
+  NAVD88: -2.71,
+  MSL:    -2.31,
+  MHHW:   -4.74
 };
 
 function mllwToDatum(ft, datum){
@@ -1341,33 +1341,27 @@ function fromDisplayToNavd(displayFt){
 
 
 /* =========================================
-   1) Cohancey River at Greenwich
+   5) Great Channel at Stone Harbor
 ========================================= */
 
-/* USGS observed (15-min IV). */
-const USGS_SITE="01413038";
-
-/* Water level ONLY (tide elevation NAVD88). */
+const USGS_SITE="01411360";
 const USGS_PARAM_PRIMARY = "72279";
 
-/* NOAA CO-OPS predictions */
-const COOPS_STATION="8537374";
+const COOPS_STATION="8535581";
 const COOPS_APP="cupajoe.live";
 const COOPS_DATUM="MLLW";
 const COOPS_INTERVAL="6";
 const COOPS_TZ="gmt";
 
-/* Tide-clock settings for crest-anchored highs (NOAA hilo predictions) */
-const NOAA_STATION_TIDECLOCK = "8537374";
+const NOAA_STATION_TIDECLOCK = "8535581";
 const CREST_WINDOW_HOURS = 2;
 const REQUIRE_WITHIN_HOURS = 1;
 
-/* Flood thresholds */
 const THRESH = {
-  MLLW:  { minorLow:7.20, moderateLow:8.20, majorLow:9.20 },
-  NAVD88:{ minorLow:3.93, moderateLow:4.93, majorLow:5.93 },
-  MSL:   { minorLow:4.05, moderateLow:5.05, majorLow:6.05 },
-  MHHW:  { minorLow:0.77, moderateLow:1.77, majorLow:2.77 }
+  MLLW:  { minorLow:6.10, moderateLow:7.10, majorLow:8.10 },
+  NAVD88:{ minorLow:3.39, moderateLow:4.39, majorLow:5.39 },
+  MSL:   { minorLow:3.79, moderateLow:4.79, majorLow:5.79 },
+  MHHW:  { minorLow:1.36, moderateLow:2.36, majorLow:3.36 }
 };
 
       const HOUR_MS = 60 * 60 * 1000;
@@ -2257,11 +2251,11 @@ async function fetchObservedSeries({startISO=null,endISO=null,period=null}={}){
 }
 
 /* =========================
-NOAA/NWS NWPS official forecast (GRWN4) -> we resample to 15-min later
+NOAA/NWS NWPS official forecast (SHBN4) -> we resample to 15-min later
 Replaces CO-OPS predictions block.
 Returns MLLW ft as [{t: ISO8601, ft: Number}] plus issuedTime for UI.
 ========================= */
-const NWPS_GAUGE = "GRWN4";
+const NWPS_GAUGE = "SHBN4";
 const NWPS_STAGEFLOW_URL = `https://api.water.noaa.gov/nwps/v1/gauges/${NWPS_GAUGE}/stageflow`;
 
 /* Clip to N hours from the first point (keeps  existing 72h logic consistent). */
