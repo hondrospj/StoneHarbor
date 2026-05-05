@@ -6,21 +6,35 @@ on:
       backfill_from:
         description: "Optional: backfill from year (e.g., 2000)"
         required: false
+        type: string
       backfill_to:
         description: "Optional: backfill to year (e.g., 2026)"
         required: false
+        type: string
+
+  # Run once per day. GitHub schedules are UTC.
+  # This runs at 6:17 AM UTC, which is 1:17 AM EST / 2:17 AM EDT.
   schedule:
-    - cron: "*/30 * * * *"  # every 30 minutes
+    - cron: "17 6 * * *"
 
 permissions:
   contents: write
 
+concurrency:
+  group: peaks-cache
+  cancel-in-progress: false
+
 jobs:
   update:
+    name: Update peaks cache
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -28,21 +42,30 @@ jobs:
           node-version: "20"
 
       - name: Run updater
+        shell: bash
         run: |
-          if [ -n "${{ inputs.backfill_from }}" ] && [ -n "${{ inputs.backfill_to }}" ]; then
-            node tools/update_peaks_navd88.js --backfill-from=${{ inputs.backfill_from }} --backfill-to=${{ inputs.backfill_to }}
+          BACKFILL_FROM="${{ github.event.inputs.backfill_from || '' }}"
+          BACKFILL_TO="${{ github.event.inputs.backfill_to || '' }}"
+
+          if [[ -n "$BACKFILL_FROM" && -n "$BACKFILL_TO" ]]; then
+            node tools/update_peaks_navd88.js --backfill-from="$BACKFILL_FROM" --backfill-to="$BACKFILL_TO"
           else
             node tools/update_peaks_navd88.js
           fi
 
-      - name: Commit & push if changed
+      - name: Commit and push if changed
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add data/peaks_navd88.json
+
           if git diff --cached --quiet; then
             echo "No changes."
             exit 0
           fi
+
           git commit -m "Update peaks cache"
+          git pull --rebase
           git push
