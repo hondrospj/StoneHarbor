@@ -1933,37 +1933,143 @@ function stageColorVar(stage){
 }
 
 // Build segments of consecutive points where stage >= Minor
-function buildFloodSegments(points){
-  const segs = [];
+// Exact flood-hour math for the 72h outlook.
+// Why this is needed:
+// The old version counted each forecast point as if it represented the full
+// following interval. On hourly forecast data, that can add one extra hour
+// to each flood period. This version counts the time BETWEEN forecast points
+// and linearly interpolates threshold crossings, so the top hour boxes and
+// the listed flood periods use the same math.
+function interpFtAtMs(a, b, ms){
+  const dt = b.ms - a.ms;
+  if(!Number.isFinite(dt) || dt <= 0) return Number(a.ftDisplay);
+  const r = (ms - a.ms) / dt;
+  return a.ftDisplay + r * (b.ftDisplay - a.ftDisplay);
+}
+
+function isoFromMs(ms){
+  return new Date(ms).toISOString();
+}
+
+function stageRank(stage){
+  if(stage === "Major") return 3;
+  if(stage === "Moderate") return 2;
+  if(stage === "Minor") return 1;
+  return 0;
+}
+
+function splitIntervalByFloodThresholds(tA, tB, ftA, ftB){
+  const T = THRESH[DISPLAY_DATUM];
+  const thresholds = [T.minorLow, T.moderateLow, T.majorLow];
+  const cuts = [tA, tB];
+
+  for(const th of thresholds){
+    const dA = ftA - th;
+    const dB = ftB - th;
+
+    // Crossing strictly inside the interval. Endpoints are already represented
+    // by tA/tB, so this avoids duplicate zero-length cuts.
+    if((dA < 0 && dB > 0) || (dA > 0 && dB < 0)){
+      const ratio = (th - ftA) / (ftB - ftA);
+      const tCross = tA + ratio * (tB - tA);
+      if(tCross > tA && tCross < tB) cuts.push(tCross);
+    }
+  }
+
+  cuts.sort((a,b)=>a-b);
+
+  const pieces = [];
+  for(let i=0; i<cuts.length-1; i++){
+    const s = cuts[i];
+    const e = cuts[i+1];
+    if(e <= s) continue;
+
+    const mid = (s + e) / 2;
+    const midFt = ftA + ((mid - tA) / (tB - tA)) * (ftB - ftA);
+    const sFt = ftA + ((s - tA) / (tB - tA)) * (ftB - ftA);
+    const eFt = ftA + ((e - tA) / (tB - tA)) * (ftB - ftA);
+    const stage = stageNameFromDisplayFt(midFt);
+
+    pieces.push({
+      startMs:s,
+      endMs:e,
+      stage,
+      peakFt:Math.max(sFt, eFt, midFt)
+    });
+  }
+  return pieces;
+}
+
+function buildExactFloodAccounting(rawPoints, t0, t1){
+  const out = {
+    minorMs:0,
+    moderateMs:0,
+    majorMs:0,
+    pieces:[],
+    segments:[]
+  };
+
+  const pts = (rawPoints || [])
+    .filter(p => Number.isFinite(p.ms) && Number.isFinite(p.ftDisplay))
+    .sort((a,b)=>a.ms-b.ms);
+
+  if(pts.length < 2) return out;
+
+  for(let i=0; i<pts.length-1; i++){
+    const a = pts[i];
+    const b = pts[i+1];
+    if(b.ms <= t0 || a.ms >= t1) continue;
+
+    const st = Math.max(a.ms, t0);
+    const en = Math.min(b.ms, t1);
+    if(en <= st) continue;
+
+    const ftS = interpFtAtMs(a, b, st);
+    const ftE = interpFtAtMs(a, b, en);
+    const pieces = splitIntervalByFloodThresholds(st, en, ftS, ftE);
+
+    for(const piece of pieces){
+      const dur = piece.endMs - piece.startMs;
+      if(piece.stage === "Major") out.majorMs += dur;
+      else if(piece.stage === "Moderate") out.moderateMs += dur;
+      else if(piece.stage === "Minor") out.minorMs += dur;
+      out.pieces.push(piece);
+    }
+  }
+
+  // Build displayed flood periods from the same pieces used for counting.
   let cur = null;
-
-  for(const p of points){
-    const stage = stageNameFromDisplayFt(p.ftDisplay);
-
-    if(stage === "Below"){
-      if(cur){ segs.push(cur); cur = null; }
+  for(const p of out.pieces){
+    if(p.stage === "Below"){
+      if(cur){ out.segments.push(cur); cur = null; }
       continue;
     }
 
     if(!cur){
-      cur = { startT:p.t, endT:p.t, peakFt:p.ftDisplay, peakStage:stage, startMs:p.ms, endMs:p.ms };
+      cur = {
+        startMs:p.startMs,
+        endMs:p.endMs,
+        peakFt:p.peakFt,
+        peakStage:p.stage
+      };
     }else{
-      cur.endT = p.t;
-      cur.endMs = p.ms;
-      if(p.ftDisplay > cur.peakFt){
-        cur.peakFt = p.ftDisplay;
-        cur.peakStage = stage;
+      cur.endMs = p.endMs;
+      if(p.peakFt > cur.peakFt){
+        cur.peakFt = p.peakFt;
+      }
+      if(stageRank(p.stage) > stageRank(cur.peakStage)){
+        cur.peakStage = p.stage;
       }
     }
   }
-  if(cur) segs.push(cur);
-  return segs;
+  if(cur) out.segments.push(cur);
+
+  return out;
 }
 
 function updateFloodOutlook48(){
-  if(!f48MinorHrsEl || !f48ModerHrsEl || !f48MajorHrsEl || !f48ListEl || !f48MetaEl) return;
+  const pred = STATE.pred || [];
 
-  const pred = STATE.pred72Mllw || [];
   if(!pred.length){
     f48MinorHrsEl.textContent = "—";
     f48ModerHrsEl.textContent = "—";
@@ -1971,71 +2077,39 @@ function updateFloodOutlook48(){
     f48ListEl.innerHTML = `
       <div class="event">
         <div class="eventLeft">
-          <div class="eventWhen">NOAA/PETSS unavailable</div>
-          <div class="eventSub">No forecast points loaded</div>
+          <div class="eventWhen">Forecast unavailable</div>
+          <div class="eventSub">NOAA/PETSS data did not load</div>
         </div>
         <div class="eventBadge" style="color:var(--muted)">—</div>
       </div>`;
-    f48MetaEl.textContent = "";
     return;
   }
 
-// Next 72h window anchored to NOW (not forecast file start)
-const nowMs = Date.now();
-const t0 = nowMs;
-const t1 = nowMs + 72 * 3600 * 1000;
+  // Next 72h window anchored to NOW.
+  const nowMs = Date.now();
+  const t0 = nowMs;
+  const t1 = nowMs + 72 * 3600 * 1000;
 
-
-  // Convert to DISPLAY datum and keep only 48h
-  const pts = pred
+  // Keep all forecast points that can form intervals overlapping the next 72h.
+  // This includes the point just before now if needed for interpolation at t0.
+  const rawPts = pred
     .map(p=>{
       const ms = new Date(p.t).getTime();
       const mllw = Number(p.ft);
       if(!Number.isFinite(ms) || !Number.isFinite(mllw)) return null;
-      if(ms < t0 || ms > t1) return null;
-      const ftDisplay = toDisplayFtFromMllw(mllw);
-      return { t: p.t, ms, ftDisplay };
+      return { t:p.t, ms, ftDisplay:toDisplayFtFromMllw(mllw) };
     })
     .filter(Boolean)
     .sort((a,b)=>a.ms-b.ms);
 
-  if(!pts.length){
-    f48MinorHrsEl.textContent = "0.0";
-    f48ModerHrsEl.textContent = "0.0";
-    f48MajorHrsEl.textContent = "0.0";
-    f48ListEl.innerHTML = `
-      <div class="event">
-        <div class="eventLeft">
-          <div class="eventWhen">No flood periods forecast</div>
-          <div class="eventSub">Next 72 hours stay flooding free</div>
-        </div>
-        <div class="eventBadge" style="color:var(--ok)">Below</div>
-      </div>`;
-    f48MetaEl.textContent = `${fmtNiceDate(pred[0].t)} → ${fmtNiceDate(new Date(t1).toISOString())}`;
-    return;
-  }
-
-  // Count duration in each stage using dt between points
-  let minorMs=0, moderMs=0, majorMs=0;
-
-  for(let i=0;i<pts.length;i++){
-    const a = pts[i];
-    const b = pts[i+1] || null;
-    const dt = b ? Math.max(0, b.ms - a.ms) : 15*60*1000; // assume 15m for last step
-    const stage = stageNameFromDisplayFt(a.ftDisplay);
-
-    if(stage==="Major") majorMs += dt;
-    else if(stage==="Moderate") moderMs += dt;
-    else if(stage==="Minor") minorMs += dt;
-  }
-
+  const accounting = buildExactFloodAccounting(rawPts, t0, t1);
   const msToHours = ms => (ms / 3600000);
-  f48MinorHrsEl.textContent = msToHours(minorMs).toFixed(1);
-  f48ModerHrsEl.textContent = msToHours(moderMs).toFixed(1);
-  f48MajorHrsEl.textContent = msToHours(majorMs).toFixed(1);
 
-  // Build flood segments list
-  const segs = buildFloodSegments(pts);
+  f48MinorHrsEl.textContent = msToHours(accounting.minorMs).toFixed(1);
+  f48ModerHrsEl.textContent = msToHours(accounting.moderateMs).toFixed(1);
+  f48MajorHrsEl.textContent = msToHours(accounting.majorMs).toFixed(1);
+
+  const segs = accounting.segments;
 
   if(!segs.length){
     f48ListEl.innerHTML = `
@@ -2049,8 +2123,8 @@ const t1 = nowMs + 72 * 3600 * 1000;
   }else{
     const show = segs.slice(0,4);
     f48ListEl.innerHTML = show.map(seg=>{
-      const durH = Math.max(0.25, (seg.endMs - seg.startMs) / 3600000);
-      const when = `${fmtNiceDate(seg.startT)} · ${fmtESTTime(seg.startT)} → ${fmtESTTime(seg.endT)}`;
+      const durH = Math.max(0, (seg.endMs - seg.startMs) / 3600000);
+      const when = `${fmtNiceDate(isoFromMs(seg.startMs))} · ${fmtESTTime(isoFromMs(seg.startMs))} → ${fmtESTTime(isoFromMs(seg.endMs))}`;
       const sub  = `${durH.toFixed(1)}h · Peak ${seg.peakFt.toFixed(2)} ${unitText()}`;
       const badgeColor = stageColorVar(seg.peakStage);
 
@@ -2063,10 +2137,21 @@ const t1 = nowMs + 72 * 3600 * 1000;
           <div class="eventBadge" style="color:${badgeColor}">${seg.peakStage}</div>
         </div>`;
     }).join("");
+
+    if(segs.length > show.length){
+      f48ListEl.innerHTML += `
+        <div class="event">
+          <div class="eventLeft">
+            <div class="eventWhen">${segs.length - show.length} additional flood period(s)</div>
+            <div class="eventSub">Included in the hour totals above</div>
+          </div>
+          <div class="eventBadge" style="color:var(--muted)">More</div>
+        </div>`;
+    }
   }
 
-f48MetaEl.textContent =
-  `${fmtNiceDate(new Date(t0).toISOString())} → ${fmtNiceDate(new Date(t1).toISOString())} · Based on NOAA/PETSS`;
+  f48MetaEl.textContent =
+    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS`;
 }
 
 function updatePred24RangeCard(){
@@ -2268,6 +2353,41 @@ async function fetchObservedSeries({startISO=null,endISO=null,period=null}={}){
   const j = await fetchIV({startISO,endISO,period});
   return extractWaterLevelSeries_NAVD88(j);
 }
+
+/* Fetch recent observed values without asking USGS for a huge YTD window.
+   The old page requested Jan 1 -> now every load. By early May that can exceed
+   the practical IV-service window and make the whole live card fail.
+   This tries short windows first, then falls back far enough to show the most
+   recent available reading if the gauge feed is temporarily stale. */
+async function fetchRecentObservedSeriesWithFallback(){
+  const tries = ["P7D", "P30D", "P120D"];
+  const errs = [];
+
+  for(const period of tries){
+    try{
+      const pts = await fetchObservedSeries({ period });
+      if(pts && pts.length) return pts;
+      errs.push(`${period}: no values`);
+    }catch(e){
+      errs.push(`${period}: ${e?.message || e}`);
+    }
+  }
+
+  throw new Error("No recent USGS tidal elevation data returned. " + errs.join(" | "));
+}
+
+function hoursSinceISO(iso){
+  const t = new Date(iso).getTime();
+  if(!Number.isFinite(t)) return Infinity;
+  return (Date.now() - t) / 3600000;
+}
+
+function sameLocalDayISO(aISO, bISO){
+  const a = getESTParts(new Date(aISO));
+  const b = getESTParts(new Date(bISO));
+  return a.y === b.y && a.m === b.m && a.d === b.d;
+}
+
 
 /* =========================
 NOAA/NWS NWPS official forecast (SHBN4) -> we resample to 15-min later
@@ -3949,63 +4069,74 @@ function countEventsFromHistoryForYear(year){
 LIVE: current conditions + daily range + overwrite current year bar
 ========================= */
 async function updateLiveAndAnnualCounts(){
-  // Build completed-year bars from whatever history is currently loaded
+  // Build completed-year bars from whatever history is currently loaded.
+  // The current year is updated from the daily peaks cache, not by pulling a huge
+  // Jan 1 -> now IV request in the browser.
   buildAnnualArraysFromHistory_completedYears();
   renderAnnual();
 
-  // ---- Live observed series YTD (NAVD88) ----
   const { y: curYear } = getESTParts(new Date());
-  const startISO = startOfYearEST_ISO(curYear);
-  const endISO   = nowISO();
 
-  const ytd = await fetchObservedSeries({ startISO, endISO });
-  if(!ytd.length) throw new Error("no live water-level data returned from USGS");
+  // ---- Current-year flooding bar: history-based (peaks JSON) ----
+  if(Array.isArray(HIGH_TIDES_NAVD) && HIGH_TIDES_NAVD.length){
+    const counts = countEventsFromHistoryForYear(curYear);
+    overwriteCurrentYearBarWithLiveCounts(counts);
+    renderAnnual();
+  }
 
-  STATE.ytdNavd  = ytd;
-  STATE.lastNavd = ytd[ytd.length - 1];
+  // ---- Live/recent observed series (NAVD88) ----
+  // This intentionally uses period-based recent windows. It avoids the May/late-year
+  // failure mode caused by requesting too many 15-minute USGS observations at once.
+  const recent = await fetchRecentObservedSeriesWithFallback();
+  if(!recent.length) throw new Error("no recent water-level data returned from USGS");
+
+  STATE.ytdNavd  = recent;
+  STATE.lastNavd = recent[recent.length - 1];
+
+  const ageHours = hoursSinceISO(STATE.lastNavd.t);
+  const isStale = ageHours > 6;
 
   // ---- Current water level card ----
-curFtEl.textContent = toDisplayFtFromNavd(STATE.lastNavd.ft).toFixed(2);
-curMetaEl.textContent = "Updated: " + fmtESTFull(STATE.lastNavd.t);
-lastPill.textContent  = "Last updated: " + fmtESTFull(STATE.lastNavd.t);
-setStage(STATE.lastNavd.ft);
-setCurrentNumberColorByNavd(STATE.lastNavd.ft);
-  // ---- Daily range (today) ----
-// ---- Daily range (today) ----
-const today = sliceAfter(ytd, startOfTodayLocalTZ_ISO());
-STATE.todayNavd = today;
+  curFtEl.textContent = toDisplayFtFromNavd(STATE.lastNavd.ft).toFixed(2);
+  curMetaEl.textContent = "Updated: " + fmtESTFull(STATE.lastNavd.t);
+
+  if(isStale){
+    lastPill.textContent = "Last USGS reading: " + fmtESTFull(STATE.lastNavd.t);
+    stageTextEl.textContent = "LIVE DATA STALE";
+    stageDotEl.style.background = "var(--minor)";
+    stageDotEl.style.boxShadow = "0 0 0 4px rgba(251,191,36,.18)";
+  }else{
+    lastPill.textContent = "Last updated: " + fmtESTFull(STATE.lastNavd.t);
+    setStage(STATE.lastNavd.ft);
+  }
+
+  setCurrentNumberColorByNavd(STATE.lastNavd.ft);
+
+  // ---- Daily range (today only if today's data actually exists) ----
+  const todayStart = startOfTodayLocalTZ_ISO();
   if(dailyRangeDateEl){
-  dailyRangeDateEl.textContent = fmtNiceDate(startOfTodayLocalTZ_ISO());
-}
+    dailyRangeDateEl.textContent = fmtNiceDate(todayStart);
+  }
 
+  const today = recent.filter(p => sameLocalDayISO(p.t, new Date().toISOString()));
+  STATE.todayNavd = today;
 
-if(today.length){
-  const dmx = maxPoint(today), dmn = minPoint(today);
+  if(today.length){
+    const dmx = maxPoint(today), dmn = minPoint(today);
 
-  dayMaxFtEl.textContent = toDisplayFtFromNavd(dmx.ft).toFixed(2);
-  dayMinFtEl.textContent = toDisplayFtFromNavd(dmn.ft).toFixed(2);
+    dayMaxFtEl.textContent = toDisplayFtFromNavd(dmx.ft).toFixed(2);
+    dayMinFtEl.textContent = toDisplayFtFromNavd(dmn.ft).toFixed(2);
 
-  //   ONLY show the time under each number (EST)
-  if(dayMaxWhenEl) dayMaxWhenEl.textContent = fmtESTTime(dmx.t);
-  if(dayMinWhenEl) dayMinWhenEl.textContent = fmtESTTime(dmn.t);
-
-  //   optional: blank the long meta line so it doesn't “fight” the clean layout
-  if(dayRangeMeta) dayRangeMeta.textContent = "";
-}else{
-  dayMaxFtEl.textContent = "—";
-  dayMinFtEl.textContent = "—";
-  if(dayMaxWhenEl) dayMaxWhenEl.textContent = "—";
-  if(dayMinWhenEl) dayMinWhenEl.textContent = "—";
-  if(dayRangeMeta) dayRangeMeta.textContent = "";
-}
-
-
-
-  // ---- Current-year flooding bar: history-based (peaks list) ----
-  // NOTE: requires HIGH_TIDES_NAVD already loaded (JSON/TXT init)
-  const counts = countEventsFromHistoryForYear(curYear);
-  overwriteCurrentYearBarWithLiveCounts(counts);
-  renderAnnual();
+    if(dayMaxWhenEl) dayMaxWhenEl.textContent = fmtESTTime(dmx.t);
+    if(dayMinWhenEl) dayMinWhenEl.textContent = fmtESTTime(dmn.t);
+    if(dayRangeMeta) dayRangeMeta.textContent = "";
+  }else{
+    dayMaxFtEl.textContent = "—";
+    dayMinFtEl.textContent = "—";
+    if(dayMaxWhenEl) dayMaxWhenEl.textContent = "—";
+    if(dayMinWhenEl) dayMinWhenEl.textContent = "—";
+    if(dayRangeMeta) dayRangeMeta.textContent = isStale ? "USGS feed has no observations for today." : "";
+  }
 }
 
 /* =========================
