@@ -1818,26 +1818,48 @@ function getESTParts(date=new Date()){
   return { y:+p.find(x=>x.type==="year").value, m:+p.find(x=>x.type==="month").value, d:+p.find(x=>x.type==="day").value };
 }
 
-function startOfTodayLocalTZ_ISO(){
-  const { y, m, d } = getESTParts(new Date()); // still ok; uses TZ inside fmtPartsYMD
-  // Create a Date that represents midnight in TZ, without hard-coding UTC offset
-  // Trick: format a TZ-midnight as parts, then find its UTC timestamp by searching.
-  const target = { y, m, d, hh: 0, mm: 0 };
+function getTZDateTimeParts(date=new Date()){
+  const p = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
 
-  // brute-force find the UTC time whose TZ parts match target (fast: only checks within 30 hours)
-  const now = Date.now();
-  const base = new Date(Date.UTC(y, m-1, d, 0, 0, 0)).getTime(); // around the right day
-  for (let t = base - 12*3600*1000; t <= base + 18*3600*1000; t += 5*60*1000){
-    const p = getESTParts(new Date(t));
-    const time = fmtTime.formatToParts(new Date(t));
-    const hh = +time.find(x=>x.type==="hour").value % 24;
-    const mm = +time.find(x=>x.type==="minute").value;
-    if (p.y===target.y && p.m===target.m && p.d===target.d && hh===0 && mm===0){
-      return new Date(t).toISOString();
-    }
+  const val = type => p.find(x => x.type === type)?.value || "0";
+
+  return {
+    y:  +val("year"),
+    m:  +val("month"),
+    d:  +val("day"),
+    hh: (+val("hour")) % 24,
+    mm: +val("minute"),
+    ss: +val("second")
+  };
+}
+
+function zonedTimeToUtcISO(y, m, d, hh=0, mm=0, ss=0){
+  let guess = Date.UTC(y, m-1, d, hh, mm, ss);
+
+  for(let i=0; i<4; i++){
+    const got = getTZDateTimeParts(new Date(guess));
+    const gotAsUTC = Date.UTC(got.y, got.m-1, got.d, got.hh, got.mm, got.ss);
+    const wantAsUTC = Date.UTC(y, m-1, d, hh, mm, ss);
+    const delta = wantAsUTC - gotAsUTC;
+    if(delta === 0) break;
+    guess += delta;
   }
-  // fallback (shouldn't happen)
-  return new Date(base).toISOString();
+
+  return new Date(guess).toISOString();
+}
+
+function startOfTodayLocalTZ_ISO(){
+  const { y, m, d } = getESTParts(new Date());
+  return zonedTimeToUtcISO(y, m, d, 0, 0, 0);
 }
 function startOfYearEST_ISO(y){ return new Date(Date.UTC(y,0,1,5,0,0)).toISOString(); }
 function nowISO(){ return new Date().toISOString(); }
@@ -1917,7 +1939,22 @@ function setTXTStatus(msg){ if(txtNote) txtNote.textContent = msg || ""; }
   return { minor:T.minorLow, moderate:T.moderateLow, major:T.majorLow };
 }
 
-      function stageNameFromDisplayFt(ft){
+      
+
+// Build segments of consecutive points where stage >= Minor
+// Exact flood-hour math for the 72h outlook.
+// Why this is needed:
+// The old version counted each forecast point as if it represented the full
+// following interval. On hourly forecast data, that can add one extra hour
+// to each flood period. This version counts the time BETWEEN forecast points
+// and linearly interpolates threshold crossings, so the top hour boxes and
+// the listed flood periods use the same math.
+
+
+
+
+
+function stageNameFromDisplayFt(ft){
   const T = THRESH[DISPLAY_DATUM];
   if(ft >= T.majorLow) return "Major";
   if(ft >= T.moderateLow) return "Moderate";
@@ -1932,14 +1969,6 @@ function stageColorVar(stage){
   return "var(--muted)";
 }
 
-// Build segments of consecutive points where stage >= Minor
-// Exact flood-hour math for the 72h outlook.
-// Why this is needed:
-// The old version counted each forecast point as if it represented the full
-// following interval. On hourly forecast data, that can add one extra hour
-// to each flood period. This version counts the time BETWEEN forecast points
-// and linearly interpolates threshold crossings, so the top hour boxes and
-// the listed flood periods use the same math.
 function interpFtAtMs(a, b, ms){
   const dt = b.ms - a.ms;
   if(!Number.isFinite(dt) || dt <= 0) return Number(a.ftDisplay);
@@ -1967,8 +1996,6 @@ function splitIntervalByFloodThresholds(tA, tB, ftA, ftB){
     const dA = ftA - th;
     const dB = ftB - th;
 
-    // Crossing strictly inside the interval. Endpoints are already represented
-    // by tA/tB, so this avoids duplicate zero-length cuts.
     if((dA < 0 && dB > 0) || (dA > 0 && dB < 0)){
       const ratio = (th - ftA) / (ftB - ftA);
       const tCross = tA + ratio * (tB - tA);
@@ -1997,6 +2024,7 @@ function splitIntervalByFloodThresholds(tA, tB, ftA, ftB){
       peakFt:Math.max(sFt, eFt, midFt)
     });
   }
+
   return pieces;
 }
 
@@ -2018,6 +2046,7 @@ function buildExactFloodAccounting(rawPoints, t0, t1){
   for(let i=0; i<pts.length-1; i++){
     const a = pts[i];
     const b = pts[i+1];
+
     if(b.ms <= t0 || a.ms >= t1) continue;
 
     const st = Math.max(a.ms, t0);
@@ -2030,18 +2059,23 @@ function buildExactFloodAccounting(rawPoints, t0, t1){
 
     for(const piece of pieces){
       const dur = piece.endMs - piece.startMs;
+
       if(piece.stage === "Major") out.majorMs += dur;
       else if(piece.stage === "Moderate") out.moderateMs += dur;
       else if(piece.stage === "Minor") out.minorMs += dur;
+
       out.pieces.push(piece);
     }
   }
 
-  // Build displayed flood periods from the same pieces used for counting.
   let cur = null;
+
   for(const p of out.pieces){
     if(p.stage === "Below"){
-      if(cur){ out.segments.push(cur); cur = null; }
+      if(cur){
+        out.segments.push(cur);
+        cur = null;
+      }
       continue;
     }
 
@@ -2054,22 +2088,26 @@ function buildExactFloodAccounting(rawPoints, t0, t1){
       };
     }else{
       cur.endMs = p.endMs;
+
       if(p.peakFt > cur.peakFt){
         cur.peakFt = p.peakFt;
       }
+
       if(stageRank(p.stage) > stageRank(cur.peakStage)){
         cur.peakStage = p.stage;
       }
     }
   }
+
   if(cur) out.segments.push(cur);
 
   return out;
 }
 
 function updateFloodOutlook48(){
-  const pred = STATE.pred || [];
+  if(!f48MinorHrsEl || !f48ModerHrsEl || !f48MajorHrsEl || !f48ListEl || !f48MetaEl) return;
 
+  const pred = STATE.pred72Mllw || [];
   if(!pred.length){
     f48MinorHrsEl.textContent = "—";
     f48ModerHrsEl.textContent = "—";
@@ -2082,16 +2120,14 @@ function updateFloodOutlook48(){
         </div>
         <div class="eventBadge" style="color:var(--muted)">—</div>
       </div>`;
+    f48MetaEl.textContent = "";
     return;
   }
 
-  // Next 72h window anchored to NOW.
   const nowMs = Date.now();
   const t0 = nowMs;
   const t1 = nowMs + 72 * 3600 * 1000;
 
-  // Keep all forecast points that can form intervals overlapping the next 72h.
-  // This includes the point just before now if needed for interpolation at t0.
   const rawPts = pred
     .map(p=>{
       const ms = new Date(p.t).getTime();
@@ -2122,6 +2158,7 @@ function updateFloodOutlook48(){
       </div>`;
   }else{
     const show = segs.slice(0,4);
+
     f48ListEl.innerHTML = show.map(seg=>{
       const durH = Math.max(0, (seg.endMs - seg.startMs) / 3600000);
       const when = `${fmtNiceDate(isoFromMs(seg.startMs))} · ${fmtESTTime(isoFromMs(seg.startMs))} → ${fmtESTTime(isoFromMs(seg.endMs))}`;
