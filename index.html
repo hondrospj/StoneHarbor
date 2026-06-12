@@ -3,24 +3,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- SHORELYSAFE_OPSEC_REDIRECT_START -->
-<script>
-(function () {
-  var target = 'https://cupajoe.live/shorelysafe/CSTR/flooddashboard';
-  var host = String(window.location.hostname || '').toLowerCase();
-  // Redirect ONLY the old GitHub Pages host. Do not redirect cupajoe/live CDN copies.
-  if (host === 'hondrospj.github.io') {
-    window.location.replace(target);
-  }
-})();
-</script>
-<noscript>
-  <meta http-equiv="refresh" content="0; url=https://cupajoe.live/shorelysafe/CSTR/flooddashboard">
-  <p>This page has moved to <a href="https://cupajoe.live/shorelysafe/CSTR/flooddashboard">https://cupajoe.live/shorelysafe/CSTR/flooddashboard</a>.</p>
-</noscript>
-<!-- SHORELYSAFE_OPSEC_REDIRECT_END -->
-
-  <meta charset="utf-8" />
+<meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title> Stone Harbor , NJ — Tidal Flooding Dashboard</title>
 
@@ -110,9 +93,6 @@ option{
   object-fit:contain;
   background:transparent;
 }
-
-
-
 
  .kicker{
   color:var(--muted);
@@ -1424,8 +1404,6 @@ const PEAK_MIN_SEP_MINUTES = 300;
       /* Historic filter: switch to live after this date */
 const LIVE_START_ISO = "2026-01-01T00:00:00Z"; // use >= Jan 1 2026
 
-
-
 /* NWS alerts point */
 const ALERT_POINT={lat:39.2325, lon:-75.0380};
 
@@ -1496,8 +1474,6 @@ const GAUGES = [
   { name:"Delaware River at Newbold Island", agency:"NOAA", id:"8548989", lat:40.137310, lon:-74.751670 }
 
 ];
-
-
 
 let _gaugeMap = null;
 let _gaugeLayer = null;
@@ -1724,8 +1700,6 @@ function applyMonthView(){
   monthAvgChart.update();
 }
 }
-
-
 
 function applyAnnualView(){
   if(!annualChart) return;
@@ -1966,10 +1940,6 @@ function setTXTStatus(msg){ if(txtNote) txtNote.textContent = msg || ""; }
 // to each flood period. This version counts the time BETWEEN forecast points
 // and linearly interpolates threshold crossings, so the top hour boxes and
 // the listed flood periods use the same math.
-
-
-
-
 
 function stageNameFromDisplayFt(ft){
   const T = THRESH[DISPLAY_DATUM];
@@ -2277,9 +2247,6 @@ function ceilToNext15MinISO(iso){
   const next = Math.ceil((t+1)/step)*step;
   return new Date(next).toISOString();
 }
-
-
-
 
 // --- PETSS: try multiple possible output filenames (works on Pages + local) ---
 const PETSS_JSON_CANDIDATES = [
@@ -2886,8 +2853,6 @@ async function buildLiveFloodPeaksSince2026(){
   });
 }
 
-
-
 /* Peak counting uses NAVD thresholds */
 function countFloodPeaks_NAVD(series){
   if(!series || series.length<3) return {minor:0, moderate:0, major:0};
@@ -3475,10 +3440,6 @@ const predValsDisplay = labels.map(iso=>{
 
   tsChart.update();
 }
-
-
-
-
 
 /* =========================
 DOY cumulative flooding — EVENT-BASED
@@ -4232,8 +4193,6 @@ try {
   updateFloodOutlook48();
 }
 
-
-
 /* =========================
 JSON-BACKED HISTORY (NAVD88 PEAKS)
 ========================= */
@@ -4385,8 +4344,6 @@ renderAnnualSparseDataNote();
   if(monthAvgMeta) monthAvgMeta.textContent = "";
 }
 
-
-
 async function initTXTBackedHistory(){
   await loadDailyTidesFromTXT();
   await hydrateHistoricFromTXT();
@@ -4493,9 +4450,6 @@ function renderAnnualSparseDataNote(){
   annualSparseNote.style.display = "block";
 }
 
-
-
-
 /* =========================
 Boot
 ========================= */
@@ -4545,9 +4499,6 @@ if (hist[0].status === "rejected") {
 }
 
 //   NEW: DOY cumulative panel (daily stats from USGS API; no TXT)
-
-
-
 
   // 2) Live counts rely on history for current-year bar overwrite
   const live = await Promise.allSettled([ updateLiveAndAnnualCounts() ]);
@@ -4653,12 +4604,6 @@ if(STATE.todayNavd && STATE.todayNavd.length){
   updateTsChartFromState();
   updateFloodOutlook48();
 }
-
-
-
-
-
-
 
 /* Start */
 boot().catch(err=>{
