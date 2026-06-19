@@ -816,10 +816,10 @@ thead th{
     }
     .doyKeyHeader{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       justify-content:space-between;
       gap:10px;
-      margin-bottom:9px;
+      margin-bottom:8px;
     }
     .doyKeyTitle{
       color:var(--text);
@@ -831,10 +831,10 @@ thead th{
     }
     .doyKeySub{
       color:var(--muted);
-      font-size:11.5px;
+      font-size:11px;
       font-weight:850;
-      line-height:1.25;
-      margin-top:4px;
+      line-height:1.2;
+      margin-top:3px;
     }
     .doyVisibleBadge{
       flex:0 0 auto;
@@ -870,18 +870,18 @@ thead th{
     }
     .doyPresetGrid{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
       gap:7px;
       margin-top:10px;
     }
     .miniKeyBtn{
-      min-height:34px;
-      padding:8px 9px;
+      min-height:32px;
+      padding:8px 8px;
       border-radius:999px;
       border:1px solid var(--line);
       background:rgba(255,255,255,.055);
       color:var(--text);
-      font-size:11.5px;
+      font-size:11px;
       font-weight:950;
       cursor:pointer;
       white-space:nowrap;
@@ -892,7 +892,7 @@ thead th{
       border-color:rgba(251,113,133,.22);
     }
     .miniKeyBtn.isWide{
-      grid-column:1 / -1;
+      grid-column:auto;
       width:100%;
     }
     .doyPicker{
@@ -905,14 +905,14 @@ thead th{
     .doyPicker.isOpen{display:block}
     .doyPickerHint{
       color:var(--muted);
-      font-size:11.5px;
+      font-size:11px;
       font-weight:850;
-      line-height:1.25;
+      line-height:1.2;
       margin:0 0 8px;
     }
     .doyYearList{
       display:grid;
-      grid-template-columns:repeat(3, minmax(0, 1fr));
+      grid-template-columns:repeat(4, minmax(0, 1fr));
       gap:6px;
       max-height:178px;
       overflow:auto;
@@ -951,6 +951,12 @@ thead th{
       flex:0 0 auto;
       box-shadow:0 0 0 1px rgba(255,255,255,.16);
     }
+    .doyYearSwatch.isLine{
+      width:16px;
+      height:3px;
+      border-radius:999px;
+      box-shadow:none;
+    }
     @media(max-width:900px){
       .doyShell{grid-template-columns:1fr;gap:10px}
       .doySidePanel{
@@ -967,7 +973,7 @@ thead th{
       .doyPresetGrid{grid-template-columns:1fr 1fr}
       .doyYearList{grid-template-columns:repeat(3, minmax(0, 1fr))}
       .doyYearChoice{font-size:11px}
-      .miniKeyBtn{font-size:11px;padding:8px 7px}
+      .miniKeyBtn{font-size:10.5px;padding:8px 7px}
     }
     .foot{margin-top:10px;color:var(--muted);font-size:12.5px;line-height:1.25;text-align:center}
 
@@ -1031,6 +1037,70 @@ thead th{
     .btn:focus,.input:focus,select:focus{
       border-color:rgba(45,212,191,.35);
       box-shadow:0 0 0 4px rgba(45,212,191,.10);
+    }
+    .predictionToggle{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      min-height:42px;
+      padding:8px 12px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+    .predictionToggleTrack{
+      position:relative;
+      width:40px;
+      height:22px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.10);
+      flex:0 0 auto;
+      transition:.18s ease;
+    }
+    .predictionToggleKnob{
+      position:absolute;
+      top:2px;
+      left:2px;
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      background:#ffffff;
+      transition:.18s ease;
+      box-shadow:0 3px 10px rgba(0,0,0,.28);
+    }
+    .predictionToggleMeta{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      line-height:1.05;
+      text-align:left;
+    }
+    .predictionToggleLabel{
+      color:var(--text);
+      font-size:11.5px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.16px;
+    }
+    .predictionToggleState{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:900;
+    }
+    .predictionToggle.isOn{
+      background:rgba(45,212,191,.10);
+      border-color:rgba(45,212,191,.24);
+    }
+    .predictionToggle.isOn .predictionToggleTrack{
+      background:rgba(45,212,191,.28);
+      border-color:rgba(45,212,191,.32);
+    }
+    .predictionToggle.isOn .predictionToggleKnob{
+      transform:translateX(18px);
+      background:#2dd4bf;
+    }
+    .predictionToggle.isOn .predictionToggleState{
+      color:#99f6e4;
     }
 
     
@@ -1353,7 +1423,7 @@ a.brand *{
           <div class="doyKeyHeader">
             <div>
               <div class="doyKeyTitle">Year visibility</div>
-              <div class="doyKeySub">Keep the pane clean: use presets, or open the picker only when choosing specific years.</div>
+              <div class="doyKeySub">Compact presets first. Open custom years only when needed.</div>
             </div>
             <div class="doyVisibleBadge" id="doyVisibleBadge">—</div>
           </div>
@@ -1365,16 +1435,15 @@ a.brand *{
           </div>
 
           <div class="doyPresetGrid">
-            <button class="miniKeyBtn" id="doySelectAll" type="button">Show all</button>
-            <button class="miniKeyBtn isDanger" id="doySelectNone" type="button">Hide all</button>
+            <button class="miniKeyBtn" id="doySelectAll" type="button">All</button>
             <button class="miniKeyBtn" id="doySelectCurrent" type="button">Current</button>
-            <button class="miniKeyBtn" id="doySelectRecent" type="button">Recent 5</button>
-            <button class="miniKeyBtn isWide" id="doyPickerToggle" type="button" aria-expanded="false" aria-controls="doyPicker">Choose specific years</button>
+            <button class="miniKeyBtn isDanger" id="doySelectNone" type="button">None</button>
+            <button class="miniKeyBtn isWide" id="doyPickerToggle" type="button" aria-expanded="false" aria-controls="doyPicker">Custom years</button>
           </div>
         </div>
 
         <div class="doyPicker" id="doyPicker" aria-label="Specific year picker">
-          <p class="doyPickerHint">Use these only when you want a custom set. The chart still keeps Average and Historic Range visible.</p>
+          <p class="doyPickerHint">Tap years to show or hide them. Average and Historic Range stay visible.</p>
           <div class="doyYearList" id="doyYearList"></div>
         </div>
       </aside>
@@ -1399,7 +1468,13 @@ a.brand *{
           <button class="segBtn" type="button" data-val="moderate">Moderate</button>
           <button class="segBtn" type="button" data-val="major">Major</button>
         </div>
-        <button class="btn" id="annualPredictionToggle" type="button">Annual Predictions OFF</button>
+        <button class="btn predictionToggle" id="annualPredictionToggle" type="button" aria-pressed="false">
+          <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
+          <span class="predictionToggleMeta">
+            <span class="predictionToggleLabel">Annual predictions</span>
+            <span class="predictionToggleState">OFF · click to turn on</span>
+          </span>
+        </button>
       </div>
 
       <div class="chartWrap"><canvas id="annualChart"></canvas></div>
@@ -1873,8 +1948,15 @@ function hookAnnualViewSwitch(){
 
 function renderAnnualScenarioControls(){
   if(annualPredictionToggle){
-    annualPredictionToggle.textContent = `Annual Predictions ${ANNUAL_PREDICTIONS_ENABLED ? "ON" : "OFF"}`;
+    annualPredictionToggle.classList.toggle("isOn", ANNUAL_PREDICTIONS_ENABLED);
     annualPredictionToggle.setAttribute("aria-pressed", ANNUAL_PREDICTIONS_ENABLED ? "true" : "false");
+    annualPredictionToggle.innerHTML = `
+      <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
+      <span class="predictionToggleMeta">
+        <span class="predictionToggleLabel">Annual predictions</span>
+        <span class="predictionToggleState">${ANNUAL_PREDICTIONS_ENABLED ? "ON · click to turn off" : "OFF · click to turn on"}</span>
+      </span>
+    `;
   }
 
   if(!annualScenarioKey) return;
@@ -3668,13 +3750,13 @@ function renderDOYVisibleSummary(years, curYear){
   const total = years.length;
 
   if(count === 0){
-    doyVisibleBadge.textContent = "0 shown";
+    doyVisibleBadge.textContent = "None";
   }else if(DOY_CURRENT_ONLY || (count === 1 && selected.has(curYear))){
     doyVisibleBadge.textContent = "Current";
   }else if(count === total){
-    doyVisibleBadge.textContent = `All ${total}`;
+    doyVisibleBadge.textContent = `${total} shown`;
   }else{
-    doyVisibleBadge.textContent = `${count} of ${total}`;
+    doyVisibleBadge.textContent = `${count} shown`;
   }
 }
 
@@ -3690,11 +3772,12 @@ function renderDOYYearControls(years, curYear){
   const maxYear = years[years.length - 1];
   doyYearList.innerHTML = years.slice().reverse().map(y=>{
     const checked = selected.has(y);
-    const color = y === curYear ? "rgba(239,68,68,1)" : doyYearColor(y, minYear, maxYear, .9);
+    const isCurrent = y === curYear;
+    const color = isCurrent ? "rgba(239,68,68,1)" : doyYearColor(y, minYear, maxYear, .9);
     return `
       <label class="doyYearChoice${checked ? " isChecked" : ""}" title="${checked ? "Hide" : "Show"} ${y}">
         <input type="checkbox" data-year="${y}" ${checked ? "checked" : ""}>
-        <span class="doyYearSwatch" style="background:${color}"></span>
+        <span class="doyYearSwatch${isCurrent ? " isLine" : ""}" style="background:${color}"></span>
         <span>${y}</span>
       </label>
     `;
@@ -3715,7 +3798,7 @@ function hookDOYControls(){
       const open = !doyPicker.classList.contains("isOpen");
       doyPicker.classList.toggle("isOpen", open);
       doyPickerToggle.setAttribute("aria-expanded", open ? "true" : "false");
-      doyPickerToggle.textContent = open ? "Hide year picker" : "Choose specific years";
+      doyPickerToggle.textContent = open ? "Hide custom" : "Custom years";
     });
   }
 
@@ -3939,6 +4022,7 @@ function renderDOYCumPanel(){
       tension:0.18,
       borderColor:color,
       backgroundColor:color,
+      pointStyle:isCurrent ? "line" : "circle",
       pointRadius:0,
       pointHoverRadius:0,
       pointHitRadius:8,
@@ -4059,8 +4143,12 @@ function renderDOYCumPanel(){
           color:"rgba(169,182,211,.9)",
           autoSkip:false,
           maxRotation:0,
-          callback:(value, index)=>{
-            const m = mStarts.indexOf(index);
+          callback:(value)=>{
+            const numeric = Number(value);
+            const idxA = Number.isFinite(numeric) ? Math.round(numeric) : NaN;
+            const idxB = Number.isFinite(numeric) ? Math.round(numeric) - 1 : NaN;
+            const dayIndex = mStarts.includes(idxA) ? idxA : idxB;
+            const m = mStarts.indexOf(dayIndex);
             return (m >= 0) ? mNames[m] : "";
           }
         },
