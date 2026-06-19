@@ -759,6 +759,17 @@ thead th{
     .chartWrap{height:240px;width:100%;position:relative}
     .chartWrapTall canvas,
     .chartWrap canvas{touch-action:none}
+    .zoomBox{
+      position:absolute;
+      display:none;
+      pointer-events:none;
+      z-index:3;
+      border:1px solid rgba(125,211,252,.95);
+      background:rgba(45,212,191,.14);
+      box-shadow:0 0 0 1px rgba(45,212,191,.18) inset;
+      border-radius:6px;
+    }
+    .zoomBox.isVisible{display:block}
     .zoomReset{
       position:absolute;
       top:8px;
@@ -780,6 +791,140 @@ thead th{
       .chartWrapTall{height:360px}
       .chartWrap{height:300px}
       .zoomReset{top:6px;right:6px;font-size:11px}
+    }
+    .doyShell{
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) 230px;
+      gap:14px;
+      align-items:stretch;
+    }
+    .doyShell .chartWrapTall{min-width:0}
+    .doySidePanel{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:4px 0 4px 14px;
+      border-left:1px solid var(--line);
+    }
+    .doyGradientKey{
+      display:grid;
+      grid-template-columns:auto 18px;
+      grid-template-rows:auto 1fr auto;
+      column-gap:9px;
+      align-items:center;
+      min-height:118px;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:950;
+      text-transform:uppercase;
+    }
+    .doyGradientKey span:first-child{align-self:start}
+    .doyGradientKey span:last-child{align-self:end}
+    .doyGradientRail{
+      grid-column:2;
+      grid-row:1 / span 3;
+      width:18px;
+      height:100%;
+      min-height:118px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background:linear-gradient(to top, rgba(37,99,235,.95), rgba(120,113,108,.88) 49%, rgba(239,68,68,.95));
+      box-shadow:0 0 18px rgba(37,99,235,.08), 0 0 18px rgba(239,68,68,.08);
+    }
+    .doyToggle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-height:34px;
+      color:var(--text);
+      font-size:12px;
+      font-weight:950;
+      cursor:pointer;
+    }
+    .doyToggle input{accent-color:#ef4444}
+    .doyYearTools{
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+    }
+    .miniKeyBtn{
+      min-height:30px;
+      padding:7px 9px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      font-size:11px;
+      font-weight:950;
+      cursor:pointer;
+    }
+    .miniKeyBtn:hover{filter:brightness(1.08)}
+    .doyYearList{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:6px;
+      max-height:208px;
+      overflow:auto;
+      padding-right:2px;
+    }
+    .doyYearChoice{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      min-width:0;
+      padding:6px 7px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:999px;
+      background:rgba(255,255,255,.035);
+      color:var(--text);
+      font-size:11.5px;
+      font-weight:900;
+      line-height:1;
+      cursor:pointer;
+    }
+    .doyYearChoice input{width:12px;height:12px;margin:0;accent-color:#ef4444}
+    .doyYearSwatch{
+      width:9px;
+      height:9px;
+      border-radius:99px;
+      flex:0 0 auto;
+      box-shadow:0 0 0 1px rgba(255,255,255,.16);
+    }
+    @media(max-width:760px){
+      .doyShell{grid-template-columns:1fr;gap:10px}
+      .doySidePanel{
+        border-left:0;
+        border-top:1px solid var(--line);
+        padding:10px 0 0;
+      }
+      .doyGradientKey{
+        grid-template-columns:auto 1fr auto;
+        grid-template-rows:auto;
+        min-height:0;
+        column-gap:8px;
+      }
+      .doyGradientKey span:first-child{order:3;align-self:center}
+      .doyGradientKey span:last-child{order:1;align-self:center}
+      .doyGradientRail{
+        grid-column:auto;
+        grid-row:auto;
+        order:2;
+        width:100%;
+        height:14px;
+        min-height:14px;
+        background:linear-gradient(to right, rgba(37,99,235,.95), rgba(120,113,108,.88) 49%, rgba(239,68,68,.95));
+      }
+      .doyYearList{
+        grid-template-columns:repeat(4, minmax(0, 1fr));
+        max-height:128px;
+      }
+      .doyYearChoice{justify-content:center;padding:7px 6px}
+    }
+    @media(max-width:520px){
+      .doyYearList{grid-template-columns:repeat(3, minmax(0, 1fr))}
+      .doyYearChoice{font-size:11px}
+      .doyYearTools .miniKeyBtn{flex:1 1 0}
     }
     .foot{margin-top:10px;color:var(--muted);font-size:12.5px;line-height:1.25;text-align:center}
 
@@ -1158,7 +1303,25 @@ a.brand *{
     </div>
 
     <div style="height:10px"></div>
-    <div class="chartWrapTall"><canvas id="doyCumChart"></canvas></div>
+    <div class="doyShell">
+      <div class="chartWrapTall"><canvas id="doyCumChart"></canvas></div>
+      <aside class="doySidePanel" aria-label="Cumulative annual flooding controls">
+        <div class="doyGradientKey" aria-label="Year color scale">
+          <span>Recent</span>
+          <div class="doyGradientRail"></div>
+          <span>Past</span>
+        </div>
+        <label class="doyToggle">
+          <input id="doyCurrentOnly" type="checkbox">
+          <span>Current year only</span>
+        </label>
+        <div class="doyYearTools">
+          <button class="miniKeyBtn" id="doySelectAll" type="button">All years</button>
+          <button class="miniKeyBtn" id="doySelectCurrent" type="button">Current year</button>
+        </div>
+        <div class="doyYearList" id="doyYearList"></div>
+      </aside>
+    </div>
   </div>
 
   <div style="height:14px"></div>
@@ -1559,6 +1722,10 @@ if(datumHelpBtn && datumHelpPop){
 const monthAvgMeta=$("monthAvgMeta"), monthAvgBody=$("monthAvgBody");
 const annualPredictionToggle = $("annualPredictionToggle");
 const annualScenarioKey = $("annualScenarioKey");
+const doyYearList = $("doyYearList");
+const doyCurrentOnly = $("doyCurrentOnly");
+const doySelectAll = $("doySelectAll");
+const doySelectCurrent = $("doySelectCurrent");
 
     
 
@@ -2531,9 +2698,24 @@ function syncChartZoomToData(chart){
   }
 }
 
-function chartIndexFromClientX(chart, clientX){
+function chartClientArea(chart){
   const rect = chart.canvas.getBoundingClientRect();
-  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / Math.max(1, rect.width)));
+  const area = chart.chartArea || {};
+  const left = rect.left + (Number.isFinite(area.left) ? area.left : 0);
+  const right = rect.left + (Number.isFinite(area.right) ? area.right : rect.width);
+  const top = rect.top + (Number.isFinite(area.top) ? area.top : 0);
+  const bottom = rect.top + (Number.isFinite(area.bottom) ? area.bottom : rect.height);
+  return {
+    left,
+    right:Math.max(left + 1, right),
+    top,
+    bottom:Math.max(top + 1, bottom)
+  };
+}
+
+function chartIndexFromClientX(chart, clientX){
+  const area = chartClientArea(chart);
+  const ratio = Math.max(0, Math.min(1, (clientX - area.left) / Math.max(1, area.right - area.left)));
   const { min, max } = getChartZoomRange(chart);
   return min + ratio * (max - min);
 }
@@ -2570,6 +2752,13 @@ function attachChartZoom(chart){
     canvas.__chartZoomCleanup();
   }
 
+  let box = parent.querySelector(".zoomBox");
+  if(!box){
+    box = document.createElement("div");
+    box.className = "zoomBox";
+    parent.appendChild(box);
+  }
+
   let button = parent.querySelector(".zoomReset");
   if(!button){
     button = document.createElement("button");
@@ -2579,7 +2768,7 @@ function attachChartZoom(chart){
     parent.appendChild(button);
   }
 
-  const state = { button, pointers:new Map(), pinch:null, pan:null };
+  const state = { button, box, pointers:new Map(), pinch:null, drag:null };
   CHART_ZOOM_STATE.set(chart, state);
   const removers = [];
   const addCanvasListener = (type, handler, options)=>{
@@ -2592,6 +2781,38 @@ function attachChartZoom(chart){
 
   button.onclick = ()=>resetChartZoom(chart);
 
+  function hideZoomBox(){
+    state.box.classList.remove("isVisible");
+  }
+
+  function setZoomBoxFromDrag(drag){
+    const parentRect = parent.getBoundingClientRect();
+    const area = chartClientArea(chart);
+    const x0 = Math.max(area.left, Math.min(area.right, drag.x0));
+    const x1 = Math.max(area.left, Math.min(area.right, drag.x1));
+    const left = Math.min(x0, x1) - parentRect.left;
+    const width = Math.abs(x1 - x0);
+    state.box.style.left = `${left}px`;
+    state.box.style.top = `${area.top - parentRect.top}px`;
+    state.box.style.width = `${width}px`;
+    state.box.style.height = `${area.bottom - area.top}px`;
+    state.box.classList.toggle("isVisible", width >= 10);
+  }
+
+  function finishDragZoom(){
+    const drag = state.drag;
+    state.drag = null;
+    hideZoomBox();
+    if(!drag) return false;
+    const width = Math.abs(drag.x1 - drag.x0);
+    if(width < 18) return false;
+    const min = chartIndexFromClientX(chart, Math.min(drag.x0, drag.x1));
+    const max = chartIndexFromClientX(chart, Math.max(drag.x0, drag.x1));
+    if(Math.abs(max - min) < chartMinRange(chartLabels(chart).length)) return false;
+    setChartZoomRange(chart, min, max);
+    return true;
+  }
+
   addCanvasListener("wheel", (e)=>{
     if(!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
@@ -2600,15 +2821,18 @@ function attachChartZoom(chart){
   }, { passive:false });
 
   addCanvasListener("pointerdown", (e)=>{
+    if(e.button != null && e.button !== 0) return;
     canvas.setPointerCapture?.(e.pointerId);
     state.pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
 
-    if(state.pointers.size === 1){
-      const { min, max } = getChartZoomRange(chart);
-      state.pan = { x:e.clientX, min, max };
+    if(state.pointers.size === 1 && (e.pointerType === "mouse" || e.pointerType === "pen")){
+      state.drag = { x0:e.clientX, x1:e.clientX };
+      hideZoomBox();
     }
 
     if(state.pointers.size === 2){
+      state.drag = null;
+      hideZoomBox();
       const pts = Array.from(state.pointers.values());
       const { min, max } = getChartZoomRange(chart);
       state.pinch = {
@@ -2637,24 +2861,21 @@ function attachChartZoom(chart){
       return;
     }
 
-    if(state.pointers.size === 1 && state.pan && isChartZoomed(chart)){
+    if(state.pointers.size === 1 && state.drag){
       e.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      const range = state.pan.max - state.pan.min;
-      const delta = ((e.clientX - state.pan.x) / Math.max(1, rect.width)) * range;
-      setChartZoomRange(chart, state.pan.min - delta, state.pan.max - delta);
+      state.drag.x1 = e.clientX;
+      setZoomBoxFromDrag(state.drag);
     }
   });
 
   function endPointer(e){
+    if(state.drag && state.pointers.has(e.pointerId)){
+      finishDragZoom();
+    }
     state.pointers.delete(e.pointerId);
     state.pinch = null;
-    state.pan = null;
-    if(state.pointers.size === 1){
-      const p = Array.from(state.pointers.values())[0];
-      const { min, max } = getChartZoomRange(chart);
-      state.pan = { x:p.x, min, max };
-    }
+    if(state.pointers.size !== 1) state.drag = null;
+    if(!state.drag) hideZoomBox();
   }
 
   addCanvasListener("pointerup", endPointer);
@@ -2808,7 +3029,17 @@ let annualSource = [];
 let annualPredictionLookup = new Map();
 
 function annualNumber(v){
-  return Number.isFinite(Number(v)) ? Number(v) : null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.floor(n) : null;
+}
+
+function parseAnnualRange(range){
+  const nums = String(range || "").match(/-?\d+(?:\.\d+)?/g);
+  if(!nums || nums.length < 2) return null;
+  const low = Number(nums[0]);
+  const high = Number(nums[1]);
+  if(!Number.isFinite(low) || !Number.isFinite(high)) return null;
+  return { low, high };
 }
 
 function countEventsFromHistoryForYear(year){
@@ -2831,6 +3062,7 @@ function countEventsFromHistoryForYear(year){
 }
 
 function buildAnnualArrays(){
+  const { y: curYear } = getESTParts(new Date());
   const historical = ATLANTIC_CITY_ANNUAL_COUNTS.map(r => ({
     year:r.year,
     minor:annualNumber(r.minor),
@@ -2843,10 +3075,14 @@ function buildAnnualArrays(){
   let rows = historical.slice();
   annualPredictionLookup = new Map();
 
+  if(curYear > lastHistoricalYear){
+    rows.push({ year:curYear, ...countEventsFromHistoryForYear(curYear), source:"live" });
+  }
+
   if(ANNUAL_PREDICTIONS_ENABLED){
     const future = FUTURE_FLOOD_PREDICTIONS[ANNUAL_SCENARIO] || [];
     rows = rows.concat(future
-      .filter(r => r.year > lastHistoricalYear)
+      .filter(r => r.year > Math.max(curYear, lastHistoricalYear))
       .map(r => {
         annualPredictionLookup.set(r.year, r);
         return {
@@ -2857,14 +3093,6 @@ function buildAnnualArrays(){
           source:"prediction"
         };
       }));
-  }else{
-    const { y: curYear } = getESTParts(new Date());
-    if(curYear > lastHistoricalYear && Array.isArray(HIGH_TIDES_NAVD) && HIGH_TIDES_NAVD.length){
-      const counts = countEventsFromHistoryForYear(curYear);
-      if(counts.minor || counts.moderate || counts.major){
-        rows.push({ year:curYear, ...counts, source:"live" });
-      }
-    }
   }
 
   rows.sort((a,b)=>a.year-b.year);
@@ -2896,6 +3124,13 @@ function annualPredictionRange(year, label){
   if(label === "Moderate") return rec.moderateRange || "";
   if(label === "Major") return rec.majorRange || "";
   return "";
+}
+
+function annualPredictionSpread(year, label, value){
+  const range = parseAnnualRange(annualPredictionRange(year, label));
+  const center = Number(value);
+  if(!range || !Number.isFinite(center)) return null;
+  return Math.floor(Math.max(Math.abs(center - range.low), Math.abs(range.high - center)));
 }
 
 
@@ -2959,10 +3194,10 @@ function ensureAnnual(){
               const v = ctx.parsed?.y;
               if (!Number.isFinite(v)) return null;
               const year = ctx.label;
-              const range = annualPredictionRange(year, ctx.dataset.label);
-              const value = Number.isInteger(v) ? String(v) : v.toFixed(2);
-              return range
-                ? `${ctx.dataset.label}: ${value} (95% CI ${range})`
+              const value = Math.floor(v);
+              const spread = annualPredictionSpread(year, ctx.dataset.label, value);
+              return Number.isFinite(spread)
+                ? `${ctx.dataset.label}: ${value} (+/- ${spread})`
                 : `${ctx.dataset.label}: ${value}`;
             },
          footer: (items) => {
@@ -2974,7 +3209,7 @@ function ensureAnnual(){
 
   const idx = items?.[0]?.dataIndex;
   const source = Number.isFinite(idx) ? annualSource[idx] : "";
-  const totalTxt = Number.isInteger(total) ? String(total) : total.toFixed(2);
+  const totalTxt = String(Math.floor(total));
   return source === "prediction"
     ? `Total: ${totalTxt} · ${ANNUAL_SCENARIO}`
     : `Total: ${totalTxt}`;
@@ -3293,6 +3528,10 @@ const predValsDisplay = labels.map(iso=>{
 
 let DOY_CACHE = null;   
 let doyCumChart = null;
+let DOY_SELECTED_YEARS = new Set();
+let DOY_YEARS_KEY = "";
+let DOY_CURRENT_ONLY = false;
+let DOY_CONTROL_YEARS = [];
 
 function doyFloodStageDisplayFt(){
   return THRESH?.[DISPLAY_DATUM]?.minorLow ?? 0;
@@ -3333,6 +3572,86 @@ function doyIndexToMonthDay(idx){
   const m = d.toLocaleString("en-US", { month:"short", timeZone:"UTC" });
   const day = d.getUTCDate();
   return `${m} ${day}`;
+}
+
+function doyYearColor(year, minYear, maxYear, alpha=.62){
+  const denom = Math.max(1, maxYear - minYear);
+  return yearGradientColor((year - minYear) / denom, alpha);
+}
+
+function formatFloodStat(v){
+  const n = Number(v);
+  if(!Number.isFinite(n)) return "";
+  if(Number.isInteger(n)) return String(n);
+  return n.toFixed(1).replace(/\.0$/, "");
+}
+
+function ensureDOYSelectedYears(years){
+  const key = years.join("|");
+  if(key !== DOY_YEARS_KEY){
+    DOY_YEARS_KEY = key;
+    DOY_SELECTED_YEARS = new Set(years);
+  }
+}
+
+function renderDOYYearControls(years, curYear){
+  if(doyCurrentOnly) doyCurrentOnly.checked = DOY_CURRENT_ONLY;
+  if(!doyYearList || !years?.length) return;
+
+  const minYear = years[0];
+  const maxYear = years[years.length - 1];
+  doyYearList.innerHTML = years.slice().reverse().map(y=>{
+    const checked = DOY_CURRENT_ONLY ? y === curYear : DOY_SELECTED_YEARS.has(y);
+    const color = y === curYear ? "rgba(239,68,68,1)" : doyYearColor(y, minYear, maxYear, .9);
+    const disabled = DOY_CURRENT_ONLY && y !== curYear ? "disabled" : "";
+    return `
+      <label class="doyYearChoice">
+        <input type="checkbox" data-year="${y}" ${checked ? "checked" : ""} ${disabled}>
+        <span class="doyYearSwatch" style="background:${color}"></span>
+        <span>${y}</span>
+      </label>
+    `;
+  }).join("");
+}
+
+function hookDOYControls(){
+  if(doyCurrentOnly){
+    doyCurrentOnly.addEventListener("change", ()=>{
+      DOY_CURRENT_ONLY = doyCurrentOnly.checked;
+      renderDOYCumPanel();
+    });
+  }
+
+  if(doySelectAll){
+    doySelectAll.addEventListener("click", ()=>{
+      const years = DOY_CONTROL_YEARS.length ? DOY_CONTROL_YEARS : (DOY_CACHE?.years || []);
+      DOY_SELECTED_YEARS = new Set(years);
+      DOY_CURRENT_ONLY = false;
+      renderDOYCumPanel();
+    });
+  }
+
+  if(doySelectCurrent){
+    doySelectCurrent.addEventListener("click", ()=>{
+      const { y: curYear } = getESTParts(new Date());
+      DOY_SELECTED_YEARS = new Set([curYear]);
+      DOY_CURRENT_ONLY = true;
+      renderDOYCumPanel();
+    });
+  }
+
+  if(doyYearList){
+    doyYearList.addEventListener("change", (e)=>{
+      const input = e.target?.closest?.("input[data-year]");
+      if(!input) return;
+      const year = Number(input.dataset.year);
+      if(!Number.isFinite(year)) return;
+      DOY_CURRENT_ONLY = false;
+      if(input.checked) DOY_SELECTED_YEARS.add(year);
+      else DOY_SELECTED_YEARS.delete(year);
+      renderDOYCumPanel();
+    });
+  }
 }
 
 
@@ -3458,6 +3777,13 @@ function buildYTDSeriesFromEvents(eventsNavd){
   return ytd;
 }
 
+function emptyCurrentYTDSeries(){
+  const { y: yNow, m: mNow, d: dNow } = getESTParts(new Date());
+  const todayIdx = calIndex365(yNow, mNow, dNow);
+  if(todayIdx === null) return null;
+  return Array.from({length:365}, (_, i)=> i <= todayIdx ? 0 : null);
+}
+
 function renderDOYCumPanel(){
   const meta   = document.getElementById("doyMeta");
   const canvas = document.getElementById("doyCumChart");
@@ -3468,9 +3794,13 @@ function renderDOYCumPanel(){
     return;
   }
 
-  const { years, seriesByYear, min, max, stageLabel } = DOY_CACHE;
+  const { years, seriesByYear, avg, min, max, stageLabel } = DOY_CACHE;
   const { y: CUR_Y } = getESTParts(new Date());
-  const ytd = buildYTDSeriesFromEvents(HIGH_TIDES_NAVD);
+  const ytd = buildYTDSeriesFromEvents(HIGH_TIDES_NAVD) || emptyCurrentYTDSeries();
+  const controlYears = years.includes(CUR_Y) ? years : [...years, CUR_Y].sort((a,b)=>a-b);
+  DOY_CONTROL_YEARS = controlYears;
+  ensureDOYSelectedYears(controlYears);
+  renderDOYYearControls(controlYears, CUR_Y);
 
   if(meta){
     meta.textContent = `${years[0]}–${years[years.length - 1]} · ${stageLabel}`;
@@ -3482,60 +3812,87 @@ function renderDOYCumPanel(){
 
   const minYear = years[0];
   const maxYear = years[years.length - 1];
-  const yearDatasets = (seriesByYear || []).map((yr, idx)=>{
-    const denom = Math.max(1, maxYear - minYear);
-    const t = (yr.y - minYear) / denom;
-    const color = yearGradientColor(t, yr.y === CUR_Y ? 1 : .55);
+  const displaySeries = (seriesByYear || []).slice();
+  if(!displaySeries.some(yr => yr.y === CUR_Y)){
+    displaySeries.push({ y:CUR_Y, cum:ytd || emptyCurrentYTDSeries() || new Array(365).fill(null) });
+  }
+  displaySeries.sort((a,b)=>a.y-b.y);
+
+  const yearDatasets = displaySeries.map((yr, idx)=>{
+    const isCurrent = yr.y === CUR_Y;
+    const color = isCurrent ? "rgba(239,68,68,1)" : doyYearColor(yr.y, minYear, maxYear, .55);
+    const selected = DOY_CURRENT_ONLY ? isCurrent : DOY_SELECTED_YEARS.has(yr.y);
     return {
-      label:String(yr.y),
-      data:(yr.y === CUR_Y && ytd) ? ytd : yr.cum,
-      _drawLast:yr.y === CUR_Y,
-      borderWidth:yr.y === CUR_Y ? 4 : 1.4,
+      label:isCurrent ? "Current Year" : String(yr.y),
+      data:(isCurrent && ytd) ? ytd : yr.cum,
+      _year:yr.y,
+      _kind:isCurrent ? "current" : "year",
+      _drawLast:isCurrent,
+      hidden:!selected,
+      borderWidth:isCurrent ? 4 : 1.4,
       tension:0.18,
       borderColor:color,
       backgroundColor:color,
       pointRadius:0,
       pointHoverRadius:0,
-      pointHitRadius:0,
+      pointHitRadius:8,
       spanGaps:false,
       fill:false,
-      order:yr.y === CUR_Y ? 900 : 20 + idx
+      order:isCurrent ? 900 : 40 + idx
     };
   });
 
-  const dsMin = {
-    label:"Absolute minimum",
+  const dsRangeFloor = {
+    label:"Range floor",
     data:min,
-    borderWidth:2,
-    borderDash:[6,5],
+    _legendHidden:true,
+    _kind:"rangeFloor",
+    borderWidth:0,
     tension:0.2,
-    borderColor:"rgba(234,240,255,.72)",
-    backgroundColor:"rgba(234,240,255,.72)",
+    borderColor:"rgba(148,163,184,0)",
+    backgroundColor:"rgba(148,163,184,0)",
     pointRadius:0,
     pointHoverRadius:0,
     pointHitRadius:0,
     fill:false,
-    order:5
+    order:1200
   };
 
-  const dsMax = {
-    label:"Absolute maximum",
+  const dsRange = {
+    label:"Historic Range",
     data:max,
-    borderWidth:2,
-    borderDash:[6,5],
+    _kind:"range",
+    borderWidth:0,
     tension:0.2,
-    borderColor:"rgba(255,255,255,.95)",
-    backgroundColor:"rgba(255,255,255,.95)",
+    borderColor:"rgba(148,163,184,.40)",
+    backgroundColor:"rgba(148,163,184,.22)",
     pointRadius:0,
     pointHoverRadius:0,
     pointHitRadius:0,
+    pointStyle:"rect",
+    fill:"-1",
+    order:1190
+  };
+
+  const dsAvg = {
+    label:"Average",
+    data:avg,
+    _kind:"average",
+    borderWidth:2.4,
+    tension:0.2,
+    borderColor:"rgba(255,255,255,.94)",
+    backgroundColor:"rgba(255,255,255,.94)",
+    pointRadius:0,
+    pointHoverRadius:0,
+    pointHitRadius:8,
+    pointStyle:"line",
     fill:false,
-    order:6
+    order:1000
   };
 
   const data = {
     labels,
-    datasets: [...yearDatasets, dsMin, dsMax]
+    datasets: [dsRangeFloor, dsRange, dsAvg, ...yearDatasets]
   };
 
   const options = {
@@ -3558,8 +3915,8 @@ function renderDOYCumPanel(){
           boxWidth:14,
           usePointStyle:true,
           filter:(legendItem, chartData)=>{
-            const label = chartData?.datasets?.[legendItem.datasetIndex]?.label || "";
-            return label === "Absolute minimum" || label === "Absolute maximum" || label === String(CUR_Y);
+            const ds = chartData?.datasets?.[legendItem.datasetIndex];
+            return ["Historic Range","Average","Current Year"].includes(ds?.label || "");
           }
         }
       },
@@ -3573,7 +3930,19 @@ function renderDOYCumPanel(){
           label:(ctx)=>{
             const v = ctx.parsed?.y;
             if(!Number.isFinite(v)) return null;
-            return `${ctx.dataset.label}: ${Math.round(v * 100) / 100}`;
+            const idx = ctx.dataIndex;
+            const kind = ctx.dataset?._kind;
+            if(kind === "rangeFloor") return null;
+            if(kind === "range"){
+              return `Historic range: ${formatFloodStat(min[idx])} - ${formatFloodStat(max[idx])} floods`;
+            }
+            if(kind === "average"){
+              return `Average: ${formatFloodStat(v)} floods`;
+            }
+            if(ctx.dataset?._year){
+              return `${ctx.dataset._year}: ${formatFloodStat(v)} floods`;
+            }
+            return `${ctx.dataset.label}: ${formatFloodStat(v)}`;
           }
         }
       }
@@ -4132,9 +4501,10 @@ async function boot(){
   updateUnitsAndBadges();
   renderTopTen();
 
-    hookMonthViewSwitch();
+  hookMonthViewSwitch();
   hookAnnualViewSwitch();
   hookAnnualPredictionControls();
+  hookDOYControls();
 
 
     
