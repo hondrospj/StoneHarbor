@@ -794,7 +794,7 @@ thead th{
     }
     .doyShell{
       display:grid;
-      grid-template-columns:minmax(0, 1fr) 230px;
+      grid-template-columns:minmax(0, 1fr) 285px;
       gap:14px;
       align-items:stretch;
     }
@@ -803,87 +803,147 @@ thead th{
       min-width:0;
       display:flex;
       flex-direction:column;
-      gap:12px;
+      gap:10px;
       padding:4px 0 4px 14px;
       border-left:1px solid var(--line);
     }
+    .doyKeyCard{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      border-radius:16px;
+      padding:12px;
+      box-shadow:0 14px 36px rgba(0,0,0,.18);
+    }
+    .doyKeyHeader{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:9px;
+    }
+    .doyKeyTitle{
+      color:var(--text);
+      font-weight:950;
+      font-size:12px;
+      letter-spacing:.18px;
+      text-transform:uppercase;
+      line-height:1.1;
+    }
+    .doyKeySub{
+      color:var(--muted);
+      font-size:11.5px;
+      font-weight:850;
+      line-height:1.25;
+      margin-top:4px;
+    }
+    .doyVisibleBadge{
+      flex:0 0 auto;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.18);
+      color:rgba(234,240,255,.92);
+      border-radius:999px;
+      padding:6px 8px;
+      font-size:11px;
+      font-weight:950;
+      line-height:1;
+      white-space:nowrap;
+    }
     .doyGradientKey{
       display:grid;
-      grid-template-columns:auto 18px;
-      grid-template-rows:auto 1fr auto;
-      column-gap:9px;
-      align-items:center;
-      min-height:118px;
-      color:var(--muted);
-      font-size:11px;
-      font-weight:950;
-      text-transform:uppercase;
-    }
-    .doyGradientKey span:first-child{align-self:start}
-    .doyGradientKey span:last-child{align-self:end}
-    .doyGradientRail{
-      grid-column:2;
-      grid-row:1 / span 3;
-      width:18px;
-      height:100%;
-      min-height:118px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.18);
-      background:linear-gradient(to top, rgba(37,99,235,.95), rgba(120,113,108,.88) 49%, rgba(239,68,68,.95));
-      box-shadow:0 0 18px rgba(37,99,235,.08), 0 0 18px rgba(239,68,68,.08);
-    }
-    .doyToggle{
-      display:flex;
+      grid-template-columns:auto minmax(0, 1fr) auto;
       align-items:center;
       gap:8px;
-      min-height:34px;
-      color:var(--text);
-      font-size:12px;
+      color:var(--muted);
+      font-size:10.5px;
       font-weight:950;
-      cursor:pointer;
+      text-transform:uppercase;
+      letter-spacing:.18px;
+      margin-top:8px;
     }
-    .doyToggle input{accent-color:#ef4444}
-    .doyYearTools{
-      display:flex;
-      flex-wrap:wrap;
-      gap:7px;
-    }
-    .miniKeyBtn{
-      min-height:30px;
-      padding:7px 9px;
+    .doyGradientRail{
+      width:100%;
+      height:12px;
       border-radius:999px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.05);
-      color:var(--text);
-      font-size:11px;
-      font-weight:950;
-      cursor:pointer;
+      border:1px solid rgba(255,255,255,.16);
+      background:linear-gradient(to right, rgba(37,99,235,.95), rgba(120,113,108,.88) 49%, rgba(239,68,68,.95));
+      box-shadow:0 0 18px rgba(37,99,235,.08), 0 0 18px rgba(239,68,68,.08);
     }
-    .miniKeyBtn:hover{filter:brightness(1.08)}
-    .doyYearList{
+    .doyPresetGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
+      gap:7px;
+      margin-top:10px;
+    }
+    .miniKeyBtn{
+      min-height:34px;
+      padding:8px 9px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.055);
+      color:var(--text);
+      font-size:11.5px;
+      font-weight:950;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .miniKeyBtn:hover{filter:brightness(1.08)}
+    .miniKeyBtn.isDanger{
+      background:rgba(251,113,133,.08);
+      border-color:rgba(251,113,133,.22);
+    }
+    .miniKeyBtn.isWide{
+      grid-column:1 / -1;
+      width:100%;
+    }
+    .doyPicker{
+      display:none;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.16);
+      border-radius:16px;
+      padding:10px;
+    }
+    .doyPicker.isOpen{display:block}
+    .doyPickerHint{
+      color:var(--muted);
+      font-size:11.5px;
+      font-weight:850;
+      line-height:1.25;
+      margin:0 0 8px;
+    }
+    .doyYearList{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
       gap:6px;
-      max-height:208px;
+      max-height:178px;
       overflow:auto;
       padding-right:2px;
     }
     .doyYearChoice{
       display:flex;
       align-items:center;
-      gap:6px;
+      justify-content:center;
+      gap:5px;
       min-width:0;
-      padding:6px 7px;
+      min-height:30px;
+      padding:6px 6px;
       border:1px solid rgba(255,255,255,.10);
       border-radius:999px;
       background:rgba(255,255,255,.035);
       color:var(--text);
-      font-size:11.5px;
-      font-weight:900;
+      font-size:11px;
+      font-weight:950;
       line-height:1;
       cursor:pointer;
     }
-    .doyYearChoice input{width:12px;height:12px;margin:0;accent-color:#ef4444}
+    .doyYearChoice.isChecked{
+      background:rgba(255,255,255,.09);
+      border-color:rgba(255,255,255,.20);
+    }
+    .doyYearChoice input{
+      position:absolute;
+      opacity:0;
+      pointer-events:none;
+    }
     .doyYearSwatch{
       width:9px;
       height:9px;
@@ -891,40 +951,23 @@ thead th{
       flex:0 0 auto;
       box-shadow:0 0 0 1px rgba(255,255,255,.16);
     }
-    @media(max-width:760px){
+    @media(max-width:900px){
       .doyShell{grid-template-columns:1fr;gap:10px}
       .doySidePanel{
         border-left:0;
         border-top:1px solid var(--line);
         padding:10px 0 0;
       }
-      .doyGradientKey{
-        grid-template-columns:auto 1fr auto;
-        grid-template-rows:auto;
-        min-height:0;
-        column-gap:8px;
-      }
-      .doyGradientKey span:first-child{order:3;align-self:center}
-      .doyGradientKey span:last-child{order:1;align-self:center}
-      .doyGradientRail{
-        grid-column:auto;
-        grid-row:auto;
-        order:2;
-        width:100%;
-        height:14px;
-        min-height:14px;
-        background:linear-gradient(to right, rgba(37,99,235,.95), rgba(120,113,108,.88) 49%, rgba(239,68,68,.95));
-      }
       .doyYearList{
-        grid-template-columns:repeat(4, minmax(0, 1fr));
+        grid-template-columns:repeat(5, minmax(0, 1fr));
         max-height:128px;
       }
-      .doyYearChoice{justify-content:center;padding:7px 6px}
     }
     @media(max-width:520px){
+      .doyPresetGrid{grid-template-columns:1fr 1fr}
       .doyYearList{grid-template-columns:repeat(3, minmax(0, 1fr))}
       .doyYearChoice{font-size:11px}
-      .doyYearTools .miniKeyBtn{flex:1 1 0}
+      .miniKeyBtn{font-size:11px;padding:8px 7px}
     }
     .foot{margin-top:10px;color:var(--muted);font-size:12.5px;line-height:1.25;text-align:center}
 
@@ -1306,20 +1349,34 @@ a.brand *{
     <div class="doyShell">
       <div class="chartWrapTall"><canvas id="doyCumChart"></canvas></div>
       <aside class="doySidePanel" aria-label="Cumulative annual flooding controls">
-        <div class="doyGradientKey" aria-label="Year color scale">
-          <span>Recent</span>
-          <div class="doyGradientRail"></div>
-          <span>Past</span>
+        <div class="doyKeyCard" aria-label="Year visibility key">
+          <div class="doyKeyHeader">
+            <div>
+              <div class="doyKeyTitle">Year visibility</div>
+              <div class="doyKeySub">Keep the pane clean: use presets, or open the picker only when choosing specific years.</div>
+            </div>
+            <div class="doyVisibleBadge" id="doyVisibleBadge">—</div>
+          </div>
+
+          <div class="doyGradientKey" aria-label="Year color scale">
+            <span>Past</span>
+            <div class="doyGradientRail"></div>
+            <span>Recent</span>
+          </div>
+
+          <div class="doyPresetGrid">
+            <button class="miniKeyBtn" id="doySelectAll" type="button">Show all</button>
+            <button class="miniKeyBtn isDanger" id="doySelectNone" type="button">Hide all</button>
+            <button class="miniKeyBtn" id="doySelectCurrent" type="button">Current</button>
+            <button class="miniKeyBtn" id="doySelectRecent" type="button">Recent 5</button>
+            <button class="miniKeyBtn isWide" id="doyPickerToggle" type="button" aria-expanded="false" aria-controls="doyPicker">Choose specific years</button>
+          </div>
         </div>
-        <label class="doyToggle">
-          <input id="doyCurrentOnly" type="checkbox">
-          <span>Current year only</span>
-        </label>
-        <div class="doyYearTools">
-          <button class="miniKeyBtn" id="doySelectAll" type="button">All years</button>
-          <button class="miniKeyBtn" id="doySelectCurrent" type="button">Current year</button>
+
+        <div class="doyPicker" id="doyPicker" aria-label="Specific year picker">
+          <p class="doyPickerHint">Use these only when you want a custom set. The chart still keeps Average and Historic Range visible.</p>
+          <div class="doyYearList" id="doyYearList"></div>
         </div>
-        <div class="doyYearList" id="doyYearList"></div>
       </aside>
     </div>
   </div>
@@ -1723,9 +1780,13 @@ const monthAvgMeta=$("monthAvgMeta"), monthAvgBody=$("monthAvgBody");
 const annualPredictionToggle = $("annualPredictionToggle");
 const annualScenarioKey = $("annualScenarioKey");
 const doyYearList = $("doyYearList");
-const doyCurrentOnly = $("doyCurrentOnly");
+const doyVisibleBadge = $("doyVisibleBadge");
+const doyPicker = $("doyPicker");
+const doyPickerToggle = $("doyPickerToggle");
 const doySelectAll = $("doySelectAll");
+const doySelectNone = $("doySelectNone");
 const doySelectCurrent = $("doySelectCurrent");
+const doySelectRecent = $("doySelectRecent");
 
     
 
@@ -3594,19 +3655,45 @@ function ensureDOYSelectedYears(years){
   }
 }
 
+function getDOYEffectiveSelectedYears(years, curYear){
+  if(DOY_CURRENT_ONLY) return new Set(years.includes(curYear) ? [curYear] : []);
+  return new Set(years.filter(y => DOY_SELECTED_YEARS.has(y)));
+}
+
+function renderDOYVisibleSummary(years, curYear){
+  if(!doyVisibleBadge || !years?.length) return;
+
+  const selected = getDOYEffectiveSelectedYears(years, curYear);
+  const count = selected.size;
+  const total = years.length;
+
+  if(count === 0){
+    doyVisibleBadge.textContent = "0 shown";
+  }else if(DOY_CURRENT_ONLY || (count === 1 && selected.has(curYear))){
+    doyVisibleBadge.textContent = "Current";
+  }else if(count === total){
+    doyVisibleBadge.textContent = `All ${total}`;
+  }else{
+    doyVisibleBadge.textContent = `${count} of ${total}`;
+  }
+}
+
 function renderDOYYearControls(years, curYear){
-  if(doyCurrentOnly) doyCurrentOnly.checked = DOY_CURRENT_ONLY;
-  if(!doyYearList || !years?.length) return;
+  if(!years?.length) return;
+
+  const selected = getDOYEffectiveSelectedYears(years, curYear);
+  renderDOYVisibleSummary(years, curYear);
+
+  if(!doyYearList) return;
 
   const minYear = years[0];
   const maxYear = years[years.length - 1];
   doyYearList.innerHTML = years.slice().reverse().map(y=>{
-    const checked = DOY_CURRENT_ONLY ? y === curYear : DOY_SELECTED_YEARS.has(y);
+    const checked = selected.has(y);
     const color = y === curYear ? "rgba(239,68,68,1)" : doyYearColor(y, minYear, maxYear, .9);
-    const disabled = DOY_CURRENT_ONLY && y !== curYear ? "disabled" : "";
     return `
-      <label class="doyYearChoice">
-        <input type="checkbox" data-year="${y}" ${checked ? "checked" : ""} ${disabled}>
+      <label class="doyYearChoice${checked ? " isChecked" : ""}" title="${checked ? "Hide" : "Show"} ${y}">
+        <input type="checkbox" data-year="${y}" ${checked ? "checked" : ""}>
         <span class="doyYearSwatch" style="background:${color}"></span>
         <span>${y}</span>
       </label>
@@ -3614,29 +3701,48 @@ function renderDOYYearControls(years, curYear){
   }).join("");
 }
 
+function selectDOYYears(nextYears, { currentOnly=false } = {}){
+  const years = DOY_CONTROL_YEARS.length ? DOY_CONTROL_YEARS : (DOY_CACHE?.years || []);
+  const allowed = new Set(years);
+  DOY_SELECTED_YEARS = new Set((nextYears || []).filter(y => allowed.has(y)));
+  DOY_CURRENT_ONLY = currentOnly;
+  renderDOYCumPanel();
+}
+
 function hookDOYControls(){
-  if(doyCurrentOnly){
-    doyCurrentOnly.addEventListener("change", ()=>{
-      DOY_CURRENT_ONLY = doyCurrentOnly.checked;
-      renderDOYCumPanel();
+  if(doyPickerToggle && doyPicker){
+    doyPickerToggle.addEventListener("click", ()=>{
+      const open = !doyPicker.classList.contains("isOpen");
+      doyPicker.classList.toggle("isOpen", open);
+      doyPickerToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      doyPickerToggle.textContent = open ? "Hide year picker" : "Choose specific years";
     });
   }
 
   if(doySelectAll){
     doySelectAll.addEventListener("click", ()=>{
       const years = DOY_CONTROL_YEARS.length ? DOY_CONTROL_YEARS : (DOY_CACHE?.years || []);
-      DOY_SELECTED_YEARS = new Set(years);
-      DOY_CURRENT_ONLY = false;
-      renderDOYCumPanel();
+      selectDOYYears(years);
+    });
+  }
+
+  if(doySelectNone){
+    doySelectNone.addEventListener("click", ()=>{
+      selectDOYYears([]);
     });
   }
 
   if(doySelectCurrent){
     doySelectCurrent.addEventListener("click", ()=>{
       const { y: curYear } = getESTParts(new Date());
-      DOY_SELECTED_YEARS = new Set([curYear]);
-      DOY_CURRENT_ONLY = true;
-      renderDOYCumPanel();
+      selectDOYYears([curYear], { currentOnly:true });
+    });
+  }
+
+  if(doySelectRecent){
+    doySelectRecent.addEventListener("click", ()=>{
+      const years = DOY_CONTROL_YEARS.length ? DOY_CONTROL_YEARS : (DOY_CACHE?.years || []);
+      selectDOYYears(years.slice(-5));
     });
   }
 
