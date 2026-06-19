@@ -3168,6 +3168,8 @@ async function buildLiveFloodPeaksSince2026(){
   });
 }
 
+const STATION_ANNUAL_PRIORITY_START_YEAR = 2007;
+let stationAnnualCoverageYears = new Set();
 let annualSource = [];
 let annualPredictionLookup = new Map();
 
@@ -3176,22 +3178,30 @@ function annualNumber(v){
   return Number.isFinite(n) ? Math.floor(n) : null;
 }
 
-function parseAnnualRange(range){
-  const nums = String(range || "").match(/-?\d+(?:\.\d+)?/g);
-  if(!nums || nums.length < 2) return null;
-  const low = Number(nums[0]);
-  const high = Number(nums[1]);
-  if(!Number.isFinite(low) || !Number.isFinite(high)) return null;
-  return { low, high };
+function annualSourceName(source){
+  if(source === "stoneHarbor") return "Stone Harbor";
+  if(source === "atlanticCity") return "Atlantic City fallback";
+  if(source === "live") return "Stone Harbor live";
+  if(source === "prediction") return ANNUAL_SCENARIO;
+  return "";
 }
 
-function countEventsFromHistoryForYear(year){
+function annualYearFromEvent(e){
+  const y = Number(e?.y);
+  if(Number.isFinite(y)) return y;
+
+  const dt = new Date(e?.t);
+  if(Number.isNaN(dt.getTime())) return null;
+  return dt.getUTCFullYear();
+}
+
+function countEventsFromListForYear(events, year){
   const T = THRESH.NAVD88;
   const out = { minor: 0, moderate: 0, major: 0 };
 
-  for(const e of (HIGH_TIDES_NAVD || [])){
-    const y = Number.isFinite(+e.y) ? +e.y : new Date(e.t).getUTCFullYear();
-    const ft = Number(e.ft);
+  for(const e of (events || [])){
+    const y = annualYearFromEvent(e);
+    const ft = Number(e?.ft);
 
     if(!Number.isFinite(y) || !Number.isFinite(ft)) continue;
     if(y !== year) continue;
@@ -3204,28 +3214,178 @@ function countEventsFromHistoryForYear(year){
   return out;
 }
 
+function buildStationAnnualCountsMap(){
+  const out = new Map();
+
+  for(const e of (HIGH_TIDES_NAVD || [])){
+    const y = annualYearFromEvent(e);
+    if(!Number.isFinite(y)) continue;
+    if(!out.has(y)) out.set(y, { minor:0, moderate:0, major:0 });
+  }
+
+  for(const y of out.keys()){
+    out.set(y, countEventsFromListForYear(HIGH_TIDES_NAVD, y));
+  }
+
+  return out;
+}
+
+function addCoverageYearValue(out, value){
+  const n = Number(value);
+  if(Number.isFinite(n) && n >= 1800 && n <= 2200) out.add(Math.floor(n));
+}
+
+function addCoverageYearsFromValue(out, value){
+  if(value == null) return;
+
+  if(Array.isArray(value)){
+    for(const item of value) addCoverageYearsFromValue(out, item);
+    return;
+  }
+
+  if(typeof value === "object"){
+    const start = Number(value.start ?? value.startYear ?? value.firstYear ?? value.from);
+    const end = Number(value.end ?? value.endYear ?? value.lastYear ?? value.to);
+    if(Number.isFinite(start) && Number.isFinite(end)){
+      const lo = Math.floor(Math.min(start, end));
+      const hi = Math.floor(Math.max(start, end));
+      for(let y=lo; y<=hi; y++) addCoverageYearValue(out, y);
+      return;
+    }
+
+    for(const key of ["year","y"]){
+      if(value[key] != null) addCoverageYearValue(out, value[key]);
+    }
+    return;
+  }
+
+  if(typeof value === "string"){
+    const range = value.match(/(\d{4})\s*[-–—]\s*(\d{4})/);
+    if(range){
+      const lo = Number(range[1]);
+      const hi = Number(range[2]);
+      for(let y=Math.min(lo, hi); y<=Math.max(lo, hi); y++) addCoverageYearValue(out, y);
+      return;
+    }
+
+    const years = value.match(/\d{4}/g) || [];
+    for(const y of years) addCoverageYearValue(out, y);
+    return;
+  }
+
+  addCoverageYearValue(out, value);
+}
+
+function inferStationAnnualCoverageYears(json, peaks, livePeaks){
+  const out = new Set();
+
+  const candidates = [
+    json?.coverageYears,
+    json?.coveredYears,
+    json?.availableYears,
+    json?.stationYears,
+    json?.years,
+    json?.meta?.coverageYears,
+    json?.meta?.coveredYears,
+    json?.meta?.availableYears,
+    json?.meta?.stationYears,
+    json?.metadata?.coverageYears,
+    json?.metadata?.availableYears,
+    json?.coverage,
+    json?.meta?.coverage,
+    json?.metadata?.coverage
+  ];
+
+  for(const candidate of candidates) addCoverageYearsFromValue(out, candidate);
+
+  if(out.size === 0){
+    for(const e of (peaks || [])){
+      const y = annualYearFromEvent(e);
+      if(Number.isFinite(y)) out.add(y);
+    }
+  }
+
+  for(const e of (livePeaks || [])){
+    const y = annualYearFromEvent(e);
+    if(Number.isFinite(y)) out.add(y);
+  }
+
+  return out;
+}
+
+function parseAnnualRange(range){
+  const nums = String(range || "").match(/-?\d+(?:\.\d+)?/g);
+  if(!nums || nums.length < 2) return null;
+  const low = Number(nums[0]);
+  const high = Number(nums[1]);
+  if(!Number.isFinite(low) || !Number.isFinite(high)) return null;
+  return { low, high };
+}
+
+function countEventsFromHistoryForYear(year){
+  return countEventsFromListForYear(HIGH_TIDES_NAVD, year);
+}
+
 function buildAnnualArrays(){
   const { y: curYear } = getESTParts(new Date());
-  const historical = ATLANTIC_CITY_ANNUAL_COUNTS.map(r => ({
-    year:r.year,
-    minor:annualNumber(r.minor),
-    moderate:annualNumber(r.moderate),
-    major:annualNumber(r.major),
-    source:"historical"
-  }));
+  const atlanticByYear = new Map(
+    ATLANTIC_CITY_ANNUAL_COUNTS.map(r => [
+      Number(r.year),
+      {
+        year:Number(r.year),
+        minor:annualNumber(r.minor),
+        moderate:annualNumber(r.moderate),
+        major:annualNumber(r.major),
+        source:"atlanticCity"
+      }
+    ])
+  );
 
-  const lastHistoricalYear = historical.reduce((max, r)=>Math.max(max, r.year), -Infinity);
-  let rows = historical.slice();
+  const stoneByYear = buildStationAnnualCountsMap();
+  const annualYears = new Set(atlanticByYear.keys());
+
+  for(const y of stationAnnualCoverageYears) annualYears.add(Number(y));
+  for(const y of stoneByYear.keys()) annualYears.add(Number(y));
+  annualYears.add(curYear);
+
+  let rows = Array.from(annualYears)
+    .filter(y => Number.isFinite(y) && y <= curYear)
+    .sort((a,b)=>a-b)
+    .map(year => {
+      const stationYearAvailable =
+        year >= STATION_ANNUAL_PRIORITY_START_YEAR &&
+        (stationAnnualCoverageYears.has(year) || stoneByYear.has(year));
+
+      if(stationYearAvailable){
+        const counts = stoneByYear.get(year) || { minor:0, moderate:0, major:0 };
+        return {
+          year,
+          minor:annualNumber(counts.minor),
+          moderate:annualNumber(counts.moderate),
+          major:annualNumber(counts.major),
+          source: year === curYear && !stationAnnualCoverageYears.has(year) ? "live" : "stoneHarbor"
+        };
+      }
+
+      const fallback = atlanticByYear.get(year);
+      if(fallback) return fallback;
+
+      return {
+        year,
+        minor:0,
+        moderate:0,
+        major:0,
+        source: year >= STATION_ANNUAL_PRIORITY_START_YEAR ? "live" : "atlanticCity"
+      };
+    });
+
+  const lastObservedYear = rows.reduce((max, r)=>Math.max(max, r.year), -Infinity);
   annualPredictionLookup = new Map();
-
-  if(curYear > lastHistoricalYear){
-    rows.push({ year:curYear, ...countEventsFromHistoryForYear(curYear), source:"live" });
-  }
 
   if(ANNUAL_PREDICTIONS_ENABLED){
     const future = FUTURE_FLOOD_PREDICTIONS[ANNUAL_SCENARIO] || [];
     rows = rows.concat(future
-      .filter(r => r.year > Math.max(curYear, lastHistoricalYear))
+      .filter(r => r.year > Math.max(curYear, lastObservedYear))
       .map(r => {
         annualPredictionLookup.set(r.year, r);
         return {
@@ -3253,11 +3413,11 @@ function annualColors(kind){
     major:"167,139,250"
   }[kind];
 
-  return annualSource.map(source =>
-    source === "prediction"
-      ? `rgba(${base},.42)`
-      : `rgba(${base},.85)`
-  );
+  return annualSource.map(source => {
+    if(source === "prediction") return `rgba(${base},.42)`;
+    if(source === "atlanticCity") return `rgba(${base},.52)`;
+    return `rgba(${base},.88)`;
+  });
 }
 
 function annualPredictionRange(year, label){
@@ -3353,8 +3513,9 @@ function ensureAnnual(){
   const idx = items?.[0]?.dataIndex;
   const source = Number.isFinite(idx) ? annualSource[idx] : "";
   const totalTxt = String(Math.floor(total));
-  return source === "prediction"
-    ? `Total: ${totalTxt} · ${ANNUAL_SCENARIO}`
+  const sourceTxt = annualSourceName(source);
+  return sourceTxt
+    ? `Total: ${totalTxt} · ${sourceTxt}`
     : `Total: ${totalTxt}`;
 }
 
@@ -4576,6 +4737,8 @@ async function initJSONBackedHistory(){
   }
 
   
+  stationAnnualCoverageYears = inferStationAnnualCoverageYears(json, peaks, livePeaks);
+
   const combined = [...peaks, ...livePeaks];
 
   
