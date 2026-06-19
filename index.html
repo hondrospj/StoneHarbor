@@ -5,10 +5,10 @@
 <head>
 <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title> Stone Harbor , NJ — Tidal Flooding Dashboard</title>
+  <title>Tidal Flooding Dashboard</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<!-- Leaflet (map) -->
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -26,7 +26,7 @@
   --shadow:0 22px 70px rgba(0,0,0,.40);
   --radius:18px;
 
-  /* NO “glow” backgrounds at all (removes greenish banding on iOS) */
+  
   --card:rgba(255,255,255,.035);
   --card2:rgba(0,0,0,.18);
 }
@@ -43,13 +43,13 @@ option{
     body{
       margin:0;
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      background:var(--bg);   /* solid only */
+      background:var(--bg);   
       color:var(--text);
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
       overflow-x:hidden;
     }
-    /* KILL any old global overlay gradient */
+    
     body:before{content:none !important;}
 
 .wrap{
@@ -71,20 +71,19 @@ option{
     .banner .small{color:var(--muted);font-size:12.5px;margin-top:4px;line-height:1.25}
 
     .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-   .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
     .brand{display:flex;align-items:center;gap:12px}
-/*  Logo container stays inside the header */
+
 .brandLogo{
   display:inline-flex;
   align-items:center;
   justify-content:center;
 
-  padding:4px 6px;      /* thin white edge */
+  padding:4px 6px;      
   background:#ffffff;
 
-  border-radius:6px;    /* 👈 small corner = square look */
+  border-radius:6px;    
 }
-/* remove any border you had before */
+
 .brandLogo img{
   height:46px;
   width:auto;
@@ -97,13 +96,13 @@ option{
  .kicker{
   color:var(--muted);
   font-weight:850;
-  font-size:16px;   /* small line */
+  font-size:16px;   
   letter-spacing:.2px;
   text-transform:uppercase
 }
 
 .name{
-  font-size:32px;   /* big title */
+  font-size:32px;   
   font-weight:950;
   letter-spacing:.2px
 }
@@ -118,7 +117,7 @@ option{
     }
     .dot{width:9px;height:9px;border-radius:999px;background:var(--ok);box-shadow:0 0 0 4px rgba(45,212,191,.16)}
 
-    /* --- Mobile header overflow fix (kept) --- */
+    
     .brand, .brandTitle { min-width: 0; }
     .kicker, .name { min-width: 0; }
     .kicker, .name{
@@ -129,15 +128,6 @@ option{
     #lastPill, #stagePill, #datumBtn{ min-width:0; }
     .pill{ max-width:100%; overflow:hidden; text-overflow:ellipsis; }
 
-    @media (max-width: 720px){
-      .top{
-        flex-direction:column;
-        align-items:center;
-        justify-content:center;
-        gap:10px;
-        text-align:center;
-      }
-      /* ===== RIGHT SIDE HEADER FIX ===== */
 .topRight{
   display:flex;
   align-items:center;
@@ -147,19 +137,16 @@ option{
   min-width:0;
 }
 
-/* Last updated box stretches nicely */
 #lastPill{
   flex:1 1 320px;
   min-width:240px;
 }
 
-/* Keep datum + status tight */
 .datumPick,
 #stagePill{
   flex:0 0 auto;
 }
 
-/* Medium screens (ipad-ish) */
 @media (max-width: 980px){
   .topRight{
     flex-wrap:wrap;
@@ -172,8 +159,15 @@ option{
   }
 }
 
-/* Mobile clean stack */
 @media (max-width: 720px){
+  .top{
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    text-align:center;
+  }
+
   .topRight{
     flex-direction:column;
     align-items:stretch;
@@ -186,15 +180,14 @@ option{
     width:100%;
     justify-content:center;
   }
-}
 
    .brand{
   width:100%;
-  justify-content:flex-start;  /*   keep logo left */
+  justify-content:flex-start;
   text-align:left;
 }
 .brandTitle{
-  align-items:flex-start;      /*   keep text aligned right of logo */
+  align-items:flex-start;
   text-align:left;
 }
 
@@ -211,9 +204,7 @@ option{
       .pill, .btn{ max-width:100%; }
     }
 
-    /* =========================
-   MINI "SWITCH" (segmented control)
-   ========================= */
+    
 .seg{
   display:inline-flex;
   border:1px solid var(--line);
@@ -244,43 +235,27 @@ option{
   background:rgba(255,255,255,.08);
 }
 
-/* Optional: color hint on active */
-.segBtn.isActive[data-val="minor"]{ box-shadow: inset 0 -2px 0 rgba(251,191,36,.75); }
-.segBtn.isActive[data-val="moderate"]{ box-shadow: inset 0 -2px 0 rgba(251,113,133,.75); }
-.segBtn.isActive[data-val="major"]{ box-shadow: inset 0 -2px 0 rgba(167,139,250,.75); }
-    .segBtn.isActive[data-val="total"]{ box-shadow: inset 0 -2px 0 rgba(234,240,255,.65); }
-
-
-/* Optional: color hint on active */
 .segBtn.isActive[data-val="minor"]{ box-shadow: inset 0 -2px 0 rgba(251,191,36,.75); }
 .segBtn.isActive[data-val="moderate"]{ box-shadow: inset 0 -2px 0 rgba(251,113,133,.75); }
 .segBtn.isActive[data-val="major"]{ box-shadow: inset 0 -2px 0 rgba(167,139,250,.75); }
 .segBtn.isActive[data-val="total"]{ box-shadow: inset 0 -2px 0 rgba(234,240,255,.65); }
 
-/* =========================
-   Monthly table column hiding + CENTERED (single-metric)
-   Columns:
-   1 Month
-   2 Avg Total
-   3 Avg Minor
-   4 Avg Moderate
-   5 Avg Major
-   ========================= */
+
 
 #monthAvgTable{
-  width:100%;              /* full width so divider lines hit card edges */
+  width:100%;              
   border-collapse:collapse;
   table-layout:fixed;
 }
 
-/* make the two visible columns split the space evenly */
+
 #monthAvgTable th,
 #monthAvgTable td{
   text-align:center;
   padding:14px 8px;
 }
 
-/* 2-column layout balance */
+
 #monthAvgTable th:first-child,
 #monthAvgTable td:first-child{
   width:50%;
@@ -290,7 +265,7 @@ option{
 #monthAvgTable td:last-child{
   width:50%;
 }
-/* --- TOTAL: show Month + Avg Total (col 2) --- */
+
 #monthAvgTable.show-total th:nth-child(3),
 #monthAvgTable.show-total td:nth-child(3),
 #monthAvgTable.show-total th:nth-child(4),
@@ -300,7 +275,7 @@ option{
   display: none;
 }
 
-/* --- MINOR: show Month + Avg Minor (col 3) --- */
+
 #monthAvgTable.show-minor th:nth-child(2),
 #monthAvgTable.show-minor td:nth-child(2),
 #monthAvgTable.show-minor th:nth-child(4),
@@ -310,7 +285,7 @@ option{
   display: none;
 }
 
-/* --- MODERATE: show Month + Avg Moderate (col 4) --- */
+
 #monthAvgTable.show-moderate th:nth-child(2),
 #monthAvgTable.show-moderate td:nth-child(2),
 #monthAvgTable.show-moderate th:nth-child(3),
@@ -320,7 +295,7 @@ option{
   display: none;
 }
 
-/* --- MAJOR: show Month + Avg Major (col 5) --- */
+
 #monthAvgTable.show-major th:nth-child(2),
 #monthAvgTable.show-major td:nth-child(2),
 #monthAvgTable.show-major th:nth-child(3),
@@ -331,9 +306,7 @@ option{
 }
 
 
-    /* =========================
-OBVIOUS DATUM DROPDOWN
-========================= */
+    
 .datumPick{
   display:flex;
   align-items:center;
@@ -373,9 +346,7 @@ OBVIOUS DATUM DROPDOWN
 }
 
 
-    /* =========================
-   Datum help "?" popover
-   ========================= */
+    
 .datumHelpBtn{
   width:28px;
   height:28px;
@@ -398,8 +369,8 @@ OBVIOUS DATUM DROPDOWN
   box-shadow:0 0 0 4px rgba(45,212,191,.12);
 }
 
-/* popover */
-.datumPick{ position:relative; } /* anchor the popover */
+
+.datumPick{ position:relative; } 
 .datumHelpPop{
   position:absolute;
   top:calc(100% + 10px);
@@ -435,7 +406,7 @@ OBVIOUS DATUM DROPDOWN
     @media(max-width:980px){.grid{grid-template-columns:1fr}}
 
     .card{
-      background:var(--card);        /* flat */
+      background:var(--card);        
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
@@ -443,13 +414,13 @@ OBVIOUS DATUM DROPDOWN
       overflow:hidden;
       position:relative;
 
-      /* keep iOS hardening, but NO overlay gradients */
+      
       isolation:isolate;
       contain:paint;
       transform:translateZ(0);
       -webkit-transform:translateZ(0);
     }
-    /* KILL glow overlays inside cards */
+    
     .card:before{content:none !important;}
     .card>*{position:relative;z-index:1}
 
@@ -462,7 +433,7 @@ OBVIOUS DATUM DROPDOWN
     }
     .hrow h2{margin:0;font-size:12.5px;letter-spacing:.22px;text-transform:uppercase;color:var(--muted);font-weight:950}
 
-    /* ===== Live Conditions layout ===== */
+    
     .liveGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -479,13 +450,15 @@ OBVIOUS DATUM DROPDOWN
       position:relative;
       overflow:hidden;
       min-height:168px;
+      display:flex;
+      flex-direction:column;
 
       isolation:isolate;
       contain:paint;
       transform:translateZ(0);
       -webkit-transform:translateZ(0);
     }
-    /* KILL glow overlays inside panels */
+    
     .panel:before{content:none !important;}
     .panel>*{position:relative;z-index:1}
 
@@ -499,13 +472,14 @@ OBVIOUS DATUM DROPDOWN
       margin-bottom:10px;
     }
 
-    /* TODAY */
+    
     .todayTop{
       display:flex;
       align-items:stretch;
       justify-content:center;
       gap:12px;
       flex-wrap:wrap;
+      flex:1;
     }
 
     .curBox{
@@ -516,6 +490,10 @@ OBVIOUS DATUM DROPDOWN
       border-radius:14px;
       padding:10px 12px;
       text-align:center;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
     }
     .curLabel{
       color:var(--muted);
@@ -542,11 +520,11 @@ OBVIOUS DATUM DROPDOWN
       letter-spacing:.2px;
       white-space:nowrap;
     }
-/* Current water elevation number color by flood stage */
-.curVal.isBelow    #curFt { color: var(--text); }      /* white */
-.curVal.isMinor    #curFt { color: var(--minor); }     /* orange */
-.curVal.isModerate #curFt { color: var(--moderate); }  /* red */
-.curVal.isMajor    #curFt { color: var(--major); }     /* purple */
+
+.curVal.isBelow    #curFt { color: var(--text); }      
+.curVal.isMinor    #curFt { color: var(--minor); }     
+.curVal.isModerate #curFt { color: var(--moderate); }  
+.curVal.isMajor    #curFt { color: var(--major); }     
     .curMeta{
       margin-top:8px;
       color:var(--muted);
@@ -555,12 +533,12 @@ OBVIOUS DATUM DROPDOWN
       text-align:center;
       display:none;
     }
-    /* remove progress bar under Current water elevation */
+    
     .levelMeter{display:none !important;}
     .levelFill{display:none !important;}
 
     .todayRange{
-      flex:0 0 320px;
+      flex:1 1 260px;
       min-width:260px;
       border:1px solid var(--line);
       background:rgba(0,0,0,.14);
@@ -599,7 +577,7 @@ OBVIOUS DATUM DROPDOWN
       .curVal{font-size:26px}
     }
 
-    /* OUTLOOK */
+    
     .outlookTop{
       display:grid;
       grid-template-columns:repeat(3, minmax(0, 1fr));
@@ -685,7 +663,7 @@ OBVIOUS DATUM DROPDOWN
       .eventBadge{margin-left:auto}
     }
 
-    /* Flood stage strip (stack on mobile so nothing goes off-screen) */
+    
     .stages{
       display:grid;
       grid-template-columns:repeat(3, minmax(0, 1fr));
@@ -735,14 +713,14 @@ OBVIOUS DATUM DROPDOWN
 table{
   width:100%;
   border-collapse:collapse;
-  text-align:center;            /* center everything */
+  text-align:center;            
 }
 
 th,td{
   padding:8px 6px;
   border-bottom:1px solid var(--line);
   font-size:13px;
-  text-align:center;            /* center each column */
+  text-align:center;            
 }
 
 th{
@@ -766,7 +744,7 @@ thead th{
     .tag{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-weight:950;font-size:12px;white-space:nowrap}
     .chip{width:9px;height:9px;border-radius:99px;display:inline-block}
 
-    /* ===== Threshold number text inside the pills ===== */
+    
 .thNum{
   font-weight:950;
   margin-left:6px;
@@ -777,23 +755,76 @@ thead th{
 .thMajor{ color: var(--major); }
 
 
-    .chartWrapTall{height:320px;width:100%}
-    .chartWrap{height:240px;width:100%}
+    .chartWrapTall{height:320px;width:100%;position:relative}
+    .chartWrap{height:240px;width:100%;position:relative}
+    .chartWrapTall canvas,
+    .chartWrap canvas{touch-action:none}
+    .zoomReset{
+      position:absolute;
+      top:8px;
+      right:8px;
+      z-index:4;
+      display:none;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:#050b16;
+      color:var(--text);
+      font-weight:950;
+      font-size:12px;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+    }
+    .zoomReset.isVisible{display:inline-flex}
+    @media(max-width:520px){
+      .chartWrapTall{height:360px}
+      .chartWrap{height:300px}
+      .zoomReset{top:6px;right:6px;font-size:11px}
+    }
     .foot{margin-top:10px;color:var(--muted);font-size:12.5px;line-height:1.25;text-align:center}
 
     .filterRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-    .annualSparseNote{
-  display:none;
-  margin:2px 0 8px 0;
-  color:var(--muted);
-  font-size:12.5px;
-  line-height:1.3;
-  text-align:left;
-}
-
-.annualSparseNote b{
-  color:var(--text);
-}
+    .annualControls{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      margin-top:10px;
+    }
+    .scenarioKey{
+      display:none;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      width:100%;
+    }
+    .scenarioKey.isVisible{display:flex}
+    .scenarioChoice{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      min-height:38px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      font-weight:950;
+      font-size:12px;
+      white-space:normal;
+      text-align:center;
+      line-height:1.12;
+      cursor:pointer;
+    }
+    .scenarioChoice input{accent-color:#ef4444}
+    @media(max-width:520px){
+      .annualControls{align-items:stretch}
+      .annualControls .btn{width:100%}
+      .scenarioChoice{flex:1 1 calc(50% - 8px);font-size:11.5px;padding:8px 7px}
+    }
     .input,.btn,select{
       background:rgba(0,0,0,.18);
       border:1px solid var(--line);
@@ -814,13 +845,11 @@ thead th{
       box-shadow:0 0 0 4px rgba(45,212,191,.10);
     }
 
-    /* Hide footer notes you called out */
+    
     #f48Meta{display:none !important;}
     #curMeta{display:none !important;}
 
-    /* ==============================
-       ACCORDION SYSTEM (NEW)
-       ============================== */
+    
     details.acc{
       border:1px solid var(--line);
       border-radius:var(--radius);
@@ -856,9 +885,7 @@ thead th{
     details[open] .chev{transform:rotate(45deg);}
     .accBody{padding:0 14px 14px 14px;}
 
-    /* =========================
-   MAP (Leaflet)
-   ========================= */
+    
 #gaugeMap{
   height: 360px;
   border-radius: 14px;
@@ -869,9 +896,30 @@ thead th{
 @media(max-width:520px){
   #gaugeMap{ height: 320px; }
 }
-/* ===== FIX PURPLE TITLE AFTER CLICK ===== */
+.gaugePin{
+  width:20px;
+  height:20px;
+  display:block;
+  border-radius:50% 50% 50% 0;
+  background:#050505;
+  border:2px solid #ffffff;
+  transform:rotate(-45deg);
+  box-shadow:0 8px 18px rgba(0,0,0,.38);
+}
+.gaugePin::after{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#ffffff;
+  position:absolute;
+  top:5px;
+  left:5px;
+}
+.gaugePin.isSelected{background:#ef4444}
 
-/*   Fix purple visited link on the whole header click area */
+
+
 a.brand,
 a.brand:visited,
 a.brand:hover,
@@ -881,22 +929,20 @@ a.brand:focus{
   text-decoration: none !important;
 }
 
-/* Optional: if anything inside tries to inherit a link color */
+
 a.brand *{
   color: inherit !important;
 }
 
 
-    /* =========================================
-   MAKE DATUM BAR BACKGROUND TRUE DARK/BLACK
-   ========================================= */
+    
 
 .datumPick{
-  background:#050b16 !important;   /* deep black */
+  background:#050b16 !important;   
   border:1px solid rgba(255,255,255,.18);
 }
 
-/* optional: make inner pill match darker style */
+
 .datumPick .datumSelect{
   background:#020814 !important;
 }
@@ -914,25 +960,25 @@ a.brand *{
   <div class="top">
     <a class="brand" href="https://cupajoe.live/" target="_blank" rel="noopener">
       <div class="brandLogo">
-        <img src="assets/shorelysafe" alt="Cupajoe logo">
+        <img src="assets/shorelysafe" alt="Cupajoe logo" onerror="this.closest('.brandLogo').style.display='none'">
       </div>
 
       <div class="brandTitle">
-        <div class="kicker">USGS 01411360 ·  Stone Harbor , NJ</div>
-        <div class="name"> Stone Harbor  Tidal  Dashboard</div>
+        <div class="kicker" id="brandKicker"></div>
+        <div class="name" id="brandName"></div>
       </div>
     </a>
 
     <div class="topRight">
-<!-- OBVIOUS datum selector -->
+
 <div class="datumPick" aria-label="Datum selector">
   <span class="datumLbl">Datum</span>
 
   <select id="datumSelect" class="datumSelect" title="Choose datum">
-    <!-- options are filled by JS so order matches DATUMS -->
+    
   </select>
 
-  <!--   New help icon + popover -->
+  
   <button
     class="datumHelpBtn"
     id="datumHelpBtn"
@@ -961,7 +1007,7 @@ a.brand *{
     </div>
   </div>
 
-  <!-- 1) Live Conditions (NOT accordion) -->
+  
   <div class="card">
     <div class="hrow">
       <h2>Live conditions</h2>
@@ -969,7 +1015,7 @@ a.brand *{
     </div>
 
     <div class="liveGrid">
-      <!-- TODAY (current + today's max/min) -->
+      
       <div class="panel">
         <div class="panelTitle">Daily range (<span id="dailyRangeDate">—</span>)</div>
 
@@ -1018,7 +1064,7 @@ a.brand *{
         </div>
       </div>
 
-      <!-- 72 HOUR FLOOD OUTLOOK (inside Live Conditions) -->
+      
       <div class="panel">
         <div class="panelTitle">Flood outlook (Next 72 Hours)</div>
 
@@ -1069,7 +1115,7 @@ a.brand *{
 
   <div style="height:14px"></div>
 
-  <!-- 2) Observations & Predictions (NOT accordion) -->
+  
   <div class="card">
     <div class="hrow">
       <h2>Observations (USGS) & Predictions (NOAA)</h2>
@@ -1100,38 +1146,32 @@ a.brand *{
       </span>
     </div>
 
-    <div class="foot" id="fcNote"></div>
-    <div class="foot" id="txtNote"></div>
   </div>
 
   <div style="height:14px"></div>
 
-  <!-- 3) Cumulative  by day-of-year (Avg + Min/Max band) (NOT accordion) -->
+  
   <div class="card">
     <div class="hrow">
       <h2>Cumulative annual flooding</h2>
       <div class="kicker" id="doyMeta">Computing…</div>
     </div>
 
-    <div class="hint" id="doyHint"></div>
-
     <div style="height:10px"></div>
     <div class="chartWrapTall"><canvas id="doyCumChart"></canvas></div>
-
-    <div class="foot" id="doyNote"></div>
   </div>
 
   <div style="height:14px"></div>
 
-  <!-- 4) Flooding over the years bar chart (ACCORDION) -->
-  <details class="acc">
+  
+  <details class="acc" id="annualAcc">
     <summary class="accHeader">
       <h2 class="accTitle">Flooding over the years </h2>
       <span class="chev"></span>
     </summary>
 
     <div class="accBody">
-      <!-- Annual view switch -->
+      
       <div class="filterRow" style="margin-bottom:8px;">
         <div class="seg" id="annualViewSeg" aria-label="Annual floods view">
           <button class="segBtn isActive" type="button" data-val="total">Total</button>
@@ -1139,18 +1179,19 @@ a.brand *{
           <button class="segBtn" type="button" data-val="moderate">Moderate</button>
           <button class="segBtn" type="button" data-val="major">Major</button>
         </div>
+        <button class="btn" id="annualPredictionToggle" type="button">Annual Predictions OFF</button>
       </div>
 
-      <div class="annualSparseNote" id="annualSparseNote"></div>
-
       <div class="chartWrap"><canvas id="annualChart"></canvas></div>
-      <div class="foot" id="annualNote"></div>
+      <div class="annualControls" aria-label="Annual prediction scenarios">
+        <div class="scenarioKey" id="annualScenarioKey"></div>
+      </div>
     </div>
   </details>
 
   <div style="height:14px"></div>
 
-  <!-- 5) Average Floods Per Month (ACCORDION) -->
+  
   <details class="acc">
     <summary class="accHeader">
       <h2 class="accTitle">Average number of floods per month</h2>
@@ -1158,7 +1199,7 @@ a.brand *{
     </summary>
 
     <div class="accBody">
-      <!-- Monthly view switch -->
+      
       <div class="filterRow" style="margin-bottom:8px;">
         <div class="seg" id="monthViewSeg" aria-label="Monthly floods view">
           <button class="segBtn isActive" type="button" data-val="total">Total</button>
@@ -1192,7 +1233,7 @@ a.brand *{
 
   <div style="height:14px"></div>
 
-  <!-- 6) Historic Flooding Filter (ACCORDION) -->
+  
   <details class="acc">
     <summary class="accHeader">
       <h2 class="accTitle">Historic flooding filter (enter a range)</h2>
@@ -1200,11 +1241,6 @@ a.brand *{
     </summary>
 
     <div class="accBody">
-      <div class="hint" id="histHelp">
-        Use any combination: Elevation range and/or Date range. Leave fields blank to ignore them.
-      </div>
-      <div style="height:8px"></div>
-
       <div class="filterRow">
         <input class="input" id="minElev" type="number" step="0.01" placeholder="Min (ft)" />
         <input class="input" id="maxElev" type="number" step="0.01" placeholder="Max (ft)" />
@@ -1239,7 +1275,7 @@ a.brand *{
 
   <div style="height:14px"></div>
 
-  <!-- 7) Top 10 Highest Tides (ACCORDION) -->
+  
   <details class="acc">
     <summary class="accHeader">
       <h2 class="accTitle">Top ten highest tides</h2>
@@ -1264,7 +1300,7 @@ a.brand *{
 
   <div style="height:14px"></div>
 
-  <!-- 8) NJ Tide Gauge Map (ACCORDION) -->
+  
   <details class="acc" id="mapAcc">
     <summary class="accHeader">
       <h2 class="accTitle">NJ tide gauge map</h2>
@@ -1273,38 +1309,25 @@ a.brand *{
 
     <div class="accBody">
       <div id="gaugeMap"></div>
-      <div class="foot">Click a marker for station info.</div>
     </div>
   </details>
 
   <div style="height:14px"></div>
 
-</div>   <!-- keep this — closes .wrap -->
+</div>   
 
 
   <script>
 
 
-/* Fixed EST year-round (UTC-5). */
+
 const TZ = "America/New_York";
 
-/* =========================
-DATUM SYSTEM (MLLW-based offsets)
-- We convert everything through MLLW using offsets from  table.
-datum_ft = mllw_ft + OFFSET_FROM_MLLW[datum]
-========================= */
 
-let DISPLAY_DATUM = "MLLW"; // MLLW | NAVD88 | MSL | MHHW
 
-const DATUMS = ["MLLW", "NAVD88", "MSL", "MHHW"]; // cycle order
 
-// From  table (Gauge Zero row): datum = MLLW + offset
-const OFFSET_FROM_MLLW = {
-  MLLW:   0.00,
-  NAVD88: -2.71,
-  MSL:    -2.31,
-  MHHW:   -4.74
-};
+
+
 
 function mllwToDatum(ft, datum){
   return ft + (OFFSET_FROM_MLLW[datum] ?? 0);
@@ -1316,7 +1339,7 @@ function datumToDatum(ft, fromDatum, toDatum){
   const mllw = datumToMllw(ft, fromDatum);
   return mllwToDatum(mllw, toDatum);
 }
-    // Convenience helpers (you reference these later)
+    
 function mllwToNavd(mllwFt){
   return datumToDatum(mllwFt, "MLLW", "NAVD88");
 }
@@ -1325,7 +1348,7 @@ function navdToMllw(navdFt){
 }
 
 
-// Helpers used across the app ( internal truth stays NAVD88 where needed)
+
 function toDisplayFtFromNavd(navdFt){
   return datumToDatum(navdFt, "NAVD88", DISPLAY_DATUM);
 }
@@ -1337,143 +1360,14 @@ function fromDisplayToNavd(displayFt){
 }
 
 
-/* =========================================
-   5) Great Channel at Stone Harbor
-========================================= */
-
-const USGS_SITE="01411360";
-const USGS_PARAM_PRIMARY = "72279";
-
-const COOPS_STATION="8535581";
-const COOPS_APP="cupajoe.live";
-const COOPS_DATUM="MLLW";
-const COOPS_INTERVAL="6";
-const COOPS_TZ="gmt";
-
-const NOAA_STATION_TIDECLOCK = "8535581";
-const CREST_WINDOW_HOURS = 2;
-const REQUIRE_WITHIN_HOURS = 1;
-
-const THRESH = {
-  MLLW:  { minorLow:6.10, moderateLow:7.10, majorLow:8.10 },
-  NAVD88:{ minorLow:3.44, moderateLow:4.44, majorLow:5.44 },
-  MSL:   { minorLow:3.79, moderateLow:4.79, majorLow:5.79 },
-  MHHW:  { minorLow:1.36, moderateLow:2.36, majorLow:3.36 }
-};
-
       const HOUR_MS = 60 * 60 * 1000;
 
 function floorToHourMs(tMs){
   return Math.floor(tMs / HOUR_MS) * HOUR_MS;
 }
 
-function buildHourlyLabels(startISO, endISO){
-  const start = floorToHourMs(new Date(startISO).getTime());
-  const end   = floorToHourMs(new Date(endISO).getTime());
-  const labels = [];
-  for(let t = start; t <= end; t += HOUR_MS){
-    labels.push(new Date(t).toISOString());
-  }
-  return labels;
-}
+    
 
-// Pick the LAST value observed within each hour (looks best for water level)
-function seriesToHourlyLast(series){
-  const m = new Map(); // hourMs -> ft
-  for(const p of (series || [])){
-    const tMs = new Date(p.t).getTime();
-    const ft  = Number(p.ft);
-    if(!Number.isFinite(tMs) || !Number.isFinite(ft)) continue;
-    m.set(floorToHourMs(tMs), ft); // later points overwrite earlier => "last in hour"
-  }
-  return m;
-}
-
-// Snap a series to the hourly labels (no interpolation, just exact hour hits)
-function mapToHourlyValues(labels, hourMap){
-  return labels.map(iso=>{
-    const h = floorToHourMs(new Date(iso).getTime());
-    return hourMap.has(h) ? hourMap.get(h) : null;
-  });
-}
-
-
-/* Peak counting settings */
-const PEAK_MIN_SEP_MINUTES = 300;
-
-      /* Historic filter: switch to live after this date */
-const LIVE_START_ISO = "2026-01-01T00:00:00Z"; // use >= Jan 1 2026
-
-/* NWS alerts point */
-const ALERT_POINT={lat:39.2325, lon:-75.0380};
-
-
-/* Top ten list (MLLW) — FIXED (shifted +2.10 ft from NAVD) */
-const TOP_TEN_MLLW = [
-  {date:"10-29-2012", ft:9.39},
-{date:"01-23-2016", ft:8.96},
-{date:"11-13-2009", ft:8.10},
-{date:"08-21-2025", ft:8.07},
-{date:"02-17-2003", ft:8.03},
-{date:"08-27-2011", ft:7.96},
-{date:"10-27-2018", ft:7.93},
-{date:"05-12-2008", ft:7.87},
-{date:"10-12-2025", ft:7.84},
-{date:"10-02-2015", ft:7.71}
-];
-
-    /* =========================
-MAP — Leaflet gauge map
-========================= */
-const DEFAULT_GAUGE_ID = "01411360"; //  Stone Harbor  USGS
-const DEFAULT_GAUGE_ZOOM = 12;       // adjust if you want closer (13 = tighter)
-// Edit these whenever you want (lat/lon + label + link)
-const GAUGES = [
-
-  // =========================
-  // USGS gauges
-  // =========================
-
-  { name:"Greenwich (Cohansey River at Greenwich)", agency:"USGS", id:"01413038", lat:39.379167, lon:-75.355278 },
-  { name:"Bivalve (Maurice River at Bivalve)", agency:"USGS", id:"01412150", lat:39.232500, lon:-75.032778 },
-  { name:"South Dennis (Sluice Creek at South Dennis)", agency:"USGS", id:"01411435", lat:39.161667, lon:-74.832222 },
-  { name:"Cape May Harbor (Cape May Harbor at Cape May)", agency:"USGS", id:"01411390", lat:38.948333, lon:-74.888889 },
-  { name:"Stone Harbor (Great Channel at Stone Harbor)", agency:"USGS", id:"01411360", lat:39.056944, lon:-74.765000 },
-  { name:"Avalon (Ingram Thorofare at Avalon)", agency:"USGS", id:"01411355", lat:39.108611, lon:-74.741944 },
-  { name:"Sea Isle (Ludlum Thorofare at Sea Isle City)", agency:"USGS", id:"01411350", lat:39.157778, lon:-74.697778 },
-  { name:"Ocean City (Great Egg Harbor Bay at Ocean City)", agency:"USGS", id:"01411320", lat:39.285833, lon:-74.575556 },
-  { name:"Margate (Beach Thorofare at Margate)", agency:"USGS", id:"01411330", lat:39.337500, lon:-74.513056 },
-  { name:"Atlantic City (Inside Thorofare at US Route 40)", agency:"USGS", id:"01410560", lat:39.353611, lon:-74.456944 },
-  { name:"Absecon Channel at Atlantic City", agency:"USGS", id:"01410600", lat:39.377778, lon:-74.423611 },
-  { name:"Absecon Creek at Absecon", agency:"USGS", id:"01410510", lat:39.423056, lon:-74.500000 },
-  { name:"Little Egg Inlet at Little Egg Harbor", agency:"USGS", id:"01409335", lat:39.508889, lon:-74.324722 },
-  { name:"Ship Bottom (East Thorofare at Ship Bottom)", agency:"USGS", id:"01409146", lat:39.654167, lon:-74.185833 },
-  { name:"Waretown (Barnegat Bay near Waretown)", agency:"USGS", id:"01409124", lat:39.770000, lon:-74.188333 },
-  { name:"Barnegat Light (Barnegat Bay at Barnegat Light)", agency:"USGS", id:"01409125", lat:39.760833, lon:-74.110556 },
-  { name:"Seaside Heights (Barnegat Bay at Route 37 at Seaside Heights)", agency:"USGS", id:"01408748", lat:39.941389, lon:-74.083889 },
-  { name:"Mantoloking (Barnegat Bay at Mantoloking)", agency:"USGS", id:"01408168", lat:40.040556, lon:-74.054444 },
-  { name:"Manasquan (Watson Creek at Manasquan)", agency:"USGS", id:"01408048", lat:40.111667, lon:-74.044722 },
-  { name:"Belmar (Shark River at Belmar)", agency:"USGS", id:"01407770", lat:40.185556, lon:-74.026111 },
-  { name:"Sea Bright (Shrewsbury River at Sea Bright)", agency:"USGS", id:"01407600", lat:40.365556, lon:-73.974722 },
-  { name:"Keansburg (Raritan Bay at Keansburg)", agency:"USGS", id:"01407081", lat:40.449167, lon:-74.147500 },
-  { name:"Perth Amboy (Arthur Kill at Perth Amboy)", agency:"USGS", id:"01396060", lat:40.503889, lon:-74.262222 },
-
-  // =========================
-  // NOAA gauges
-  // =========================
-
-  { name:"Cape May Canal at Lower Township", agency:"NOAA", id:"8536110", lat:38.968330, lon:-74.960000 },
-  { name:"Atlantic City at Steel Pier (Ocean)", agency:"NOAA", id:"8534720", lat:39.355000, lon:-74.418300 },
-  { name:"Sandy Hook", agency:"NOAA", id:"8531680", lat:40.466700, lon:-74.010000 },
-  { name:"Reedy Point", agency:"NOAA", id:"8551910", lat:39.558333, lon:-75.573333 },
-  { name:"Delaware River at Philadelphia (Washington Street)", agency:"NOAA", id:"8545240", lat:39.933300, lon:-75.141700 },
-  { name:"Delaware River at Burlington", agency:"NOAA", id:"8539094", lat:40.080000, lon:-74.873333 },
-  { name:"Delaware River at Marcus Hook", agency:"NOAA", id:"8540433", lat:39.811670, lon:-75.409440 },
-  { name:"Bergen Point", agency:"NOAA", id:"8519483", lat:40.636670, lon:-74.141670 },
-  { name:"Delaware River at Philadelphia (Bridesburg)", agency:"NOAA", id:"8546252", lat:39.983330, lon:-75.075000 },
-  { name:"Delaware River at Newbold Island", agency:"NOAA", id:"8548989", lat:40.137310, lon:-74.751670 }
-
-];
 
 let _gaugeMap = null;
 let _gaugeLayer = null;
@@ -1482,15 +1376,15 @@ function ensureGaugeMap(){
   const el = document.getElementById("gaugeMap");
   if(!el) return;
 
-  // Leaflet not loaded yet? Bail quietly.
+  
   if(typeof window.L === "undefined"){
     console.warn("Leaflet not loaded (window.L missing).");
     return;
   }
 
-  // Already built
+  
   if(_gaugeMap){
-    // In case accordion opened later, force resize.
+    
     setTimeout(()=>_gaugeMap.invalidateSize(true), 50);
     return;
   }
@@ -1500,27 +1394,27 @@ function ensureGaugeMap(){
     zoomControl: true
   });
 
-  // Base tiles
+  
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18,
     attribution: "&copy; OpenStreetMap"
   }).addTo(_gaugeMap);
 
-  // Markers
+  
   _gaugeLayer = L.layerGroup().addTo(_gaugeMap);
 
   const bounds = [];
 
   for(const g of GAUGES){
-    const color =
-      (g.agency || "").toUpperCase() === "NOAA" ? "#60a5fa" : "#2dd4bf";
-
-    const m = L.circleMarker([g.lat, g.lon], {
-      radius: 8,
-      weight: 2,
-      color: color,
-      fillColor: color,
-      fillOpacity: 0.85
+    const selected = String(g.id) === String(DEFAULT_GAUGE_ID);
+    const m = L.marker([g.lat, g.lon], {
+      icon: L.divIcon({
+        className: "gaugePinIcon",
+        html: `<span class="gaugePin${selected ? " isSelected" : ""}"></span>`,
+        iconSize: [24, 32],
+        iconAnchor: [12, 30],
+        popupAnchor: [0, -28]
+      })
     });
 
     const popup = `
@@ -1535,7 +1429,7 @@ function ensureGaugeMap(){
     bounds.push([g.lat, g.lon]);
   }
 
-// Default view =  Stone Harbor  gauge
+
 const def = GAUGES.find(g => String(g.id) === DEFAULT_GAUGE_ID);
 
 if(def){
@@ -1546,7 +1440,7 @@ if(def){
   _gaugeMap.setView([40.2,-74.0], 9);
 }
 
-  // Fix initial render sizing issues (accordion hidden → shown)
+  
   setTimeout(()=>_gaugeMap.invalidateSize(true), 100);
 }
 
@@ -1564,9 +1458,10 @@ function hookGaugeMapAccordion(){
   });
 }
 
-/* DOM */
+
 const $=id=>document.getElementById(id);
 
+const brandKickerEl=$("brandKicker"), brandNameEl=$("brandName");
 const curFtEl=$("curFt"), curMetaEl=$("curMeta");
 const dayMaxFtEl = $("dayMaxFt"),
       dayMinFtEl = $("dayMinFt"),
@@ -1583,8 +1478,6 @@ const alertBanner=$("alertBanner"), alertTitle=$("alertTitle"), alertBody=$("ale
 
 const topTenBody=$("topTenBody");
 const topTenUnitTh=$("topTenUnitTh");
-const fcNote=$("fcNote");
-const txtNote=$("txtNote");
 
     const thMinorTxt = $("thMinorTxt");
 const thModerTxt = $("thModerTxt");
@@ -1606,7 +1499,7 @@ const minorBadge = $("minorBadge"),
       majorBadge = $("majorBadge");
 
 
-      // Flood outlook (next 48h) DOM
+      
 const f48MinorHrsEl = $("f48MinorHrs");
 const f48ModerHrsEl = $("f48ModerHrs");
 const f48MajorHrsEl = $("f48MajorHrs");
@@ -1614,9 +1507,9 @@ const f48ListEl     = $("f48List");
 const f48MetaEl     = $("f48Meta");
 
  const datumSelect = $("datumSelect");
-// =========================
-// Datum help popover ("?")
-// =========================
+
+
+
 const datumHelpBtn = $("datumHelpBtn");
 const datumHelpPop = $("datumHelpPop");
 
@@ -1646,7 +1539,7 @@ if(datumHelpBtn && datumHelpPop){
     toggleDatumHelp();
   });
 
-  // click outside closes it
+  
   document.addEventListener("click", (e)=>{
     const t = e.target;
     if(datumHelpPop.classList.contains("isOpen")){
@@ -1656,7 +1549,7 @@ if(datumHelpBtn && datumHelpPop){
     }
   });
 
-  // Esc closes it
+  
   document.addEventListener("keydown", (e)=>{
     if(e.key === "Escape") closeDatumHelp();
   });
@@ -1664,13 +1557,16 @@ if(datumHelpBtn && datumHelpPop){
 
 
 const monthAvgMeta=$("monthAvgMeta"), monthAvgBody=$("monthAvgBody");
-const annualSparseNote = $("annualSparseNote");
+const annualPredictionToggle = $("annualPredictionToggle");
+const annualScenarioKey = $("annualScenarioKey");
 
-    /* =========================
-   VIEW SWITCHES (Monthly + Annual)
-   ========================= */
-let MONTH_VIEW = "total";  // "total" | "minor" | "moderate" | "major"
-let ANNUAL_VIEW = "total"; // "total" | "minor" | "moderate" | "major"
+    
+
+
+let MONTH_VIEW = "total";  
+let ANNUAL_VIEW = "total"; 
+let ANNUAL_PREDICTIONS_ENABLED = false;
+let ANNUAL_SCENARIO = "Baseline";
 
 
 function setSegActive(segEl, val){
@@ -1681,16 +1577,16 @@ function setSegActive(segEl, val){
 }
 
 function applyMonthView(){
-  // 1) Table column visibility (via class)
+  
   const tbl = document.getElementById("monthAvgTable");
   if(tbl){
     tbl.classList.remove("show-minor","show-moderate","show-major","show-total");
     tbl.classList.add(`show-${MONTH_VIEW}`);
   }
 
-  // 2) Chart dataset visibility
+  
  if(monthAvgChart){
-  // datasets: 0 minor, 1 moderate, 2 major
+  
   const showAll = (MONTH_VIEW === "total");
 
   monthAvgChart.data.datasets[0].hidden = !showAll && (MONTH_VIEW !== "minor");
@@ -1706,16 +1602,9 @@ function applyAnnualView(){
 
   const showAll = (ANNUAL_VIEW === "total");
 
-  // datasets: 0 minor, 1 moderate, 2 major
   annualChart.data.datasets[0].hidden = !showAll && (ANNUAL_VIEW !== "minor");
   annualChart.data.datasets[1].hidden = !showAll && (ANNUAL_VIEW !== "moderate");
   annualChart.data.datasets[2].hidden = !showAll && (ANNUAL_VIEW !== "major");
-
-  //   dataset 3 = quadratic trendline (Total)
-  // Show it ONLY when Total is selected
-  if(annualChart.data.datasets[3]){
-    annualChart.data.datasets[3].hidden = (ANNUAL_VIEW !== "total");
-  }
 
   annualChart.update();
 }
@@ -1733,7 +1622,7 @@ function hookMonthViewSwitch(){
     applyMonthView();
   });
 
-  // initial
+  
   setSegActive(seg, MONTH_VIEW);
 }
 
@@ -1750,12 +1639,56 @@ function hookAnnualViewSwitch(){
     applyAnnualView();
   });
 
-  // initial
+  
   setSegActive(seg, ANNUAL_VIEW);
 }
 
+function renderAnnualScenarioControls(){
+  if(annualPredictionToggle){
+    annualPredictionToggle.textContent = `Annual Predictions ${ANNUAL_PREDICTIONS_ENABLED ? "ON" : "OFF"}`;
+    annualPredictionToggle.setAttribute("aria-pressed", ANNUAL_PREDICTIONS_ENABLED ? "true" : "false");
+  }
 
-/* If ANY JS error happens, show it in the UI so you’re not blind */
+  if(!annualScenarioKey) return;
+
+  annualScenarioKey.classList.toggle("isVisible", ANNUAL_PREDICTIONS_ENABLED);
+  annualScenarioKey.innerHTML = FUTURE_SCENARIOS.map(s => `
+    <label class="scenarioChoice">
+      <input type="radio" name="annualScenario" value="${s.id}" ${s.id === ANNUAL_SCENARIO ? "checked" : ""}>
+      <span>${s.label}</span>
+    </label>
+  `).join("");
+}
+
+function hookAnnualPredictionControls(){
+  renderAnnualScenarioControls();
+
+  if(annualPredictionToggle){
+    annualPredictionToggle.addEventListener("click", ()=>{
+      ANNUAL_PREDICTIONS_ENABLED = !ANNUAL_PREDICTIONS_ENABLED;
+      if(!FUTURE_FLOOD_PREDICTIONS[ANNUAL_SCENARIO]){
+        ANNUAL_SCENARIO = "Baseline";
+      }
+      renderAnnualScenarioControls();
+      buildAnnualArrays();
+      renderAnnual();
+    });
+  }
+
+  if(annualScenarioKey){
+    annualScenarioKey.addEventListener("change", (e)=>{
+      const input = e.target?.closest?.("input[name='annualScenario']");
+      if(!input) return;
+      ANNUAL_SCENARIO = input.value;
+      renderAnnualScenarioControls();
+      buildAnnualArrays();
+      renderAnnual();
+    });
+  }
+}
+
+
+
 window.addEventListener("error",(e)=>{
   console.error("JS error:", e?.message || e);
   stageTextEl.textContent="SCRIPT ERROR (open Console)";
@@ -1765,7 +1698,7 @@ window.addEventListener("unhandledrejection",(e)=>{
   stageTextEl.textContent="SCRIPT ERROR (open Console)";
 });
 
-/* Formatters */
+
 const fmtFull = new Intl.DateTimeFormat("en-US",{ timeZone:TZ,year:"numeric",month:"short",day:"2-digit", hour:"2-digit",minute:"2-digit",hour12:true });
 const fmtDay = new Intl.DateTimeFormat("en-US",{timeZone:TZ,month:"short",day:"2-digit"});
 const fmtPartsYMD = new Intl.DateTimeFormat("en-US",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit"});
@@ -1856,7 +1789,7 @@ function startOfYearEST_ISO(y){ return new Date(Date.UTC(y,0,1,5,0,0)).toISOStri
 function nowISO(){ return new Date().toISOString(); }
 
 
-/* Stage classify uses NAVD thresholds */
+
 function classifyByNavd(navdFt){
   const T = THRESH.NAVD88;
   if(navdFt>=T.majorLow) return {label:"MAJOR FLOODING", color:"var(--major)", glow:"rgba(167,139,250,.22)", short:"Major"};
@@ -1878,10 +1811,10 @@ function setStage(navdFt){
   const wrap = document.getElementById("curValWrap") || (curFtEl ? curFtEl.closest(".curVal") : null);
   if(!wrap) return;
 
-  // clear prior state classes
+  
   wrap.classList.remove("isBelow","isMinor","isModerate","isMajor");
 
-  const c = classifyByNavd(navdFt); // uses NAVD thresholds
+  const c = classifyByNavd(navdFt); 
   if(c.short === "Major") wrap.classList.add("isMajor");
   else if(c.short === "Moderate") wrap.classList.add("isModerate");
   else if(c.short === "Minor") wrap.classList.add("isMinor");
@@ -1896,35 +1829,39 @@ function unitText(){
   return `ft ${DISPLAY_DATUM}`;
 }
 
+function renderGaugeStaticText(){
+  document.title = `${GAUGE_DISPLAY_NAME}, NJ — Tidal Flooding Dashboard`;
+  if(brandKickerEl) brandKickerEl.textContent = `${USGS_SITE} · ${GAUGE_DISPLAY_NAME}, NJ`;
+  if(brandNameEl) brandNameEl.textContent = `${GAUGE_DISPLAY_NAME} Tidal Dashboard`;
+}
 
 function updateUnitsAndBadges(){
-  // Update all the little "ft DATUM" unit labels around the page
+  
   document.querySelectorAll("[data-unit]").forEach(el=>{
     el.textContent = "ft " + datumLabel();
   });
 
-  // Update table headers
+  
   topTenUnitTh.textContent = "Height (" + unitText() + ")";
   histUnitTh.textContent   = "Peak (" + unitText() + ")";
 
-  // Update the stage badges under Live conditions (Minor/Moderate/Major boxes)
+  
   const T = THRESH[DISPLAY_DATUM];
 minorBadge.textContent    = `${T.minorLow.toFixed(2)}–${T.moderateLow.toFixed(2)} ft`;
 moderateBadge.textContent = `${T.moderateLow.toFixed(2)}–${T.majorLow.toFixed(2)} ft`;
 majorBadge.textContent    = `≥ ${T.majorLow.toFixed(2)} ft`;
 
 
-  //   NEW: Update the numbers next to Minor/Moderate/Major in Observations & Predictions
+  
   if(thMinorTxt) thMinorTxt.textContent = `${T.minorLow.toFixed(2)} ${unitText()}`;
   if(thModerTxt) thModerTxt.textContent = `${T.moderateLow.toFixed(2)} ${unitText()}`;
   if(thMajorTxt) thMajorTxt.textContent = `${T.majorLow.toFixed(2)} ${unitText()}`;
 }
 
 
-/* Simple helpers */
+
 function maxPoint(arr){ return arr.reduce((a,b)=>b.ft>a.ft?b:a, arr[0]); }
 function minPoint(arr){ return arr.reduce((a,b)=>b.ft<a.ft?b:a, arr[0]); }
-function setTXTStatus(msg){ if(txtNote) txtNote.textContent = msg || ""; }
       function thresholdsDisplay(){
   const T = THRESH[DISPLAY_DATUM];
   return { minor:T.minorLow, moderate:T.moderateLow, major:T.majorLow };
@@ -1932,14 +1869,14 @@ function setTXTStatus(msg){ if(txtNote) txtNote.textContent = msg || ""; }
 
       
 
-// Build segments of consecutive points where stage >= Minor
-// Exact flood-hour math for the 72h outlook.
-// Why this is needed:
-// The old version counted each forecast point as if it represented the full
-// following interval. On hourly forecast data, that can add one extra hour
-// to each flood period. This version counts the time BETWEEN forecast points
-// and linearly interpolates threshold crossings, so the top hour boxes and
-// the listed flood periods use the same math.
+
+
+
+
+
+
+
+
 
 function stageNameFromDisplayFt(ft){
   const T = THRESH[DISPLAY_DATUM];
@@ -2178,49 +2115,7 @@ function updateFloodOutlook48(){
     `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS`;
 }
 
-function updatePred24RangeCard(){
-  const maxEl = document.getElementById("pred24MaxFt");
-  const minEl = document.getElementById("pred24MinFt");
-  const metaEl = document.getElementById("pred24Meta");
-  if(!maxEl || !minEl || !metaEl) return;
 
-  const pred = STATE.pred72Mllw || [];
-  if(!pred.length){
-    maxEl.textContent = "—";
-    minEl.textContent = "—";
-    metaEl.textContent = "NOAA predictions unavailable";
-    return;
-  }
-
-  const t0 = new Date(pred[0].t).getTime();
-  const t1 = t0 + 24*3600*1000;
-
-  const window = pred
-    .map(p => ({ t:new Date(p.t).getTime(), ft:p.ft }))
-    .filter(p => Number.isFinite(p.t) && Number.isFinite(p.ft) && p.t >= t0 && p.t <= t1);
-
-  if(!window.length){
-    maxEl.textContent = "—";
-    minEl.textContent = "—";
-    metaEl.textContent = "NOAA predictions empty (24h)";
-    return;
-  }
-
-  let max = -Infinity, min = Infinity;
-  for(const p of window){
-    if(p.ft > max) max = p.ft;
-    if(p.ft < min) min = p.ft;
-  }
-
-  maxEl.textContent = toDisplayFtFromMllw(max).toFixed(2);
-  minEl.textContent = toDisplayFtFromMllw(min).toFixed(2);
-
-  metaEl.textContent =
-    ``;
-}
-
-
-/* Top ten renderer (MLLW list; converts for display + classification) */
 function renderTopTen(){
   topTenBody.innerHTML="";
   TOP_TEN_MLLW.forEach((r,i)=>{
@@ -2238,34 +2133,9 @@ function renderTopTen(){
   });
 }
 
-/* Helpers for predictions alignment (used later) */
-function ceilToNext15MinISO(iso){
-  const d = new Date(iso);
-  if(Number.isNaN(d.getTime())) return iso;
-  const t = d.getTime();
-  const step = 15*60*1000;
-  const next = Math.ceil((t+1)/step)*step;
-  return new Date(next).toISOString();
-}
 
-// --- PETSS: try multiple possible output filenames (works on Pages + local) ---
-const PETSS_JSON_CANDIDATES = [
-  "data/petss_forecast.json",
-  "./data/petss_forecast.json",
-  "/data/petss_forecast.json",
-
-  // common variants if you name files per-station:
-  `data/petss_forecast_${COOPS_STATION}_mllw.json`,
-  `./data/petss_forecast_${COOPS_STATION}_mllw.json`,
-  `/data/petss_forecast_${COOPS_STATION}_mllw.json`,
-
-  // keep  old guess as a last resort
-  "data/petss_forecast_8536889_mllw.json"
-];
-
-// returns parsed points in the format  chart expects: [{t, ft}]
 function normalizePetssJsonToPoints(json){
-  // Option A: { points: [{t, fcst, ...}, ...] }
+  
   if(Array.isArray(json?.points)){
     return json.points
       .map(p => ({ t: p.t, ft: Number(p.fcst ?? p.twl ?? p.value) }))
@@ -2273,7 +2143,7 @@ function normalizePetssJsonToPoints(json){
       .sort((a,b)=> new Date(a.t) - new Date(b.t));
   }
 
-  // Option B: [{t, fcst}, ...]
+  
   if(Array.isArray(json)){
     return json
       .map(p => ({ t: p.t ?? p.time ?? p.validTime, ft: Number(p.fcst ?? p.twl ?? p.value ?? p.primary) }))
@@ -2281,7 +2151,7 @@ function normalizePetssJsonToPoints(json){
       .sort((a,b)=> new Date(a.t) - new Date(b.t));
   }
 
-  // Option C: { data: [...] }
+  
   if(Array.isArray(json?.data)){
     return json.data
       .map(p => ({ t: p.t ?? p.time ?? p.validTime, ft: Number(p.fcst ?? p.twl ?? p.value ?? p.primary) }))
@@ -2319,16 +2189,16 @@ async function fetchPETSSForecast_MLLW({ hours = 48 } = {}){
 
   const ptsAll = normalizePetssJsonToPoints(json);
 
-  // IMPORTANT:
-  // Do NOT clip to "first timestamp + hours".
-  // The chart itself already slices/resamples to the correct window (now → now+72h).
+  
+  
+  
   return { issuedTime, points: ptsAll, urlUsed: url };
 }
 
 
-/* =========================
-USGS IV fetch — STRICTLY tidal elevation 72279 (not discharge)
-========================= */
+
+
+
 async function fetchIV({startISO=null,endISO=null,period=null}={}){
   const url=new URL("https://waterservices.usgs.gov/nwis/iv/");
   url.searchParams.set("format","json");
@@ -2375,11 +2245,11 @@ async function fetchObservedSeries({startISO=null,endISO=null,period=null}={}){
   return extractWaterLevelSeries_NAVD88(j);
 }
 
-/* Fetch recent observed values without asking USGS for a huge YTD window.
-   The old page requested Jan 1 -> now every load. By early May that can exceed
-   the practical IV-service window and make the whole live card fail.
-   This tries short windows first, then falls back far enough to show the most
-   recent available reading if the gauge feed is temporarily stale. */
+
+
+
+
+
 async function fetchRecentObservedSeriesWithFallback(){
   const tries = ["P7D", "P30D", "P120D"];
   const errs = [];
@@ -2410,65 +2280,9 @@ function sameLocalDayISO(aISO, bISO){
 }
 
 
-/* =========================
-NOAA/NWS NWPS official forecast (SHBN4) -> we resample to 15-min later
-Replaces CO-OPS predictions block.
-Returns MLLW ft as [{t: ISO8601, ft: Number}] plus issuedTime for UI.
-========================= */
-const NWPS_GAUGE = "SHBN4";
-const NWPS_STAGEFLOW_URL = `https://api.water.noaa.gov/nwps/v1/gauges/${NWPS_GAUGE}/stageflow`;
-
-/* Clip to N hours from the first point (keeps  existing 72h logic consistent). */
-function clipHoursFromFirst(points, hours){
-  if(!hours || !points?.length) return points || [];
-  const t0 = new Date(points[0].t).getTime();
-  if(!Number.isFinite(t0)) return points || [];
-  const t1 = t0 + hours*3600*1000;
-  return points.filter(p => {
-    const tt = new Date(p.t).getTime();
-    return Number.isFinite(tt) && tt <= t1;
-  });
-}
-
-/* Best-effort extraction across common NWPS response shapes. */
-function extractNWPSForecastSeries(json){
-  //  sample shows top-level json.data[]
-  if(Array.isArray(json?.data) && json.data.length) return json.data;
-
-  // Some NWPS responses include nested forecast series
-  if(Array.isArray(json?.forecast?.timeSeries) && json.forecast.timeSeries.length){
-    const d = json.forecast.timeSeries[0]?.data;
-    if(Array.isArray(d) && d.length) return d;
-  }
-  if(Array.isArray(json?.forecast?.data) && json.forecast.data.length) return json.forecast.data;
-
-  return [];
-}
-
-async function fetchNWPSpredictions_MLLW({ hours = 72 } = {}){
-  const res = await fetch(NWPS_STAGEFLOW_URL, { cache: "no-store" });
-  if(!res.ok) throw new Error("NWPS stageflow failed " + res.status);
-
-  const j = await res.json();
-
-  const issuedTime = j.issuedTime || j.issued_time || null;
-  const raw = extractNWPSForecastSeries(j);
-
-  const pts = raw
-    .map(d => ({
-      t: d.validTime || d.valid_time,
-      ft: Number(d.primary)
-    }))
-    .filter(p => p.t && Number.isFinite(p.ft))
-    .sort((a,b)=> new Date(a.t) - new Date(b.t));
-
-  return { issuedTime, points: clipHoursFromFirst(pts, hours) };
-}
 
 
-/* =========================
-Alerts
-========================= */
+
 async function updateAlerts(){
   try{
     const url = `https://api.weather.gov/alerts/active?point=${ALERT_POINT.lat},${ALERT_POINT.lon}`;
@@ -2488,38 +2302,15 @@ async function updateAlerts(){
   }
 }
 
-/* =========================
-Timeseries quality requirements:
-- 15-min grid
-- do not connect across gaps (>15 min) -> nulls on grid achieve this
-- if jump >0.75 ft across 15 min, drop the later point (null)
-========================= */
+
+
+
+
+
+
 const TS_STEP_MIN = 15;
 const TS_STEP_MS  = TS_STEP_MIN * 60 * 1000;
 const TS_MAX_DELTA_FT = 0.75;
-
-function buildFixedGrid15Min_fromAny(series, startISO, endISO){
-  const start = new Date(startISO).getTime();
-  const end = new Date(endISO).getTime();
-
-  const m = new Map();
-  for(const p of (series||[])){
-    const t = new Date(p.t).getTime();
-    if(Number.isNaN(t) || !Number.isFinite(p.ft)) continue;
-    const snapped = Math.round(t/TS_STEP_MS)*TS_STEP_MS;
-    m.set(snapped, p.ft);
-  }
-
-  const labels=[], values=[];
-  const s0 = Math.floor(start/TS_STEP_MS)*TS_STEP_MS;
-  const e0 = Math.ceil(end/TS_STEP_MS)*TS_STEP_MS;
-
-  for(let t=s0; t<=e0; t+=TS_STEP_MS){
-    labels.push(new Date(t).toISOString());
-    values.push(m.has(t) ? m.get(t) : null);
-  }
-  return {labels, values};
-}
 
 function filterSpikes15Min(values, maxDeltaFt=TS_MAX_DELTA_FT){
   const out = values.slice();
@@ -2532,7 +2323,7 @@ function filterSpikes15Min(values, maxDeltaFt=TS_MAX_DELTA_FT){
       continue;
     }
     if(Math.abs(v - lastGood) > maxDeltaFt){
-      out[i] = null; // do not plot that data
+      out[i] = null; 
     }else{
       lastGood = v;
     }
@@ -2540,8 +2331,8 @@ function filterSpikes15Min(values, maxDeltaFt=TS_MAX_DELTA_FT){
   return out;
 }
 
-/* Resample predictions to 15-min grid via linear interpolation
-   (required for hourly / irregular NWPS forecasts) */
+
+
 function resampleTo15Min_MLLW(predSeries, startISO, endISO){
   const start = new Date(startISO).getTime();
   const end   = new Date(endISO).getTime();
@@ -2568,7 +2359,7 @@ function resampleTo15Min_MLLW(predSeries, startISO, endISO){
     return { labels, values };
   }
 
-  const MAX_BRACKET_GAP_MS = 3 * 3600 * 1000; // do not interpolate across large gaps
+  const MAX_BRACKET_GAP_MS = 3 * 3600 * 1000; 
   let i = 0;
 
   for(let t = s0; t <= e0; t += TS_STEP_MS){
@@ -2631,25 +2422,25 @@ const floodBandsPlugin = {
 
     ctx.save();
 
-// ===== Flood bands (stronger / less transparent) =====
 
-ctx.fillStyle = "rgba(251,191,36,.14)";   // Minor
+
+ctx.fillStyle = "rgba(251,191,36,.14)";   
 ctx.fillRect(left, yModer, right - left, yMinor - yModer);
 
-ctx.fillStyle = "rgba(251,113,133,.14)";  // Moderate
+ctx.fillStyle = "rgba(251,113,133,.14)";  
 ctx.fillRect(left, yMajor, right - left, yModer - yMajor);
 
-ctx.fillStyle = "rgba(167,139,250,.14)";  // Major
+ctx.fillStyle = "rgba(167,139,250,.14)";  
 ctx.fillRect(left, chartArea.top, right - left, yMajor - chartArea.top);
 
-    // dashed lines
+    
 
     ctx.restore();
   }
 };
 
 Chart.register(floodBandsPlugin);
-//   Force one dataset to draw LAST (on top), regardless of internal sorting
+
 const drawDatasetLastPlugin = {
   id: "drawDatasetLast",
   afterDatasetsDraw(chart, args, pluginOpts) {
@@ -2659,21 +2450,228 @@ const drawDatasetLastPlugin = {
     const meta = chart.getDatasetMeta(idx);
     if (!meta || meta.hidden) return;
 
-    // Draw it again on top of everything
+    
     meta.controller.draw();
   }
 };
 
 Chart.register(drawDatasetLastPlugin);
 
-/* =========================
-Core state
-========================= */
+const CHART_ZOOM_STATE = new WeakMap();
+
+function chartLabels(chart){
+  return chart?.data?.labels || [];
+}
+
+function getChartZoomRange(chart){
+  const total = chartLabels(chart).length;
+  const x = chart?.options?.scales?.x || {};
+  const min = typeof x.min === "number" ? x.min : 0;
+  const max = typeof x.max === "number" ? x.max : Math.max(0, total - 1);
+  return { min, max, total };
+}
+
+function chartMinRange(total){
+  if(total <= 12) return Math.max(1, total - 1);
+  return Math.max(6, Math.min(30, Math.round(total * 0.06)));
+}
+
+function isChartZoomed(chart){
+  const { min, max, total } = getChartZoomRange(chart);
+  return min > 0.01 || max < total - 1.01;
+}
+
+function updateZoomResetButton(chart){
+  const state = CHART_ZOOM_STATE.get(chart);
+  if(!state?.button) return;
+  state.button.classList.toggle("isVisible", isChartZoomed(chart));
+}
+
+function setChartZoomRange(chart, min, max){
+  const total = chartLabels(chart).length;
+  if(total < 2) return;
+
+  const minRange = chartMinRange(total);
+  let nextMin = Math.max(0, Math.min(total - 1 - minRange, min));
+  let nextMax = Math.max(nextMin + minRange, Math.min(total - 1, max));
+
+  if(nextMax > total - 1){
+    const shift = nextMax - (total - 1);
+    nextMax -= shift;
+    nextMin = Math.max(0, nextMin - shift);
+  }
+
+  chart.options.scales.x.min = nextMin;
+  chart.options.scales.x.max = nextMax;
+  chart.update("none");
+  updateZoomResetButton(chart);
+}
+
+function resetChartZoom(chart){
+  if(!chart?.options?.scales?.x) return;
+  delete chart.options.scales.x.min;
+  delete chart.options.scales.x.max;
+  chart.update("none");
+  updateZoomResetButton(chart);
+}
+
+function syncChartZoomToData(chart){
+  if(!chart?.options?.scales?.x) return;
+  const total = chartLabels(chart).length;
+  if(total < 2){
+    resetChartZoom(chart);
+    return;
+  }
+
+  const { min, max } = getChartZoomRange(chart);
+  if(isChartZoomed(chart)){
+    setChartZoomRange(chart, min, Math.min(max, total - 1));
+  }else{
+    updateZoomResetButton(chart);
+  }
+}
+
+function chartIndexFromClientX(chart, clientX){
+  const rect = chart.canvas.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / Math.max(1, rect.width)));
+  const { min, max } = getChartZoomRange(chart);
+  return min + ratio * (max - min);
+}
+
+function applyChartZoom(chart, factor, centerIndex){
+  const { min, max, total } = getChartZoomRange(chart);
+  if(total < 2) return;
+
+  const range = Math.max(1, max - min);
+  const nextRange = Math.max(chartMinRange(total), Math.min(total - 1, range * factor));
+  const center = Number.isFinite(centerIndex) ? centerIndex : (min + max) / 2;
+  const leftRatio = range > 0 ? (center - min) / range : .5;
+  const nextMin = center - nextRange * leftRatio;
+  const nextMax = nextMin + nextRange;
+  setChartZoomRange(chart, nextMin, nextMax);
+}
+
+function pointerDistance(a, b){
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function pointerCenterIndex(chart, a, b){
+  return chartIndexFromClientX(chart, (a.x + b.x) / 2);
+}
+
+function attachChartZoom(chart){
+  if(!chart?.canvas || CHART_ZOOM_STATE.has(chart)) return;
+
+  const canvas = chart.canvas;
+  const parent = canvas.parentElement;
+  if(!parent) return;
+
+  if(canvas.__chartZoomCleanup){
+    canvas.__chartZoomCleanup();
+  }
+
+  let button = parent.querySelector(".zoomReset");
+  if(!button){
+    button = document.createElement("button");
+    button.type = "button";
+    button.className = "zoomReset";
+    button.textContent = "Reset zoom";
+    parent.appendChild(button);
+  }
+
+  const state = { button, pointers:new Map(), pinch:null, pan:null };
+  CHART_ZOOM_STATE.set(chart, state);
+  const removers = [];
+  const addCanvasListener = (type, handler, options)=>{
+    canvas.addEventListener(type, handler, options);
+    removers.push(()=>canvas.removeEventListener(type, handler, options));
+  };
+  canvas.__chartZoomCleanup = ()=>{
+    while(removers.length) removers.pop()();
+  };
+
+  button.onclick = ()=>resetChartZoom(chart);
+
+  addCanvasListener("wheel", (e)=>{
+    if(!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? .82 : 1.18;
+    applyChartZoom(chart, factor, chartIndexFromClientX(chart, e.clientX));
+  }, { passive:false });
+
+  addCanvasListener("pointerdown", (e)=>{
+    canvas.setPointerCapture?.(e.pointerId);
+    state.pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+
+    if(state.pointers.size === 1){
+      const { min, max } = getChartZoomRange(chart);
+      state.pan = { x:e.clientX, min, max };
+    }
+
+    if(state.pointers.size === 2){
+      const pts = Array.from(state.pointers.values());
+      const { min, max } = getChartZoomRange(chart);
+      state.pinch = {
+        distance:pointerDistance(pts[0], pts[1]),
+        center:pointerCenterIndex(chart, pts[0], pts[1]),
+        min,
+        max
+      };
+    }
+  });
+
+  addCanvasListener("pointermove", (e)=>{
+    if(!state.pointers.has(e.pointerId)) return;
+    state.pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+
+    if(state.pointers.size >= 2 && state.pinch){
+      e.preventDefault();
+      const pts = Array.from(state.pointers.values()).slice(0,2);
+      const dist = pointerDistance(pts[0], pts[1]);
+      if(dist > 0 && state.pinch.distance > 0){
+        const factor = state.pinch.distance / dist;
+        chart.options.scales.x.min = state.pinch.min;
+        chart.options.scales.x.max = state.pinch.max;
+        applyChartZoom(chart, factor, state.pinch.center);
+      }
+      return;
+    }
+
+    if(state.pointers.size === 1 && state.pan && isChartZoomed(chart)){
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const range = state.pan.max - state.pan.min;
+      const delta = ((e.clientX - state.pan.x) / Math.max(1, rect.width)) * range;
+      setChartZoomRange(chart, state.pan.min - delta, state.pan.max - delta);
+    }
+  });
+
+  function endPointer(e){
+    state.pointers.delete(e.pointerId);
+    state.pinch = null;
+    state.pan = null;
+    if(state.pointers.size === 1){
+      const p = Array.from(state.pointers.values())[0];
+      const { min, max } = getChartZoomRange(chart);
+      state.pan = { x:p.x, min, max };
+    }
+  }
+
+  addCanvasListener("pointerup", endPointer);
+  addCanvasListener("pointercancel", endPointer);
+  addCanvasListener("pointerleave", endPointer);
+
+  updateZoomResetButton(chart);
+}
+
+
+
+
 let HIGH_TIDES_NAVD=[];
 let annualChart=null, tsChart=null, monthAvgChart=null;
 let YEARS=[], annualMinor=[], annualModerate=[], annualMajor=[];
 
-const STATE = { lastNavd:null, ytdNavd:null, todayNavd:null, obs24Navd:null, pred72Mllw:null };
+const STATE = { lastNavd:null, todayNavd:null, obs24Navd:null, pred72Mllw:null };
 
 function sliceAfter(series, startISO){
   const s = new Date(startISO).getTime();
@@ -2688,71 +2686,24 @@ function colorForFtDisplay(ftDisplay){
   return "rgba(45,212,191,.90)";
 }
 
-function extractFloodPeaks_NAVD(series){
-  if(!series || series.length < 3) return [];
-
-  const T = THRESH.NAVD88;
-
-  // sort ascending by time + sanitize ft
-  const pts = [...series]
-    .map(p => ({ t: p.t, ft: Number(p.ft) }))
-    .filter(p => p.t && Number.isFinite(p.ft))
-    .sort((a,b)=> new Date(a.t) - new Date(b.t));
-
-  if(pts.length < 3) return [];
-
-  // find local maxima (ALL peaks — no minor-threshold gate)
-  const candidates = [];
-  for(let i=1;i<pts.length-1;i++){
-    const a = pts[i-1], b = pts[i], c = pts[i+1];
-    if(b.ft >= a.ft && b.ft >= c.ft){
-      // avoid flat triple-plateau
-      if(!(b.ft === a.ft && b.ft === c.ft)) candidates.push(b);
-    }
-  }
-  if(!candidates.length) return [];
-
-  // de-cluster peaks that are too close together (keep the highest within the window)
-  const minSepMs = PEAK_MIN_SEP_MINUTES * 60 * 1000;
-
-  const kept = [];
-  let cur = candidates[0];
-
-  for(let i=1;i<candidates.length;i++){
-    const p = candidates[i];
-
-    const pt = new Date(p.t).getTime();
-    const ct = new Date(cur.t).getTime();
-
-    if(Number.isFinite(pt) && Number.isFinite(ct) && (pt - ct) <= minSepMs){
-      if(p.ft > cur.ft) cur = p;
-    }else{
-      kept.push(cur);
-      cur = p;
-    }
-  }
-  kept.push(cur);
-
-  // classify each peak by NAVD thresholds (includes "Below")
-  return kept.map(p=>{
-    let type = "Below";
-    if(p.ft >= T.majorLow) type = "Major";
-    else if(p.ft >= T.moderateLow) type = "Moderate";
-    else if(p.ft >= T.minorLow) type = "Minor";
-    return { t: p.t, ft: p.ft, type };
-  });
+function yearGradientColor(t, alpha=.6){
+  const clamped = Math.max(0, Math.min(1, t));
+  const blue = [37, 99, 235];
+  const red = [239, 68, 68];
+  const rgb = blue.map((b, i)=>Math.round(b + (red[i] - b) * clamped));
+  return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
 }
 
-      /* =========================
-STEP 3 — build live flood peak events since Jan 1 2026
-These are NAVD88 peaks from USGS 15-min data (same datum as  TXT events)
-========================= */
+      
+
+
+
 async function fetchNOAAHiloHighs({ station, beginYMD, endYMD, datum="MLLW" }){
   const url = new URL("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter");
   url.searchParams.set("product","predictions");
   url.searchParams.set("application", COOPS_APP || "web");
-  url.searchParams.set("begin_date", beginYMD); // YYYYMMDD
-  url.searchParams.set("end_date", endYMD);     // YYYYMMDD
+  url.searchParams.set("begin_date", beginYMD); 
+  url.searchParams.set("end_date", endYMD);     
   url.searchParams.set("datum", datum);
   url.searchParams.set("station", station);
   url.searchParams.set("time_zone","gmt");
@@ -2768,7 +2719,7 @@ async function fetchNOAAHiloHighs({ station, beginYMD, endYMD, datum="MLLW" }){
   return preds
     .filter(p => String(p.type || "").toUpperCase() === "H")
     .map(p => ({
-      t: new Date(String(p.t).replace(" ", "T") + "Z").toISOString(), // GMT -> ISO
+      t: new Date(String(p.t).replace(" ", "T") + "Z").toISOString(), 
       ft: Number(p.v)
     }))
     .filter(p => p.t && Number.isFinite(p.ft))
@@ -2787,7 +2738,7 @@ async function buildLiveFloodPeaksSince2026(){
   const startISO = LIVE_START_ISO;
   const endISO   = nowISO();
 
-  // observed NAVD88 (15-min)
+  
   const obs = await fetchObservedSeries({ startISO, endISO });
   if(!obs || !obs.length) return [];
 
@@ -2796,7 +2747,7 @@ async function buildLiveFloodPeaksSince2026(){
     .filter(p => Number.isFinite(p.tMs) && Number.isFinite(p.ft))
     .sort((a,b)=>a.tMs-b.tMs);
 
-  // predicted HIGH tide times (NOAA hilo)
+  
   const highs = await fetchNOAAHiloHighs({
     station: NOAA_STATION_TIDECLOCK,
     beginYMD: ymdCompactFromISO(startISO),
@@ -2804,8 +2755,8 @@ async function buildLiveFloodPeaksSince2026(){
     datum: "MLLW"
   });
 
-  const winMs = CREST_WINDOW_HOURS * 3600 * 1000;    // ±2h search window
-  const reqMs = REQUIRE_WITHIN_HOURS * 3600 * 1000;  // must have obs within ±1h
+  const winMs = CREST_WINDOW_HOURS * 3600 * 1000;    
+  const reqMs = REQUIRE_WITHIN_HOURS * 3600 * 1000;  
 
   function bestObsNear(centerMs){
     const lo = centerMs - winMs;
@@ -2835,15 +2786,15 @@ async function buildLiveFloodPeaksSince2026(){
     if(!best) continue;
 
     out.push({
-      t: best.t,          // observed timestamp
-      ft: best.ft,        // NAVD88
-      kind: "LiveHigh",   // label only
+      t: best.t,          
+      ft: best.ft,        
+      kind: "LiveHigh",   
       source: "USGS+NOAA",
-      type: classifyByNavd(best.ft).short  // optional
+      type: classifyByNavd(best.ft).short  
     });
   }
 
-  // de-dupe
+  
   const seen = new Set();
   return out.filter(e=>{
     const k = `${e.t}|${Number(e.ft).toFixed(3)}`;
@@ -2853,171 +2804,105 @@ async function buildLiveFloodPeaksSince2026(){
   });
 }
 
-/* Peak counting uses NAVD thresholds */
-function countFloodPeaks_NAVD(series){
-  if(!series || series.length<3) return {minor:0, moderate:0, major:0};
+let annualSource = [];
+let annualPredictionLookup = new Map();
+
+function annualNumber(v){
+  return Number.isFinite(Number(v)) ? Number(v) : null;
+}
+
+function countEventsFromHistoryForYear(year){
   const T = THRESH.NAVD88;
+  const out = { minor: 0, moderate: 0, major: 0 };
 
-  const pts = [...series].sort((a,b)=>new Date(a.t)-new Date(b.t));
-  const candidates=[];
+  for(const e of (HIGH_TIDES_NAVD || [])){
+    const y = Number.isFinite(+e.y) ? +e.y : new Date(e.t).getUTCFullYear();
+    const ft = Number(e.ft);
 
-  for(let i=1;i<pts.length-1;i++){
-    const a=pts[i-1], b=pts[i], c=pts[i+1];
-    if(b.ft>=T.minorLow && b.ft>=a.ft && b.ft>=c.ft){
-      if(!(b.ft===a.ft && b.ft===c.ft)) candidates.push(b);
+    if(!Number.isFinite(y) || !Number.isFinite(ft)) continue;
+    if(y !== year) continue;
+
+    if(ft >= T.majorLow) out.major++;
+    else if(ft >= T.moderateLow) out.moderate++;
+    else if(ft >= T.minorLow) out.minor++;
+  }
+
+  return out;
+}
+
+function buildAnnualArrays(){
+  const historical = ATLANTIC_CITY_ANNUAL_COUNTS.map(r => ({
+    year:r.year,
+    minor:annualNumber(r.minor),
+    moderate:annualNumber(r.moderate),
+    major:annualNumber(r.major),
+    source:"historical"
+  }));
+
+  const lastHistoricalYear = historical.reduce((max, r)=>Math.max(max, r.year), -Infinity);
+  let rows = historical.slice();
+  annualPredictionLookup = new Map();
+
+  if(ANNUAL_PREDICTIONS_ENABLED){
+    const future = FUTURE_FLOOD_PREDICTIONS[ANNUAL_SCENARIO] || [];
+    rows = rows.concat(future
+      .filter(r => r.year > lastHistoricalYear)
+      .map(r => {
+        annualPredictionLookup.set(r.year, r);
+        return {
+          year:r.year,
+          minor:annualNumber(r.minorMean),
+          moderate:annualNumber(r.moderateMean),
+          major:annualNumber(r.majorMean),
+          source:"prediction"
+        };
+      }));
+  }else{
+    const { y: curYear } = getESTParts(new Date());
+    if(curYear > lastHistoricalYear && Array.isArray(HIGH_TIDES_NAVD) && HIGH_TIDES_NAVD.length){
+      const counts = countEventsFromHistoryForYear(curYear);
+      if(counts.minor || counts.moderate || counts.major){
+        rows.push({ year:curYear, ...counts, source:"live" });
+      }
     }
   }
-  if(!candidates.length) return {minor:0, moderate:0, major:0};
 
-  const minSepMs = PEAK_MIN_SEP_MINUTES*60*1000;
-  const kept=[];
-  let cur = candidates[0];
-  for(let i=1;i<candidates.length;i++){
-    const p=candidates[i];
-    if(new Date(p.t)-new Date(cur.t) <= minSepMs){
-      if(p.ft>cur.ft) cur=p;
-    }else{
-      kept.push(cur);
-      cur=p;
-    }
-  }
-  kept.push(cur);
-
-  let minor=0, moderate=0, major=0;
-  for(const p of kept){
-    if(p.ft>=T.majorLow) major++;
-    else if(p.ft>=T.moderateLow) moderate++;
-    else minor++;
-  }
-  return {minor, moderate, major};
+  rows.sort((a,b)=>a.year-b.year);
+  YEARS = rows.map(r=>r.year);
+  annualMinor = rows.map(r=>r.minor);
+  annualModerate = rows.map(r=>r.moderate);
+  annualMajor = rows.map(r=>r.major);
+  annualSource = rows.map(r=>r.source);
 }
 
-/* Annual counts from TXT */
-function countAnnualFloodsFromTXT(eventsNavd){
-  const T = THRESH.NAVD88;
-  const byYear = new Map();
-  for(const e of eventsNavd){
-    const y = e.y || (new Date(e.t)).getUTCFullYear();
-    if(!byYear.has(y)) byYear.set(y,{minor:0, moderate:0, major:0});
-    if(e.ft >= T.minorLow){
-      const rec = byYear.get(y);
-      if(e.ft >= T.majorLow) rec.major++;
-      else if(e.ft >= T.moderateLow) rec.moderate++;
-      else rec.minor++;
-    }
-  }
-  return byYear;
+function annualColors(kind){
+  const base = {
+    minor:"251,191,36",
+    moderate:"251,113,133",
+    major:"167,139,250"
+  }[kind];
+
+  return annualSource.map(source =>
+    source === "prediction"
+      ? `rgba(${base},.42)`
+      : `rgba(${base},.85)`
+  );
 }
-function buildAnnualArraysFromHistory_completedYears(){
-  const T = THRESH.NAVD88;
 
-  const yearCounts = new Map(); // y -> {minor, moderate, major}
-
-  for(const e of HIGH_TIDES_NAVD){
-    const tMs = new Date(e.t).getTime();
-    if(!Number.isFinite(tMs)) continue;
-
-    const y = new Date(e.t).getUTCFullYear();
-    const ft = +e.ft;
-    if(!Number.isFinite(ft)) continue;
-
-    if(!yearCounts.has(y)){
-      yearCounts.set(y,{minor:0, moderate:0, major:0});
-    }
-
-    if(ft >= T.majorLow) yearCounts.get(y).major++;
-    else if(ft >= T.moderateLow) yearCounts.get(y).moderate++;
-    else if(ft >= T.minorLow) yearCounts.get(y).minor++;
-  }
-
-  const yearsWithData = Array.from(yearCounts.keys()).sort((a,b)=>a-b);
-  if(!yearsWithData.length){
-    YEARS = [];
-    annualMinor = [];
-    annualModerate = [];
-    annualMajor = [];
-    return;
-  }
-
-  const minYear = yearsWithData[0];
-  const curYear = new Date().getFullYear();
-
-  // continuous year range
-  const yearsAll = [];
-  for(let y = minYear; y <= curYear; y++){
-    yearsAll.push(y);
-  }
-
-  const yearsCompleted = yearsAll.filter(y => y < curYear);
-
-  YEARS = yearsCompleted;
-  annualMinor = yearsCompleted.map(y => yearCounts.get(y)?.minor ?? 0);
-  annualModerate = yearsCompleted.map(y => yearCounts.get(y)?.moderate ?? 0);
-  annualMajor = yearsCompleted.map(y => yearCounts.get(y)?.major ?? 0);
+function annualPredictionRange(year, label){
+  const rec = annualPredictionLookup.get(Number(year));
+  if(!rec) return "";
+  if(label === "Minor") return rec.minorRange || "";
+  if(label === "Moderate") return rec.moderateRange || "";
+  if(label === "Major") return rec.majorRange || "";
+  return "";
 }
 
 
-function overwriteCurrentYearBarWithLiveCounts(liveCounts){
-  if(!liveCounts) return;
-  const { y: curYear } = getESTParts(new Date());
-
-  let idx = YEARS.indexOf(curYear);
-  if(idx < 0){
-    // If the annual arrays were built as "completed years only", append current year.
-    YEARS.push(curYear);
-    annualMinor.push(0);
-    annualModerate.push(0);
-    annualMajor.push(0);
-    idx = YEARS.length - 1;
-
-    // Keep labels sorted if you want strict order:
-    // (If you sort, you must reorder the arrays too; simplest is to not sort here.)
-  }
-
-  annualMinor[idx] = liveCounts.minor;
-  annualModerate[idx] = liveCounts.moderate;
-  annualMajor[idx] = liveCounts.major;
-}
-
-function linearFit(xs, ys){
-  // Fits y = m x + b (least squares)
-  const n = Math.min(xs.length, ys.length);
-  if(n < 2) return null;
-
-  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0, count = 0;
-
-  for(let i = 0; i < n; i++){
-    const x = Number(xs[i]);
-    const y = Number(ys[i]);
-    if(!Number.isFinite(x) || !Number.isFinite(y)) continue;
-
-    sumX += x;
-    sumY += y;
-    sumXY += x * y;
-    sumXX += x * x;
-    count++;
-  }
-
-  if(count < 2) return null;
-
-  const denom = (count * sumXX) - (sumX * sumX);
-  if(Math.abs(denom) < 1e-12) return null;
-
-  const m = ((count * sumXY) - (sumX * sumY)) / denom;
-  const b = (sumY - m * sumX) / count;
-
-  return { m, b };
-}
-
-function evalLinear({m, b}, x){
-  return (m * x) + b;
-}
-
-/* Annual chart */
 function ensureAnnual(){
   if(annualChart) return;
 
-  const ctx = $("annualChart"); //  helper returns the canvas element
+  const ctx = $("annualChart"); 
 
   annualChart = new Chart(ctx, {
     type: "bar",
@@ -3029,44 +2914,22 @@ function ensureAnnual(){
           data: annualMinor,
           stack: "f",
           borderWidth: 0,
-          backgroundColor: "rgba(251,191,36,.85)"
+          backgroundColor: annualColors("minor")
         },
         {
           label: "Moderate",
           data: annualModerate,
           stack: "f",
           borderWidth: 0,
-          backgroundColor: "rgba(251,113,133,.80)"
+          backgroundColor: annualColors("moderate")
         },
         {
           label: "Major",
           data: annualMajor,
           stack: "f",
           borderWidth: 0,
-          backgroundColor: "rgba(167,139,250,.80)"
-        },
-
-        //   Trendline MUST be the 4th dataset (index 3)
-{
-  type: "line",
-  label: "Linear trend (Total)",
-  data: [],                 // filled in renderAnnual()
-  borderWidth: 3,
-  pointRadius: 0,
-  tension: 0,
-  spanGaps: true,
-
-  // critical: don't stack the line with bars
-  stack: undefined,
-
-  // keep it above bars
-  order: 99,
-
-  // solid line
-  borderDash: [],
-
-  borderColor: "rgba(234,240,255,.85)"
-}
+          backgroundColor: annualColors("major")
+        }
       ]
     },
 
@@ -3074,7 +2937,7 @@ function ensureAnnual(){
       responsive: true,
       maintainAspectRatio: false,
 
-      //   hover anywhere on the bar → show ALL stacks for that year
+      
       interaction: { mode: "index", intersect: false },
 
       plugins: {
@@ -3095,17 +2958,26 @@ function ensureAnnual(){
             label: (ctx) => {
               const v = ctx.parsed?.y;
               if (!Number.isFinite(v)) return null;
-              return `${ctx.dataset.label}: ${Math.round(v)}`;
+              const year = ctx.label;
+              const range = annualPredictionRange(year, ctx.dataset.label);
+              const value = Number.isInteger(v) ? String(v) : v.toFixed(2);
+              return range
+                ? `${ctx.dataset.label}: ${value} (95% CI ${range})`
+                : `${ctx.dataset.label}: ${value}`;
             },
          footer: (items) => {
   const total = (items || [])
-    .filter(it => it.dataset.type !== "line") //   exclude quadratic
     .reduce((sum, it) => {
       const v = it.parsed?.y;
       return sum + (Number.isFinite(v) ? v : 0);
     }, 0);
 
-  return `Total: ${Math.round(total)}`;
+  const idx = items?.[0]?.dataIndex;
+  const source = Number.isFinite(idx) ? annualSource[idx] : "";
+  const totalTxt = Number.isInteger(total) ? String(total) : total.toFixed(2);
+  return source === "prediction"
+    ? `Total: ${totalTxt} · ${ANNUAL_SCENARIO}`
+    : `Total: ${totalTxt}`;
 }
 
           }
@@ -3131,6 +3003,8 @@ function ensureAnnual(){
       }
     }
   });
+
+  attachChartZoom(annualChart);
 }
 
 
@@ -3141,50 +3015,17 @@ function renderAnnual(){
   annualChart.data.datasets[0].data = annualMinor;
   annualChart.data.datasets[1].data = annualModerate;
   annualChart.data.datasets[2].data = annualMajor;
-
-  // ---- Linear trend on TOTAL (minor+moderate+major) ----
-  const lastFullYear = 2025; // adjust if needed
-
-  // Build totals for each year
-  const totalsAll = YEARS.map((y,i)=>
-    (annualMinor[i]||0) + (annualModerate[i]||0) + (annualMajor[i]||0)
-  );
-
-  // Fit only through lastFullYear (so partial current year doesn’t skew)
-  const fit = YEARS
-    .map((y,i)=>({ y, t: totalsAll[i] }))
-    .filter(d => d.y <= lastFullYear);
-
-  // If not enough points, trend = nulls
-  let trend = totalsAll.map(_=>null);
-
-  if(fit.length >= 2){
-    const fitYears  = fit.map(d=>d.y);
-    const fitTotals = fit.map(d=>d.t);
-
-    const meanYear = fitYears.reduce((s,y)=>s+y,0) / fitYears.length;
-    const xsFit = fitYears.map(y => y - meanYear);
-
-    const coeff = linearFit(xsFit, fitTotals);
-
-    if(coeff){
-      // Evaluate trend for ALL YEARS on same centered x-scale
-      const xsAll = YEARS.map(y => y - meanYear);
-      trend = xsAll.map(x => evalLinear(coeff, x));
-    }
-  }
-
-  // dataset index 3 = trend
-  if(annualChart.data.datasets[3]){
-    annualChart.data.datasets[3].data = trend;
-  }
+  annualChart.data.datasets[0].backgroundColor = annualColors("minor");
+  annualChart.data.datasets[1].backgroundColor = annualColors("moderate");
+  annualChart.data.datasets[2].backgroundColor = annualColors("major");
 
   annualChart.update();
   applyAnnualView();
+  syncChartZoomToData(annualChart);
 }
 
 
-/* Timeseries tick labels (daily) */
+
 function buildDailyTickCallbackSkipFirstDay(labels){
   const seenDays = new Set();
   let firstDay = null;
@@ -3200,7 +3041,7 @@ function buildDailyTickCallbackSkipFirstDay(labels){
   };
 }
 
-/* Timeseries chart (Observed + Predicted), with NO LINE across null gaps */
+
 function ensureTsChart(){
   if(tsChart) return;
 
@@ -3217,7 +3058,7 @@ function ensureTsChart(){
           pointHoverRadius:0,
           pointHitRadius:0,
           tension:0.25,
-          spanGaps:false, // do NOT connect across missing obs
+          spanGaps:false, 
           borderColor:"rgba(45,212,191,.9)",
           segment:{
             borderColor:(ctx)=>{
@@ -3237,7 +3078,7 @@ function ensureTsChart(){
           tension:0.25,
           spanGaps:true,
 
-          //   DASHED predicted line
+          
           borderDash:[8,6],
           borderDashOffset:0,
 
@@ -3287,7 +3128,7 @@ function ensureTsChart(){
             color:"rgba(169,182,211,.9)",
             autoSkip:false,
             maxRotation:0,
-            callback:()=>"" // overwritten in updateTsChartFromState()
+            callback:()=>"" 
           },
           grid:{ color:"rgba(255,255,255,.06)" }
         },
@@ -3307,16 +3148,18 @@ function ensureTsChart(){
       }
     }
   });
+
+  attachChartZoom(tsChart);
 }
 
 
-/* Build 15-min obs grid + plot RAW PETSS predictions (no interpolation) */
+
 function isTopOfHourISO(iso){
   const d = new Date(iso);
   return d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0;
 }
 
-// Build 15-min labels only (no values)
+
 function build15MinLabels(startISO, endISO){
   const start = new Date(startISO).getTime();
   const end   = new Date(endISO).getTime();
@@ -3335,28 +3178,24 @@ function updateTsChartFromState(){
   const endISO = nowISO();
   const startObsISO = new Date(new Date(endISO).getTime() - 24*3600*1000).toISOString();
 
-  // last obs timestamp (or now)
+  
   const lastObsT = (STATE.obs24Navd && STATE.obs24Navd.length)
     ? STATE.obs24Navd[STATE.obs24Navd.length - 1].t
     : endISO;
 
-  //   predictions start at NEXT hour
+  
   const lastObsMs = new Date(lastObsT).getTime();
   const predStartMs = floorToHourMs(lastObsMs) + HOUR_MS;
   const predStartISO = new Date(predStartMs).toISOString();
   const predEndISO   = new Date(predStartMs + 72*3600*1000).toISOString();
   const predEndMs    = new Date(predEndISO).getTime();
 
-  //   15-min axis from obs start → forecast end
+  
   const labels = build15MinLabels(startObsISO, predEndISO);
 
-  // -------------------------
-  // Observed (NAVD88) -> 15-min grid -> display
-  // -------------------------
-  const obsGrid = buildFixedGrid15Min_fromAny(STATE.obs24Navd || [], startObsISO, endISO);
-  // obsGrid.labels covers only obs window; we need values over the full label axis
-  // So: map obs points onto the full labels using the same snap logic
-
+  
+  
+  
   const obsMap = new Map();
   for(const p of (STATE.obs24Navd || [])){
     const t = new Date(p.t).getTime();
@@ -3372,15 +3211,15 @@ function updateTsChartFromState(){
     return (v==null) ? null : toDisplayFtFromNavd(v);
   });
 
-  // (optional) keep  spike filter for OBS only (15-min makes sense)
+  
   const obsFiltered = filterSpikes15Min(
     obsValsDisplay.map(v => (Number.isFinite(v) ? v : null)),
     TS_MAX_DELTA_FT
   );
 
-// -------------------------
-// Predicted (MLLW) -> resample to 15-min -> display
-// -------------------------
+
+
+
 const predRaw = (STATE.pred72Mllw || [])
   .map(p => ({ t:p.t, ft:Number(p.ft) }))
   .filter(p=>{
@@ -3390,11 +3229,11 @@ const predRaw = (STATE.pred72Mllw || [])
       && tMs <= predEndMs;
   });
 
-// Resample to 15-min grid (fills in-between so the line can draw)
+
 const predRes = resampleTo15Min_MLLW(predRaw, predStartISO, predEndISO);
 
-// Put resampled predictions onto the FULL axis labels
-const predMap = new Map(); // ms -> ft (MLLW)
+
+const predMap = new Map(); 
 for(let i=0;i<predRes.labels.length;i++){
   const ms = new Date(predRes.labels[i]).getTime();
   const ft = predRes.values[i];
@@ -3409,18 +3248,18 @@ const predValsDisplay = labels.map(iso=>{
 });
 
 
-  // -------------------------
-  // Plot
-  // -------------------------
+  
+  
+  
   ensureTsChart();
   tsChart.data.labels = labels;
-  tsChart.data.datasets[0].data = obsFiltered;     // observed 15-min
-  tsChart.data.datasets[1].data = predValsDisplay; // predicted hourly-only
+  tsChart.data.datasets[0].data = obsFiltered;     
+  tsChart.data.datasets[1].data = predValsDisplay; 
 
   tsChart.options.scales.x.ticks.callback = buildDailyTickCallbackSkipFirstDay(labels);
   tsChart.options.scales.y.title.text = unitText();
 
-  // y-scale includes thresholds
+  
   const {minor, moderate, major} = thresholdsDisplay();
   const ys = [...obsFiltered, ...predValsDisplay].filter(v => Number.isFinite(v));
   ys.push(minor, moderate, major);
@@ -3439,19 +3278,20 @@ const predValsDisplay = labels.map(iso=>{
   tsChart.options.scales.y.ticks.stepSize = STEP;
 
   tsChart.update();
+  syncChartZoomToData(tsChart);
 }
 
-/* =========================
-DOY cumulative flooding — EVENT-BASED
-Uses the SAME peak-event history as:
-- Flooding over the years
-- Average floods per month
-- Historic flooding filter
 
-Source of truth: HIGH_TIDES_NAVD
-========================= */
 
-let DOY_CACHE = null;   // { years, avg, min, max, stageLabel }
+
+
+
+
+
+
+
+
+let DOY_CACHE = null;   
 let doyCumChart = null;
 
 function doyFloodStageDisplayFt(){
@@ -3467,7 +3307,7 @@ function isLeapYear(y){
   return (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
 }
 
-// returns 0..364, or null for Feb 29
+
 function calIndex365(y,m,d){
   if(m === 2 && d === 29) return null;
 
@@ -3481,7 +3321,7 @@ function calIndex365(y,m,d){
 }
 
 function monthStarts365(){
-  const y = 2021; // non-leap
+  const y = 2021; 
   const out = [];
   for(let m=1; m<=12; m++) out.push(calIndex365(y,m,1));
   return out;
@@ -3495,18 +3335,18 @@ function doyIndexToMonthDay(idx){
   return `${m} ${day}`;
 }
 
-/* Build per-year daily event counts from HIGH_TIDES_NAVD.
-   This mirrors your annual chart logic:
-   every event in HIGH_TIDES_NAVD that meets/exceeds Minor counts as 1 event.
-*/
+
+
+
+
 function buildDOYYearDailyCountsFromEvents(eventsNavd){
   const T = THRESH.NAVD88;
-  const byYear = new Map(); // y -> Array(365).fill(0)
+  const byYear = new Map(); 
 
   for(const e of (eventsNavd || [])){
     const ft = Number(e.ft);
     if(!Number.isFinite(ft)) continue;
-    if(ft < T.minorLow) continue; // same threshold logic as annual chart
+    if(ft < T.minorLow) continue; 
 
     const dt = new Date(e.t);
     if(Number.isNaN(dt.getTime())) continue;
@@ -3567,6 +3407,7 @@ function computeDOYStatsFromEvents(eventsNavd){
 
   return {
     years,
+    seriesByYear:cumByYear,
     avg,
     min,
     max,
@@ -3574,9 +3415,9 @@ function computeDOYStatsFromEvents(eventsNavd){
   };
 }
 
-/* Build current-year cumulative series from HIGH_TIDES_NAVD
-   Stops at today so the red line does not flatline into the future.
-*/
+
+
+
 function buildYTDSeriesFromEvents(eventsNavd){
   if(!eventsNavd || !eventsNavd.length) return null;
 
@@ -3619,97 +3460,88 @@ function buildYTDSeriesFromEvents(eventsNavd){
 
 function renderDOYCumPanel(){
   const meta   = document.getElementById("doyMeta");
-  const note   = document.getElementById("doyNote");
   const canvas = document.getElementById("doyCumChart");
   if(!canvas) return;
 
   if(!DOY_CACHE){
     if(meta) meta.textContent = "Loading flood-event history…";
-    if(note) note.textContent = "";
     return;
   }
 
-  const { years, avg, min, max, stageLabel } = DOY_CACHE;
+  const { years, seriesByYear, min, max, stageLabel } = DOY_CACHE;
   const { y: CUR_Y } = getESTParts(new Date());
   const ytd = buildYTDSeriesFromEvents(HIGH_TIDES_NAVD);
 
   if(meta){
     meta.textContent = `${years[0]}–${years[years.length - 1]} · ${stageLabel}`;
   }
-  if(note){
-    note.textContent = "";
-  }
 
   const labels  = Array.from({length:365}, (_,i)=> i+1);
   const mStarts = monthStarts365();
   const mNames  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-  const dsRangeMin = {
-    label: "_rangeMin",
-    data: min,
-    borderWidth: 0,
-    pointRadius: 0,
-    pointHoverRadius: 0,
-    pointHitRadius: 0,
-    showLine: false,
-    order: 0
+  const minYear = years[0];
+  const maxYear = years[years.length - 1];
+  const yearDatasets = (seriesByYear || []).map((yr, idx)=>{
+    const denom = Math.max(1, maxYear - minYear);
+    const t = (yr.y - minYear) / denom;
+    const color = yearGradientColor(t, yr.y === CUR_Y ? 1 : .55);
+    return {
+      label:String(yr.y),
+      data:(yr.y === CUR_Y && ytd) ? ytd : yr.cum,
+      _drawLast:yr.y === CUR_Y,
+      borderWidth:yr.y === CUR_Y ? 4 : 1.4,
+      tension:0.18,
+      borderColor:color,
+      backgroundColor:color,
+      pointRadius:0,
+      pointHoverRadius:0,
+      pointHitRadius:0,
+      spanGaps:false,
+      fill:false,
+      order:yr.y === CUR_Y ? 900 : 20 + idx
+    };
+  });
+
+  const dsMin = {
+    label:"Absolute minimum",
+    data:min,
+    borderWidth:2,
+    borderDash:[6,5],
+    tension:0.2,
+    borderColor:"rgba(234,240,255,.72)",
+    backgroundColor:"rgba(234,240,255,.72)",
+    pointRadius:0,
+    pointHoverRadius:0,
+    pointHitRadius:0,
+    fill:false,
+    order:5
   };
 
-  const dsRangeBand = {
-    label: "Historic Range (min–max)",
-    data: max,
-    borderWidth: 0,
-    pointRadius: 0,
-    pointHoverRadius: 0,
-    pointHitRadius: 0,
-    fill: "-1",
-    backgroundColor: "rgba(255,255,255,0.18)",
-    order: 1
-  };
-
-  const dsAvg = {
-    label: "Average",
-    data: avg,
-    borderWidth: 2,
-    tension: 0.25,
-    borderColor: "rgba(45,212,191,.95)",
-    backgroundColor: "rgba(45,212,191,.95)",
-    pointRadius: 0,
-    pointHoverRadius: 0,
-    pointHitRadius: 0,
-    pointStyle: "rectFilled",
-    pointBackgroundColor: "rgba(45,212,191,.95)",
-    pointBorderColor: "rgba(45,212,191,.95)",
-    pointBorderWidth: 0,
-    fill: false,
-    order: 10
-  };
-
-  const dsCur = {
-    label: String(CUR_Y),
-    data: ytd || new Array(365).fill(null),
-    _drawLast: true,
-    borderWidth: 5,
-    tension: 0.25,
-    borderColor: "#ef4444",
-    backgroundColor: "#ef4444",
-    pointRadius: 0,
-    pointHoverRadius: 0,
-    pointHitRadius: 0,
-    spanGaps: false,
-    fill: false,
-    order: 999
+  const dsMax = {
+    label:"Absolute maximum",
+    data:max,
+    borderWidth:2,
+    borderDash:[6,5],
+    tension:0.2,
+    borderColor:"rgba(255,255,255,.95)",
+    backgroundColor:"rgba(255,255,255,.95)",
+    pointRadius:0,
+    pointHoverRadius:0,
+    pointHitRadius:0,
+    fill:false,
+    order:6
   };
 
   const data = {
     labels,
-    datasets: [dsRangeMin, dsRangeBand, dsAvg, dsCur]
+    datasets: [...yearDatasets, dsMin, dsMax]
   };
 
   const options = {
     responsive:true,
     maintainAspectRatio:false,
-    interaction:{mode:"index", intersect:false},
+    interaction:{mode:"nearest", intersect:false},
     elements:{
       point:{
         radius:0,
@@ -3727,7 +3559,7 @@ function renderDOYCumPanel(){
           usePointStyle:true,
           filter:(legendItem, chartData)=>{
             const label = chartData?.datasets?.[legendItem.datasetIndex]?.label || "";
-            return label !== "_rangeMin";
+            return label === "Absolute minimum" || label === "Absolute maximum" || label === String(CUR_Y);
           }
         }
       },
@@ -3741,10 +3573,6 @@ function renderDOYCumPanel(){
           label:(ctx)=>{
             const v = ctx.parsed?.y;
             if(!Number.isFinite(v)) return null;
-
-            const want = new Set(["Average", String(CUR_Y)]);
-            if(!want.has(ctx.dataset.label)) return null;
-
             return `${ctx.dataset.label}: ${Math.round(v * 100) / 100}`;
           }
         }
@@ -3772,6 +3600,7 @@ function renderDOYCumPanel(){
 
   if(doyCumChart) doyCumChart.destroy();
   doyCumChart = new Chart(canvas.getContext("2d"), { type:"line", data, options });
+  attachChartZoom(doyCumChart);
 }
 
 function refreshDOYFromHistory(){
@@ -3779,50 +3608,10 @@ function refreshDOYFromHistory(){
   renderDOYCumPanel();
 }
 
-/* =========================
-Historic filter from TXT
-========================= */
-async function hydrateHistoricFromTXT(){
-  // 1) Base history from TXT (NAVD88 daily “events”)
-  const txtEvents = (DAILY_EVENTS_NAVD||[]).map(e=>({
-    t:e.t, ft:e.ft, kind:e.kind, y:e.y, m:e.m, d:e.d,
-    source:"TXT"
-  }));
-
-  // 2) Live peaks from USGS since Jan 1 2026 (NAVD88)
-  let livePeaks = [];
-  try{
-    livePeaks = await buildLiveFloodPeaksSince2026();
-  }catch(e){
-    console.error("Live peaks build failed:", e);
-    livePeaks = [];
-  }
-
-  // 3) Combine
-  const combined = [...txtEvents, ...livePeaks];
-
-  // 4) De-duplicate by timestamp+height (prevents duplicates if anything overlaps)
-  const seen = new Set();
-  HIGH_TIDES_NAVD = combined.filter(r=>{
-    const key = `${r.t}|${Number(r.ft).toFixed(3)}`;
-    if(seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-
-  // 5) Newest first for “recent”
-  HIGH_TIDES_NAVD.sort((a,b)=>new Date(b.t)-new Date(a.t));
-
-  // 6) Refresh UI pieces that depend on HIGH_TIDES_NAVD
-  applyFilter();
-  if(histMeta) histMeta.textContent = "";
-}
-
-
 function renderHist(rowsNavd){
   histBody.innerHTML = "";
 
-  const LIMIT = 10;                      //   only show 10
+  const LIMIT = 10;                      
   const show = rowsNavd.slice(0, LIMIT);
 
   for(const r of show){
@@ -3842,22 +3631,18 @@ function renderHist(rowsNavd){
 }
 
 function applyFilter(){
-    const help = document.getElementById("histHelp");
-  if(help) help.textContent = "Use any combination: Elevation range and/or Date range. Leave fields blank to ignore them.";
-
-  // NEW: range inputs (display datum)
   const minDisplay = parseFloat(minElevEl.value);
   const maxDisplay = parseFloat(maxElevEl.value);
 
-  // NEW: date inputs (YYYY-MM-DD) — inclusive
+  
   const fromStr = (fromDateEl?.value || "").trim();
   const toStr   = (toDateEl?.value   || "").trim();
 
-  // Convert elev range -> NAVD ( data are NAVD)
+  
   const minNavd = Number.isFinite(minDisplay) ? fromDisplayToNavd(minDisplay) : -Infinity;
   const maxNavd = Number.isFinite(maxDisplay) ? fromDisplayToNavd(maxDisplay) :  Infinity;
 
-  // Build date bounds in ms (inclusive). Using UTC parsing is fine since we compare ISO times.
+  
   const fromMs = fromStr ? new Date(fromStr + "T00:00:00Z").getTime() : -Infinity;
   const toMs   = toStr   ? new Date(toStr   + "T23:59:59Z").getTime() :  Infinity;
 
@@ -3881,9 +3666,9 @@ function applyFilter(){
   renderHist(rows);
 }
 
-/* =========================
-Monthly averages
-========================= */
+
+
+
 function monthNameFromIndex(i){
   const d = new Date(Date.UTC(2020, i-1, 15, 0, 0, 0));
   return fmtMonthName.format(d);
@@ -4019,13 +3804,13 @@ function ensureMonthAvgChart(){
           grid:{color:"rgba(255,255,255,.06)"}
         },
 
-        // ⭐ FIX: force hundredths on y-axis
+        
         y:{
           stacked:true,
           ticks:{
             color:"rgba(169,182,211,.9)",
 
-            // 👇 THIS controls axis numbers
+            
             callback:(value)=> Number(value).toFixed(2)
           },
           grid:{color:"rgba(255,255,255,.06)"}
@@ -4033,6 +3818,8 @@ function ensureMonthAvgChart(){
       }
     }
   });
+
+  attachChartZoom(monthAvgChart);
 }
 
 function renderMonthAveragesChart(monthStats){
@@ -4042,6 +3829,7 @@ function renderMonthAveragesChart(monthStats){
   monthAvgChart.data.datasets[1].data = monthStats.map(r=>r.avgModerate);
   monthAvgChart.data.datasets[2].data = monthStats.map(r=>r.avgMajor);
   monthAvgChart.update();
+  syncChartZoomToData(monthAvgChart);
     applyMonthView();
 }
 
@@ -4062,56 +3850,18 @@ function updateMonthAveragesFromHistory(){
   renderMonthAveragesChart(stats);
 }
 
-function countEventsFromHistoryForYear(year){
-  const T = THRESH.NAVD88;
-  const out = { minor: 0, moderate: 0, major: 0 };
-
-  for(const e of (HIGH_TIDES_NAVD || [])){
-    const y = Number.isFinite(+e.y) ? +e.y : new Date(e.t).getUTCFullYear();
-    const ft = Number(e.ft);
-
-    if(!Number.isFinite(y) || !Number.isFinite(ft)) continue;
-    if(y !== year) continue;
-
-    if(ft >= T.majorLow) out.major++;
-    else if(ft >= T.moderateLow) out.moderate++;
-    else if(ft >= T.minorLow) out.minor++;
-  }
-
-  return out;
-}
-/* =========================
-LIVE: current conditions + daily range + overwrite current year bar
-========================= */
 async function updateLiveAndAnnualCounts(){
-  // Build completed-year bars from whatever history is currently loaded.
-  // The current year is updated from the daily peaks cache, not by pulling a huge
-  // Jan 1 -> now IV request in the browser.
-  buildAnnualArraysFromHistory_completedYears();
+  buildAnnualArrays();
   renderAnnual();
 
-  const { y: curYear } = getESTParts(new Date());
-
-  // ---- Current-year flooding bar: history-based (peaks JSON) ----
-  if(Array.isArray(HIGH_TIDES_NAVD) && HIGH_TIDES_NAVD.length){
-    const counts = countEventsFromHistoryForYear(curYear);
-    overwriteCurrentYearBarWithLiveCounts(counts);
-    renderAnnual();
-  }
-
-  // ---- Live/recent observed series (NAVD88) ----
-  // This intentionally uses period-based recent windows. It avoids the May/late-year
-  // failure mode caused by requesting too many 15-minute USGS observations at once.
   const recent = await fetchRecentObservedSeriesWithFallback();
   if(!recent.length) throw new Error("no recent water-level data returned from USGS");
 
-  STATE.ytdNavd  = recent;
   STATE.lastNavd = recent[recent.length - 1];
 
   const ageHours = hoursSinceISO(STATE.lastNavd.t);
   const isStale = ageHours > 6;
 
-  // ---- Current water level card ----
   curFtEl.textContent = toDisplayFtFromNavd(STATE.lastNavd.ft).toFixed(2);
   curMetaEl.textContent = "Updated: " + fmtESTFull(STATE.lastNavd.t);
 
@@ -4127,7 +3877,6 @@ async function updateLiveAndAnnualCounts(){
 
   setCurrentNumberColorByNavd(STATE.lastNavd.ft);
 
-  // ---- Daily range (today only if today's data actually exists) ----
   const todayStart = startOfTodayLocalTZ_ISO();
   if(dailyRangeDateEl){
     dailyRangeDateEl.textContent = fmtNiceDate(todayStart);
@@ -4154,58 +3903,41 @@ async function updateLiveAndAnnualCounts(){
   }
 }
 
-/* =========================
-Timeseries update (observed + predictions)
-- Observed: last 24h
-- Predictions: 72h starting at next 15-min tick after last observation
-========================= */
+
+
+
+
+
 async function updateTimeseries(){
   const end = new Date();
   const start = new Date(end.getTime() - 24*3600*1000);
 
-  // Observed: last 24h (NAVD88)
+  
   const obs = await fetchObservedSeries({
     startISO: start.toISOString(),
     endISO: end.toISOString()
   });
   STATE.obs24Navd = obs || [];
 
-// Forecast: PETSS (MLLW)
+
 try {
-  const { issuedTime, points } = await fetchPETSSForecast_MLLW({ hours: 72 });
+  const { points } = await fetchPETSSForecast_MLLW({ hours: 72 });
   STATE.pred72Mllw = points || [];
 
-  // 🔕 no message shown under chart
-  if (fcNote) fcNote.textContent = "";
-
 } catch (e) {
-  console.error("PETSS forecast failed:", e);
+  console.warn("PETSS forecast failed:", e);
   STATE.pred72Mllw = [];
-
-  // 🔕 still show nothing even if PETSS fails
-  if (fcNote) fcNote.textContent = "";
 }
 
 
-  //   IMPORTANT: actually render the chart + 24h range card after STATE updates
+  
   updateTsChartFromState();
-  updatePred24RangeCard();
   updateFloodOutlook48();
 }
 
-/* =========================
-JSON-BACKED HISTORY (NAVD88 PEAKS)
-========================= */
 
-const PEAKS_JSON_FILE = "peaks_navd88.json";
-const PEAKS_JSON_PATH_CANDIDATES = [
-  `data/${PEAKS_JSON_FILE}`,
-  `./data/${PEAKS_JSON_FILE}`,
-  `../data/${PEAKS_JSON_FILE}`,
-  `/data/${PEAKS_JSON_FILE}`
-];
 
-let PEAKS_JSON_URL = PEAKS_JSON_PATH_CANDIDATES[0];
+
 
 async function resolvePeaksJsonUrl(){
   const errs = [];
@@ -4244,7 +3976,7 @@ function normalizePeaksJson(json){
     const ft = Number(ftRaw);
     if(!Number.isFinite(ft)) continue;
 
-    // Derive y/m/d if missing ( monthly stats like having these)
+    
     const y = r?.y ?? r?.year ?? dt.getUTCFullYear();
     const m = r?.m ?? r?.month ?? (dt.getUTCMonth() + 1);
     const d = r?.d ?? r?.day ?? dt.getUTCDate();
@@ -4262,9 +3994,9 @@ function normalizePeaksJson(json){
 
 async function initJSONBackedHistory(){
   const { json } = await resolvePeaksJsonUrl();
-  const peaks = normalizePeaksJson(json); // NAVD88
+  const peaks = normalizePeaksJson(json); 
 
-  // Only build live peaks if JSON does NOT already contain 2026+
+  
   const has2026Plus = peaks.some(e => {
     const y = new Date(e.t).getUTCFullYear();
     return Number.isFinite(y) && y >= 2026;
@@ -4275,17 +4007,17 @@ async function initJSONBackedHistory(){
     try{
       livePeaks = await buildLiveFloodPeaksSince2026();
     }catch(e){
-      console.error("Live peaks build failed:", e);
+      console.warn("Live peaks build failed:", e);
       livePeaks = [];
     }
   }
 
-  // Combine (may contain overlaps)
+  
   const combined = [...peaks, ...livePeaks];
 
-  /* --- HARD DEDUPE: keep max per (EST day + tide-cycle bucket) --- */
+  
   function estParts(iso){
-    const p = fmtPartsYMD.formatToParts(new Date(iso)); // TZ = Etc/GMT+5
+    const p = fmtPartsYMD.formatToParts(new Date(iso)); 
     return {
       y: p.find(x=>x.type==="year")?.value,
       m: p.find(x=>x.type==="month")?.value,
@@ -4329,167 +4061,101 @@ async function initJSONBackedHistory(){
 
   HIGH_TIDES_NAVD = Array.from(bestByKey.values());
 
-  // Newest first
+  
   HIGH_TIDES_NAVD.sort((a,b)=>new Date(b.t)-new Date(a.t));
 
-  // Refresh UI that depends on HIGH_TIDES_NAVD
+  
  applyFilter();
 updateMonthAveragesFromHistory();
-buildAnnualArraysFromHistory_completedYears();
+buildAnnualArrays();
 renderAnnual();
 refreshDOYFromHistory();
-renderAnnualSparseDataNote();
 
   if(histMeta) histMeta.textContent = "";
   if(monthAvgMeta) monthAvgMeta.textContent = "";
 }
 
-async function initTXTBackedHistory(){
-  await loadDailyTidesFromTXT();
-  await hydrateHistoricFromTXT();
-  updateMonthAveragesFromHistory();
-  buildAnnualArraysFromHistory_completedYears();
-  renderAnnual();
-  refreshDOYFromHistory();
-  renderAnnualSparseDataNote();
-}
 
-function compressYearRanges(years){
-  if(!years || !years.length) return "";
+const GAUGE_DISPLAY_NAME = "Stone Harbor";
+const DEFAULT_GAUGE_ID = "01411360";
+const DEFAULT_GAUGE_ZOOM = 12;
+const USGS_SITE = "01411360";
+const USGS_PARAM_PRIMARY = "72279";
+const COOPS_STATION = "8535581";
+const COOPS_APP = "cupajoe.live";
+const NOAA_STATION_TIDECLOCK = "8535581";
+const CREST_WINDOW_HOURS = 2;
+const REQUIRE_WITHIN_HOURS = 1;
+const LIVE_START_ISO = "2026-01-01T00:00:00Z";
+const ALERT_POINT = { lat:39.2325, lon:-75.0380 };
+let DISPLAY_DATUM = "MLLW";
+const DATUMS = ["MLLW","NAVD88","MSL","MHHW"];
+const OFFSET_FROM_MLLW = { MLLW:0.00, NAVD88:-2.71, MSL:-2.31, MHHW:-4.74 };
+const THRESH = {
+  MLLW:{ minorLow:6.10, moderateLow:7.10, majorLow:8.10 },
+  NAVD88:{ minorLow:3.44, moderateLow:4.44, majorLow:5.44 },
+  MSL:{ minorLow:3.79, moderateLow:4.79, majorLow:5.79 },
+  MHHW:{ minorLow:1.36, moderateLow:2.36, majorLow:3.36 }
+};
+const TOP_TEN_MLLW = [{"date":"10-29-2012","ft":9.39},{"date":"01-23-2016","ft":8.96},{"date":"11-13-2009","ft":8.1},{"date":"08-21-2025","ft":8.07},{"date":"02-17-2003","ft":8.03},{"date":"08-27-2011","ft":7.96},{"date":"10-27-2018","ft":7.93},{"date":"05-12-2008","ft":7.87},{"date":"10-12-2025","ft":7.84},{"date":"10-02-2015","ft":7.71}];
+const GAUGES = [{"name":"Greenwich (Cohansey River at Greenwich)","agency":"USGS","id":"01413038","lat":39.379167,"lon":-75.355278},{"name":"Bivalve (Maurice River at Bivalve)","agency":"USGS","id":"01412150","lat":39.2325,"lon":-75.032778},{"name":"South Dennis (Sluice Creek at South Dennis)","agency":"USGS","id":"01411435","lat":39.161667,"lon":-74.832222},{"name":"Cape May Harbor (Cape May Harbor at Cape May)","agency":"USGS","id":"01411390","lat":38.948333,"lon":-74.888889},{"name":"Stone Harbor (Great Channel at Stone Harbor)","agency":"USGS","id":"01411360","lat":39.056944,"lon":-74.765},{"name":"Avalon (Ingram Thorofare at Avalon)","agency":"USGS","id":"01411355","lat":39.108611,"lon":-74.741944},{"name":"Sea Isle (Ludlum Thorofare at Sea Isle City)","agency":"USGS","id":"01411350","lat":39.157778,"lon":-74.697778},{"name":"Ocean City (Great Egg Harbor Bay at Ocean City)","agency":"USGS","id":"01411320","lat":39.285833,"lon":-74.575556},{"name":"Margate (Beach Thorofare at Margate)","agency":"USGS","id":"01411330","lat":39.3375,"lon":-74.513056},{"name":"Atlantic City (Inside Thorofare at US Route 40)","agency":"USGS","id":"01410560","lat":39.353611,"lon":-74.456944},{"name":"Absecon Channel at Atlantic City","agency":"USGS","id":"01410600","lat":39.377778,"lon":-74.423611},{"name":"Absecon Creek at Absecon","agency":"USGS","id":"01410510","lat":39.423056,"lon":-74.5},{"name":"Little Egg Inlet at Little Egg Harbor","agency":"USGS","id":"01409335","lat":39.508889,"lon":-74.324722},{"name":"Ship Bottom (East Thorofare at Ship Bottom)","agency":"USGS","id":"01409146","lat":39.654167,"lon":-74.185833},{"name":"Waretown (Barnegat Bay near Waretown)","agency":"USGS","id":"01409124","lat":39.77,"lon":-74.188333},{"name":"Barnegat Light (Barnegat Bay at Barnegat Light)","agency":"USGS","id":"01409125","lat":39.760833,"lon":-74.110556},{"name":"Seaside Heights (Barnegat Bay at Route 37 at Seaside Heights)","agency":"USGS","id":"01408748","lat":39.941389,"lon":-74.083889},{"name":"Mantoloking (Barnegat Bay at Mantoloking)","agency":"USGS","id":"01408168","lat":40.040556,"lon":-74.054444},{"name":"Manasquan (Watson Creek at Manasquan)","agency":"USGS","id":"01408048","lat":40.111667,"lon":-74.044722},{"name":"Belmar (Shark River at Belmar)","agency":"USGS","id":"01407770","lat":40.185556,"lon":-74.026111},{"name":"Sea Bright (Shrewsbury River at Sea Bright)","agency":"USGS","id":"01407600","lat":40.365556,"lon":-73.974722},{"name":"Keansburg (Raritan Bay at Keansburg)","agency":"USGS","id":"01407081","lat":40.449167,"lon":-74.1475},{"name":"Perth Amboy (Arthur Kill at Perth Amboy)","agency":"USGS","id":"01396060","lat":40.503889,"lon":-74.262222},{"name":"Cape May Canal at Lower Township","agency":"NOAA","id":"8536110","lat":38.96833,"lon":-74.96},{"name":"Atlantic City at Steel Pier (Ocean)","agency":"NOAA","id":"8534720","lat":39.355,"lon":-74.4183},{"name":"Sandy Hook","agency":"NOAA","id":"8531680","lat":40.4667,"lon":-74.01},{"name":"Reedy Point","agency":"NOAA","id":"8551910","lat":39.558333,"lon":-75.573333},{"name":"Delaware River at Philadelphia (Washington Street)","agency":"NOAA","id":"8545240","lat":39.9333,"lon":-75.1417},{"name":"Delaware River at Burlington","agency":"NOAA","id":"8539094","lat":40.08,"lon":-74.873333},{"name":"Delaware River at Marcus Hook","agency":"NOAA","id":"8540433","lat":39.81167,"lon":-75.40944},{"name":"Bergen Point","agency":"NOAA","id":"8519483","lat":40.63667,"lon":-74.14167},{"name":"Delaware River at Philadelphia (Bridesburg)","agency":"NOAA","id":"8546252","lat":39.98333,"lon":-75.075},{"name":"Delaware River at Newbold Island","agency":"NOAA","id":"8548989","lat":40.13731,"lon":-74.75167}];
+const FUTURE_SCENARIOS = [{"id":"Baseline","label":"Baseline"},{"id":"Low","label":"Low"},{"id":"IntermediateLow","label":"Intermediate Low"},{"id":"Intermediate","label":"Intermediate"},{"id":"IntermediateHigh","label":"Intermediate High"},{"id":"High","label":"High"}];
+const ATLANTIC_CITY_ANNUAL_COUNTS = [{"year":1911,"minor":0,"moderate":0,"major":0},{"year":1912,"minor":0,"moderate":0,"major":0},{"year":1913,"minor":0,"moderate":0,"major":0},{"year":1914,"minor":1,"moderate":0,"major":0},{"year":1915,"minor":1,"moderate":0,"major":0},{"year":1916,"minor":0,"moderate":0,"major":0},{"year":1917,"minor":0,"moderate":0,"major":0},{"year":1918,"minor":4,"moderate":0,"major":0},{"year":1919,"minor":1,"moderate":0,"major":0},{"year":1920,"minor":3,"moderate":0,"major":0},{"year":1921,"minor":0,"moderate":0,"major":0},{"year":1922,"minor":0,"moderate":0,"major":0},{"year":1923,"minor":0,"moderate":0,"major":0},{"year":1924,"minor":2,"moderate":0,"major":0},{"year":1925,"minor":0,"moderate":0,"major":0},{"year":1926,"minor":0,"moderate":0,"major":0},{"year":1927,"minor":1,"moderate":0,"major":0},{"year":1928,"minor":0,"moderate":0,"major":0},{"year":1929,"minor":0,"moderate":0,"major":0},{"year":1930,"minor":0,"moderate":0,"major":0},{"year":1931,"minor":3,"moderate":0,"major":0},{"year":1932,"minor":2,"moderate":0,"major":0},{"year":1933,"minor":7,"moderate":0,"major":0},{"year":1934,"minor":0,"moderate":0,"major":0},{"year":1935,"minor":2,"moderate":0,"major":0},{"year":1936,"minor":0,"moderate":0,"major":0},{"year":1937,"minor":1,"moderate":0,"major":0},{"year":1938,"minor":0,"moderate":0,"major":0},{"year":1939,"minor":2,"moderate":0,"major":0},{"year":1940,"minor":4,"moderate":0,"major":0},{"year":1941,"minor":0,"moderate":0,"major":0},{"year":1942,"minor":1,"moderate":0,"major":0},{"year":1943,"minor":4,"moderate":0,"major":0},{"year":1944,"minor":1,"moderate":1,"major":1},{"year":1945,"minor":4,"moderate":0,"major":0},{"year":1946,"minor":1,"moderate":0,"major":0},{"year":1947,"minor":1,"moderate":1,"major":0},{"year":1948,"minor":1,"moderate":0,"major":0},{"year":1949,"minor":1,"moderate":0,"major":0},{"year":1950,"minor":2,"moderate":0,"major":1},{"year":1951,"minor":1,"moderate":0,"major":0},{"year":1952,"minor":0,"moderate":0,"major":0},{"year":1953,"minor":2,"moderate":1,"major":0},{"year":1954,"minor":1,"moderate":0,"major":0},{"year":1955,"minor":4,"moderate":0,"major":0},{"year":1956,"minor":3,"moderate":0,"major":0},{"year":1957,"minor":0,"moderate":0,"major":0},{"year":1958,"minor":2,"moderate":0,"major":0},{"year":1959,"minor":2,"moderate":0,"major":0},{"year":1960,"minor":1,"moderate":0,"major":0},{"year":1961,"minor":11,"moderate":1,"major":0},{"year":1962,"minor":4,"moderate":1,"major":3},{"year":1963,"minor":1,"moderate":0,"major":0},{"year":1964,"minor":1,"moderate":0,"major":0},{"year":1965,"minor":1,"moderate":0,"major":0},{"year":1966,"minor":0,"moderate":1,"major":0},{"year":1967,"minor":6,"moderate":0,"major":0},{"year":1968,"minor":5,"moderate":0,"major":0},{"year":1969,"minor":3,"moderate":0,"major":0},{"year":1970,"minor":null,"moderate":null,"major":null},{"year":1971,"minor":4,"moderate":0,"major":0},{"year":1972,"minor":9,"moderate":2,"major":0},{"year":1973,"minor":7,"moderate":1,"major":0},{"year":1974,"minor":6,"moderate":0,"major":0},{"year":1975,"minor":0,"moderate":0,"major":0},{"year":1976,"minor":1,"moderate":0,"major":1},{"year":1977,"minor":4,"moderate":1,"major":0},{"year":1978,"minor":5,"moderate":0,"major":0},{"year":1979,"minor":2,"moderate":0,"major":0},{"year":1980,"minor":4,"moderate":1,"major":0},{"year":1981,"minor":3,"moderate":1,"major":0},{"year":1982,"minor":2,"moderate":0,"major":0},{"year":1983,"minor":7,"moderate":0,"major":0},{"year":1984,"minor":6,"moderate":1,"major":0},{"year":1985,"minor":2,"moderate":0,"major":0},{"year":1986,"minor":8,"moderate":0,"major":0},{"year":1987,"minor":5,"moderate":1,"major":0},{"year":1988,"minor":2,"moderate":0,"major":0},{"year":1989,"minor":7,"moderate":0,"major":0},{"year":1990,"minor":6,"moderate":0,"major":0},{"year":1991,"minor":6,"moderate":3,"major":0},{"year":1992,"minor":10,"moderate":8,"major":1},{"year":1993,"minor":25,"moderate":0,"major":0},{"year":1994,"minor":5,"moderate":1,"major":0},{"year":1995,"minor":6,"moderate":1,"major":0},{"year":1996,"minor":19,"moderate":2,"major":0},{"year":1997,"minor":15,"moderate":1,"major":0},{"year":1998,"minor":15,"moderate":2,"major":0},{"year":1999,"minor":4,"moderate":0,"major":0},{"year":2000,"minor":9,"moderate":1,"major":0},{"year":2001,"minor":11,"moderate":0,"major":0},{"year":2002,"minor":7,"moderate":0,"major":0},{"year":2003,"minor":12,"moderate":2,"major":0},{"year":2004,"minor":9,"moderate":0,"major":0},{"year":2005,"minor":21,"moderate":1,"major":0},{"year":2006,"minor":15,"moderate":2,"major":0},{"year":2007,"minor":19,"moderate":0,"major":0},{"year":2008,"minor":17,"moderate":1,"major":0},{"year":2009,"minor":30,"moderate":5,"major":0},{"year":2010,"minor":34,"moderate":0,"major":0},{"year":2011,"minor":25,"moderate":1,"major":0},{"year":2012,"minor":25,"moderate":1,"major":2},{"year":2013,"minor":24,"moderate":0,"major":0},{"year":2014,"minor":29,"moderate":2,"major":0},{"year":2015,"minor":12,"moderate":1,"major":0},{"year":2016,"minor":33,"moderate":4,"major":0},{"year":2017,"minor":36,"moderate":2,"major":0},{"year":2018,"minor":43,"moderate":3,"major":0},{"year":2019,"minor":34,"moderate":3,"major":0},{"year":2020,"minor":40,"moderate":1,"major":0},{"year":2021,"minor":33,"moderate":2,"major":0},{"year":2022,"minor":31,"moderate":4,"major":0},{"year":2023,"minor":56,"moderate":2,"major":0},{"year":2024,"minor":64,"moderate":5,"major":0},{"year":2025,"minor":28,"moderate":0,"major":0}];
+const FUTURE_FLOOD_PREDICTIONS = {"Baseline":[{"year":2026,"minorMean":45.89,"minorRange":"34 - 59","moderateMean":4.11,"moderateRange":"1 - 8","majorMean":0.32,"majorRange":"0 - 2"},{"year":2027,"minorMean":48.12,"minorRange":"36 - 61","moderateMean":4.33,"moderateRange":"1 - 9","majorMean":0.37,"majorRange":"0 - 2"},{"year":2028,"minorMean":50.44,"minorRange":"38 - 64","moderateMean":4.53,"moderateRange":"1 - 9","majorMean":0.42,"majorRange":"0 - 2"},{"year":2029,"minorMean":53.33,"minorRange":"40 - 67","moderateMean":4.72,"moderateRange":"1 - 9","majorMean":0.43,"majorRange":"0 - 2"},{"year":2030,"minorMean":56.17,"minorRange":"43 - 70","moderateMean":4.81,"moderateRange":"1 - 9","majorMean":0.47,"majorRange":"0 - 2"},{"year":2031,"minorMean":59,"minorRange":"45 - 73","moderateMean":5.07,"moderateRange":"1 - 10","majorMean":0.48,"majorRange":"0 - 2"},{"year":2032,"minorMean":61.83,"minorRange":"48 - 77","moderateMean":5.29,"moderateRange":"1 - 10","majorMean":0.53,"majorRange":"0 - 2"},{"year":2033,"minorMean":64.57,"minorRange":"50 - 79","moderateMean":5.48,"moderateRange":"1 - 10","majorMean":0.55,"majorRange":"0 - 2"},{"year":2034,"minorMean":67.72,"minorRange":"53 - 83","moderateMean":5.71,"moderateRange":"2 - 11","majorMean":0.55,"majorRange":"0 - 2"},{"year":2035,"minorMean":70.82,"minorRange":"56 - 86","moderateMean":6.06,"moderateRange":"2 - 11","majorMean":0.56,"majorRange":"0 - 2"},{"year":2036,"minorMean":74.11,"minorRange":"59 - 90","moderateMean":6.4,"moderateRange":"2 - 12","majorMean":0.56,"majorRange":"0 - 2"},{"year":2037,"minorMean":76.92,"minorRange":"62 - 93","moderateMean":6.75,"moderateRange":"2 - 12","majorMean":0.57,"majorRange":"0 - 2"},{"year":2038,"minorMean":80.51,"minorRange":"65 - 97","moderateMean":7.15,"moderateRange":"2 - 13","majorMean":0.61,"majorRange":"0 - 2"},{"year":2039,"minorMean":84.11,"minorRange":"68 - 101","moderateMean":7.39,"moderateRange":"3 - 13","majorMean":0.67,"majorRange":"0 - 3"},{"year":2040,"minorMean":87.64,"minorRange":"71 - 105","moderateMean":7.73,"moderateRange":"3 - 14","majorMean":0.68,"majorRange":"0 - 3"},{"year":2041,"minorMean":91.32,"minorRange":"75 - 108","moderateMean":8.05,"moderateRange":"3 - 14","majorMean":0.67,"majorRange":"0 - 3"},{"year":2042,"minorMean":95.39,"minorRange":"79 - 113","moderateMean":8.45,"moderateRange":"3 - 15","majorMean":0.69,"majorRange":"0 - 3"},{"year":2043,"minorMean":99.61,"minorRange":"83 - 117","moderateMean":8.82,"moderateRange":"4 - 15","majorMean":0.76,"majorRange":"0 - 3"},{"year":2044,"minorMean":104.06,"minorRange":"87 - 122","moderateMean":9.44,"moderateRange":"4 - 16","majorMean":0.83,"majorRange":"0 - 3"},{"year":2045,"minorMean":107.96,"minorRange":"90 - 126","moderateMean":9.82,"moderateRange":"4 - 16","majorMean":0.83,"majorRange":"0 - 3"},{"year":2046,"minorMean":112.25,"minorRange":"94 - 131","moderateMean":10.37,"moderateRange":"5 - 17","majorMean":0.88,"majorRange":"0 - 3"},{"year":2047,"minorMean":116.52,"minorRange":"98 - 135","moderateMean":10.96,"moderateRange":"5 - 18","majorMean":0.96,"majorRange":"0 - 3"},{"year":2048,"minorMean":121.48,"minorRange":"103 - 140","moderateMean":11.48,"moderateRange":"5 - 18","majorMean":1.08,"majorRange":"0 - 3"},{"year":2049,"minorMean":126.64,"minorRange":"108 - 146","moderateMean":11.74,"moderateRange":"6 - 19","majorMean":1.26,"majorRange":"0 - 4"},{"year":2050,"minorMean":131.45,"minorRange":"113 - 151","moderateMean":12.39,"moderateRange":"6 - 20","majorMean":1.33,"majorRange":"0 - 4"},{"year":2051,"minorMean":136.09,"minorRange":"117 - 156","moderateMean":13.11,"moderateRange":"7 - 21","majorMean":1.41,"majorRange":"0 - 4"},{"year":2052,"minorMean":141.82,"minorRange":"122 - 162","moderateMean":13.85,"moderateRange":"7 - 21","majorMean":1.43,"majorRange":"0 - 4"},{"year":2053,"minorMean":146.24,"minorRange":"127 - 166","moderateMean":14.17,"moderateRange":"7 - 22","majorMean":1.57,"majorRange":"0 - 4"},{"year":2054,"minorMean":151.22,"minorRange":"131 - 172","moderateMean":14.67,"moderateRange":"8 - 23","majorMean":1.76,"majorRange":"0 - 5"},{"year":2055,"minorMean":157.49,"minorRange":"137 - 178","moderateMean":15.34,"moderateRange":"8 - 23","majorMean":1.88,"majorRange":"0 - 5"},{"year":2056,"minorMean":163.24,"minorRange":"143 - 184","moderateMean":16.16,"moderateRange":"9 - 24","majorMean":1.93,"majorRange":"0 - 5"},{"year":2057,"minorMean":168.03,"minorRange":"147 - 189","moderateMean":17.06,"moderateRange":"10 - 25","majorMean":1.95,"majorRange":"0 - 5"},{"year":2058,"minorMean":174.54,"minorRange":"154 - 196","moderateMean":18.04,"moderateRange":"10 - 27","majorMean":1.94,"majorRange":"0 - 5"},{"year":2059,"minorMean":180.54,"minorRange":"160 - 202","moderateMean":18.96,"moderateRange":"11 - 28","majorMean":2.05,"majorRange":"0 - 5"},{"year":2060,"minorMean":187.38,"minorRange":"166 - 209","moderateMean":19.89,"moderateRange":"12 - 29","majorMean":2.11,"majorRange":"0 - 5"},{"year":2061,"minorMean":192.62,"minorRange":"171 - 214","moderateMean":21.27,"moderateRange":"13 - 30","majorMean":2.18,"majorRange":"0 - 5"},{"year":2062,"minorMean":198.46,"minorRange":"177 - 220","moderateMean":22.31,"moderateRange":"14 - 32","majorMean":2.32,"majorRange":"0 - 6"},{"year":2063,"minorMean":203.85,"minorRange":"182 - 226","moderateMean":23.72,"moderateRange":"15 - 33","majorMean":2.33,"majorRange":"0 - 6"},{"year":2064,"minorMean":210.51,"minorRange":"189 - 233","moderateMean":25.08,"moderateRange":"16 - 35","majorMean":2.38,"majorRange":"0 - 6"},{"year":2065,"minorMean":215.26,"minorRange":"193 - 238","moderateMean":26.76,"moderateRange":"17 - 37","majorMean":2.46,"majorRange":"0 - 6"},{"year":2066,"minorMean":220.9,"minorRange":"199 - 243","moderateMean":28.23,"moderateRange":"19 - 39","majorMean":2.7,"majorRange":"0 - 6"},{"year":2067,"minorMean":226.07,"minorRange":"204 - 249","moderateMean":29.89,"moderateRange":"20 - 41","majorMean":2.86,"majorRange":"0 - 7"},{"year":2068,"minorMean":232.48,"minorRange":"210 - 255","moderateMean":31.75,"moderateRange":"22 - 43","majorMean":3.04,"majorRange":"0 - 7"},{"year":2069,"minorMean":236.46,"minorRange":"214 - 259","moderateMean":33.1,"moderateRange":"23 - 44","majorMean":3.39,"majorRange":"0 - 7"},{"year":2070,"minorMean":241.91,"minorRange":"219 - 265","moderateMean":34.65,"moderateRange":"24 - 46","majorMean":3.51,"majorRange":"0 - 8"},{"year":2071,"minorMean":247.22,"minorRange":"224 - 270","moderateMean":36.4,"moderateRange":"25 - 48","majorMean":3.72,"majorRange":"1 - 8"},{"year":2072,"minorMean":253.65,"minorRange":"231 - 277","moderateMean":38.24,"moderateRange":"27 - 50","majorMean":3.9,"majorRange":"1 - 8"},{"year":2073,"minorMean":258.31,"minorRange":"235 - 282","moderateMean":40.1,"moderateRange":"29 - 52","majorMean":4.01,"majorRange":"1 - 8"},{"year":2074,"minorMean":263.08,"minorRange":"240 - 287","moderateMean":42.35,"moderateRange":"31 - 55","majorMean":4.23,"majorRange":"1 - 9"},{"year":2075,"minorMean":268,"minorRange":"244 - 292","moderateMean":44.47,"moderateRange":"32 - 57","majorMean":4.31,"majorRange":"1 - 9"}],"Low":[{"year":2026,"minorMean":46.29,"minorRange":"34 - 59","moderateMean":4.17,"moderateRange":"1 - 9","majorMean":0.32,"majorRange":"0 - 2"},{"year":2027,"minorMean":49.21,"minorRange":"37 - 63","moderateMean":4.44,"moderateRange":"1 - 9","majorMean":0.4,"majorRange":"0 - 2"},{"year":2028,"minorMean":53.14,"minorRange":"40 - 67","moderateMean":4.7,"moderateRange":"1 - 9","majorMean":0.44,"majorRange":"0 - 2"},{"year":2029,"minorMean":56.83,"minorRange":"43 - 71","moderateMean":4.84,"moderateRange":"1 - 10","majorMean":0.47,"majorRange":"0 - 2"},{"year":2030,"minorMean":60.42,"minorRange":"47 - 75","moderateMean":5.2,"moderateRange":"1 - 10","majorMean":0.5,"majorRange":"0 - 2"},{"year":2031,"minorMean":64.24,"minorRange":"50 - 79","moderateMean":5.45,"moderateRange":"1 - 10","majorMean":0.55,"majorRange":"0 - 2"},{"year":2032,"minorMean":68.52,"minorRange":"54 - 84","moderateMean":5.78,"moderateRange":"2 - 11","majorMean":0.56,"majorRange":"0 - 2"},{"year":2033,"minorMean":72.26,"minorRange":"57 - 88","moderateMean":6.24,"moderateRange":"2 - 12","majorMean":0.56,"majorRange":"0 - 2"},{"year":2034,"minorMean":76.11,"minorRange":"61 - 92","moderateMean":6.63,"moderateRange":"2 - 12","majorMean":0.56,"majorRange":"0 - 2"},{"year":2035,"minorMean":80.54,"minorRange":"65 - 97","moderateMean":7.13,"moderateRange":"2 - 13","majorMean":0.62,"majorRange":"0 - 2"},{"year":2036,"minorMean":85.31,"minorRange":"69 - 102","moderateMean":7.48,"moderateRange":"3 - 13","majorMean":0.68,"majorRange":"0 - 3"},{"year":2037,"minorMean":89.24,"minorRange":"73 - 106","moderateMean":7.89,"moderateRange":"3 - 14","majorMean":0.68,"majorRange":"0 - 3"},{"year":2038,"minorMean":94.5,"minorRange":"78 - 112","moderateMean":8.38,"moderateRange":"3 - 14","majorMean":0.68,"majorRange":"0 - 3"},{"year":2039,"minorMean":99.51,"minorRange":"82 - 117","moderateMean":8.82,"moderateRange":"4 - 15","majorMean":0.76,"majorRange":"0 - 3"},{"year":2040,"minorMean":104.85,"minorRange":"87 - 123","moderateMean":9.52,"moderateRange":"4 - 16","majorMean":0.83,"majorRange":"0 - 3"},{"year":2041,"minorMean":109.62,"minorRange":"92 - 128","moderateMean":10.01,"moderateRange":"4 - 17","majorMean":0.85,"majorRange":"0 - 3"},{"year":2042,"minorMean":114.63,"minorRange":"97 - 133","moderateMean":10.73,"moderateRange":"5 - 17","majorMean":0.92,"majorRange":"0 - 3"},{"year":2043,"minorMean":120.08,"minorRange":"102 - 139","moderateMean":11.33,"moderateRange":"5 - 18","majorMean":1.04,"majorRange":"0 - 3"},{"year":2044,"minorMean":126.5,"minorRange":"108 - 146","moderateMean":11.73,"moderateRange":"6 - 19","majorMean":1.25,"majorRange":"0 - 4"},{"year":2045,"minorMean":131.77,"minorRange":"113 - 151","moderateMean":12.43,"moderateRange":"6 - 20","majorMean":1.34,"majorRange":"0 - 4"},{"year":2046,"minorMean":137.1,"minorRange":"118 - 157","moderateMean":13.27,"moderateRange":"7 - 21","majorMean":1.41,"majorRange":"0 - 4"},{"year":2047,"minorMean":143.16,"minorRange":"124 - 163","moderateMean":13.92,"moderateRange":"7 - 21","majorMean":1.47,"majorRange":"0 - 4"},{"year":2048,"minorMean":148.75,"minorRange":"129 - 169","moderateMean":14.42,"moderateRange":"8 - 22","majorMean":1.67,"majorRange":"0 - 5"},{"year":2049,"minorMean":154.76,"minorRange":"135 - 175","moderateMean":15.06,"moderateRange":"8 - 23","majorMean":1.83,"majorRange":"0 - 5"},{"year":2050,"minorMean":160.92,"minorRange":"141 - 182","moderateMean":15.8,"moderateRange":"9 - 24","majorMean":1.92,"majorRange":"0 - 5"},{"year":2051,"minorMean":166.63,"minorRange":"146 - 188","moderateMean":16.77,"moderateRange":"9 - 25","majorMean":1.95,"majorRange":"0 - 5"},{"year":2052,"minorMean":173.68,"minorRange":"153 - 195","moderateMean":17.93,"moderateRange":"10 - 27","majorMean":1.94,"majorRange":"0 - 5"},{"year":2053,"minorMean":179.9,"minorRange":"159 - 201","moderateMean":18.88,"moderateRange":"11 - 28","majorMean":2.03,"majorRange":"0 - 5"},{"year":2054,"minorMean":186.38,"minorRange":"165 - 208","moderateMean":19.72,"moderateRange":"12 - 29","majorMean":2.1,"majorRange":"0 - 5"},{"year":2055,"minorMean":192.28,"minorRange":"171 - 214","moderateMean":21.17,"moderateRange":"13 - 30","majorMean":2.18,"majorRange":"0 - 5"},{"year":2056,"minorMean":198.88,"minorRange":"177 - 221","moderateMean":22.34,"moderateRange":"14 - 32","majorMean":2.33,"majorRange":"0 - 6"},{"year":2057,"minorMean":203.71,"minorRange":"182 - 226","moderateMean":23.71,"moderateRange":"15 - 33","majorMean":2.34,"majorRange":"0 - 6"},{"year":2058,"minorMean":209.91,"minorRange":"188 - 232","moderateMean":24.99,"moderateRange":"16 - 35","majorMean":2.36,"majorRange":"0 - 6"},{"year":2059,"minorMean":215.01,"minorRange":"193 - 237","moderateMean":26.71,"moderateRange":"17 - 37","majorMean":2.44,"majorRange":"0 - 6"},{"year":2060,"minorMean":221.25,"minorRange":"199 - 244","moderateMean":28.27,"moderateRange":"19 - 39","majorMean":2.69,"majorRange":"0 - 6"},{"year":2061,"minorMean":225.51,"minorRange":"203 - 248","moderateMean":29.76,"moderateRange":"20 - 40","majorMean":2.85,"majorRange":"0 - 7"},{"year":2062,"minorMean":231.2,"minorRange":"209 - 254","moderateMean":31.4,"moderateRange":"21 - 42","majorMean":2.99,"majorRange":"0 - 7"},{"year":2063,"minorMean":235.49,"minorRange":"213 - 258","moderateMean":32.88,"moderateRange":"22 - 44","majorMean":3.34,"majorRange":"0 - 7"},{"year":2064,"minorMean":241.54,"minorRange":"219 - 265","moderateMean":34.3,"moderateRange":"24 - 46","majorMean":3.46,"majorRange":"0 - 7"},{"year":2065,"minorMean":245.45,"minorRange":"223 - 268","moderateMean":35.79,"moderateRange":"25 - 47","majorMean":3.67,"majorRange":"0 - 8"},{"year":2066,"minorMean":250.61,"minorRange":"227 - 274","moderateMean":37.35,"moderateRange":"26 - 49","majorMean":3.82,"majorRange":"1 - 8"},{"year":2067,"minorMean":255.54,"minorRange":"233 - 279","moderateMean":39.06,"moderateRange":"28 - 51","majorMean":3.95,"majorRange":"1 - 8"},{"year":2068,"minorMean":260.86,"minorRange":"238 - 284","moderateMean":40.95,"moderateRange":"29 - 53","majorMean":4.1,"majorRange":"1 - 8"},{"year":2069,"minorMean":264.11,"minorRange":"241 - 288","moderateMean":42.87,"moderateRange":"31 - 55","majorMean":4.25,"majorRange":"1 - 9"},{"year":2070,"minorMean":268.3,"minorRange":"245 - 292","moderateMean":44.62,"moderateRange":"33 - 58","majorMean":4.31,"majorRange":"1 - 9"},{"year":2071,"minorMean":272.49,"minorRange":"249 - 296","moderateMean":46.53,"moderateRange":"34 - 60","majorMean":4.52,"majorRange":"1 - 9"},{"year":2072,"minorMean":276.71,"minorRange":"253 - 300","moderateMean":48.54,"moderateRange":"36 - 62","majorMean":4.77,"majorRange":"1 - 9"},{"year":2073,"minorMean":280.35,"minorRange":"256 - 304","moderateMean":50.15,"moderateRange":"37 - 64","majorMean":4.93,"majorRange":"1 - 10"},{"year":2074,"minorMean":283.44,"minorRange":"260 - 307","moderateMean":52.63,"moderateRange":"40 - 66","majorMean":5.13,"majorRange":"1 - 10"},{"year":2075,"minorMean":286.29,"minorRange":"262 - 310","moderateMean":54.99,"moderateRange":"42 - 69","majorMean":5.22,"majorRange":"1 - 10"}],"IntermediateLow":[{"year":2026,"minorMean":46.37,"minorRange":"34 - 59","moderateMean":4.17,"moderateRange":"1 - 9","majorMean":0.33,"majorRange":"0 - 2"},{"year":2027,"minorMean":49.48,"minorRange":"37 - 63","moderateMean":4.46,"moderateRange":"1 - 9","majorMean":0.41,"majorRange":"0 - 2"},{"year":2028,"minorMean":53.73,"minorRange":"41 - 67","moderateMean":4.74,"moderateRange":"1 - 9","majorMean":0.44,"majorRange":"0 - 2"},{"year":2029,"minorMean":57.81,"minorRange":"44 - 72","moderateMean":4.93,"moderateRange":"1 - 10","majorMean":0.48,"majorRange":"0 - 2"},{"year":2030,"minorMean":61.71,"minorRange":"48 - 76","moderateMean":5.29,"moderateRange":"1 - 10","majorMean":0.52,"majorRange":"0 - 2"},{"year":2031,"minorMean":65.92,"minorRange":"52 - 81","moderateMean":5.56,"moderateRange":"1 - 11","majorMean":0.55,"majorRange":"0 - 2"},{"year":2032,"minorMean":70.62,"minorRange":"56 - 86","moderateMean":6.04,"moderateRange":"2 - 11","majorMean":0.56,"majorRange":"0 - 2"},{"year":2033,"minorMean":74.83,"minorRange":"60 - 91","moderateMean":6.47,"moderateRange":"2 - 12","majorMean":0.55,"majorRange":"0 - 2"},{"year":2034,"minorMean":79.6,"minorRange":"64 - 96","moderateMean":7.06,"moderateRange":"2 - 13","majorMean":0.6,"majorRange":"0 - 2"},{"year":2035,"minorMean":84.67,"minorRange":"69 - 101","moderateMean":7.44,"moderateRange":"3 - 13","majorMean":0.67,"majorRange":"0 - 3"},{"year":2036,"minorMean":89.85,"minorRange":"73 - 107","moderateMean":7.93,"moderateRange":"3 - 14","majorMean":0.68,"majorRange":"0 - 3"},{"year":2037,"minorMean":95.51,"minorRange":"79 - 113","moderateMean":8.47,"moderateRange":"3 - 15","majorMean":0.7,"majorRange":"0 - 3"},{"year":2038,"minorMean":101.61,"minorRange":"84 - 119","moderateMean":9.07,"moderateRange":"4 - 15","majorMean":0.79,"majorRange":"0 - 3"},{"year":2039,"minorMean":107.46,"minorRange":"90 - 126","moderateMean":9.79,"moderateRange":"4 - 16","majorMean":0.83,"majorRange":"0 - 3"},{"year":2040,"minorMean":113.7,"minorRange":"96 - 132","moderateMean":10.63,"moderateRange":"5 - 17","majorMean":0.9,"majorRange":"0 - 3"},{"year":2041,"minorMean":119.97,"minorRange":"102 - 139","moderateMean":11.31,"moderateRange":"5 - 18","majorMean":1.04,"majorRange":"0 - 3"},{"year":2042,"minorMean":127.28,"minorRange":"109 - 147","moderateMean":11.83,"moderateRange":"6 - 19","majorMean":1.27,"majorRange":"0 - 4"},{"year":2043,"minorMean":134.01,"minorRange":"115 - 154","moderateMean":12.76,"moderateRange":"6 - 20","majorMean":1.37,"majorRange":"0 - 4"},{"year":2044,"minorMean":141.59,"minorRange":"122 - 162","moderateMean":13.83,"moderateRange":"7 - 21","majorMean":1.44,"majorRange":"0 - 4"},{"year":2045,"minorMean":147.98,"minorRange":"128 - 168","moderateMean":14.34,"moderateRange":"8 - 22","majorMean":1.65,"majorRange":"0 - 5"},{"year":2046,"minorMean":156.09,"minorRange":"136 - 177","moderateMean":15.19,"moderateRange":"8 - 23","majorMean":1.85,"majorRange":"0 - 5"},{"year":2047,"minorMean":163.82,"minorRange":"143 - 185","moderateMean":16.3,"moderateRange":"9 - 24","majorMean":1.94,"majorRange":"0 - 5"},{"year":2048,"minorMean":172.17,"minorRange":"152 - 193","moderateMean":17.67,"moderateRange":"10 - 26","majorMean":1.95,"majorRange":"0 - 5"},{"year":2049,"minorMean":180.68,"minorRange":"160 - 202","moderateMean":18.95,"moderateRange":"11 - 28","majorMean":2.05,"majorRange":"0 - 5"},{"year":2050,"minorMean":189.15,"minorRange":"168 - 211","moderateMean":20.42,"moderateRange":"12 - 29","majorMean":2.12,"majorRange":"0 - 5"},{"year":2051,"minorMean":197.31,"minorRange":"176 - 219","moderateMean":22.12,"moderateRange":"14 - 32","majorMean":2.3,"majorRange":"0 - 6"},{"year":2052,"minorMean":205.66,"minorRange":"184 - 228","moderateMean":24,"moderateRange":"15 - 34","majorMean":2.35,"majorRange":"0 - 6"},{"year":2053,"minorMean":213.15,"minorRange":"191 - 235","moderateMean":26.08,"moderateRange":"17 - 36","majorMean":2.41,"majorRange":"0 - 6"},{"year":2054,"minorMean":220.77,"minorRange":"199 - 243","moderateMean":28.22,"moderateRange":"19 - 39","majorMean":2.7,"majorRange":"0 - 6"},{"year":2055,"minorMean":228.23,"minorRange":"206 - 251","moderateMean":30.54,"moderateRange":"20 - 41","majorMean":2.9,"majorRange":"0 - 7"},{"year":2056,"minorMean":236.07,"minorRange":"214 - 259","moderateMean":32.86,"moderateRange":"22 - 44","majorMean":3.32,"majorRange":"0 - 7"},{"year":2057,"minorMean":242.97,"minorRange":"220 - 266","moderateMean":34.9,"moderateRange":"24 - 46","majorMean":3.55,"majorRange":"0 - 8"},{"year":2058,"minorMean":250.38,"minorRange":"228 - 273","moderateMean":37.33,"moderateRange":"26 - 49","majorMean":3.81,"majorRange":"1 - 8"},{"year":2059,"minorMean":257.73,"minorRange":"235 - 281","moderateMean":39.94,"moderateRange":"28 - 52","majorMean":4.02,"majorRange":"1 - 8"},{"year":2060,"minorMean":265.36,"minorRange":"242 - 289","moderateMean":43.11,"moderateRange":"31 - 56","majorMean":4.26,"majorRange":"1 - 9"},{"year":2061,"minorMean":271.33,"minorRange":"248 - 295","moderateMean":46.01,"moderateRange":"34 - 59","majorMean":4.45,"majorRange":"1 - 9"},{"year":2062,"minorMean":277.47,"minorRange":"254 - 301","moderateMean":48.96,"moderateRange":"36 - 62","majorMean":4.82,"majorRange":"1 - 9"},{"year":2063,"minorMean":283.43,"minorRange":"259 - 307","moderateMean":52.74,"moderateRange":"40 - 66","majorMean":5.13,"majorRange":"1 - 10"},{"year":2064,"minorMean":289.74,"minorRange":"266 - 314","moderateMean":56.86,"moderateRange":"43 - 71","majorMean":5.31,"majorRange":"1 - 10"},{"year":2065,"minorMean":295.04,"minorRange":"271 - 319","moderateMean":60.46,"moderateRange":"47 - 75","majorMean":5.71,"majorRange":"2 - 11"},{"year":2066,"minorMean":300.12,"minorRange":"276 - 325","moderateMean":64.43,"moderateRange":"50 - 79","majorMean":6.01,"majorRange":"2 - 11"},{"year":2067,"minorMean":305.29,"minorRange":"281 - 330","moderateMean":68.62,"moderateRange":"54 - 84","majorMean":6.36,"majorRange":"2 - 12"},{"year":2068,"minorMean":311.21,"minorRange":"287 - 336","moderateMean":73.05,"moderateRange":"58 - 89","majorMean":6.87,"majorRange":"2 - 12"},{"year":2069,"minorMean":315.38,"minorRange":"291 - 340","moderateMean":76.99,"moderateRange":"62 - 93","majorMean":7.34,"majorRange":"3 - 13"},{"year":2070,"minorMean":320.21,"minorRange":"295 - 345","moderateMean":81.87,"moderateRange":"66 - 98","majorMean":7.88,"majorRange":"3 - 14"},{"year":2071,"minorMean":325.41,"minorRange":"300 - 351","moderateMean":86.63,"moderateRange":"71 - 103","majorMean":8.3,"majorRange":"3 - 14"},{"year":2072,"minorMean":330.37,"minorRange":"305 - 356","moderateMean":92.01,"moderateRange":"75 - 109","majorMean":8.78,"majorRange":"4 - 15"},{"year":2073,"minorMean":332.56,"minorRange":"307 - 358","moderateMean":97.3,"moderateRange":"80 - 115","majorMean":9.35,"majorRange":"4 - 16"},{"year":2074,"minorMean":335.46,"minorRange":"310 - 361","moderateMean":103.09,"moderateRange":"86 - 121","majorMean":10.12,"majorRange":"4 - 17"},{"year":2075,"minorMean":338.31,"minorRange":"313 - 364","moderateMean":108.69,"moderateRange":"91 - 127","majorMean":10.79,"majorRange":"5 - 18"}],"Intermediate":[{"year":2026,"minorMean":46.37,"minorRange":"34 - 59","moderateMean":4.17,"moderateRange":"1 - 9","majorMean":0.33,"majorRange":"0 - 2"},{"year":2027,"minorMean":49.49,"minorRange":"37 - 63","moderateMean":4.45,"moderateRange":"1 - 9","majorMean":0.41,"majorRange":"0 - 2"},{"year":2028,"minorMean":53.72,"minorRange":"41 - 68","moderateMean":4.73,"moderateRange":"1 - 9","majorMean":0.44,"majorRange":"0 - 2"},{"year":2029,"minorMean":57.84,"minorRange":"44 - 72","moderateMean":4.94,"moderateRange":"1 - 10","majorMean":0.48,"majorRange":"0 - 2"},{"year":2030,"minorMean":61.88,"minorRange":"48 - 76","moderateMean":5.29,"moderateRange":"1 - 10","majorMean":0.53,"majorRange":"0 - 2"},{"year":2031,"minorMean":66.46,"minorRange":"52 - 82","moderateMean":5.62,"moderateRange":"2 - 11","majorMean":0.55,"majorRange":"0 - 2"},{"year":2032,"minorMean":71.46,"minorRange":"57 - 87","moderateMean":6.14,"moderateRange":"2 - 11","majorMean":0.56,"majorRange":"0 - 2"},{"year":2033,"minorMean":75.94,"minorRange":"61 - 92","moderateMean":6.63,"moderateRange":"2 - 12","majorMean":0.56,"majorRange":"0 - 2"},{"year":2034,"minorMean":81.42,"minorRange":"66 - 98","moderateMean":7.22,"moderateRange":"3 - 13","majorMean":0.63,"majorRange":"0 - 3"},{"year":2035,"minorMean":87.01,"minorRange":"71 - 104","moderateMean":7.67,"moderateRange":"3 - 13","majorMean":0.67,"majorRange":"0 - 3"},{"year":2036,"minorMean":93.53,"minorRange":"77 - 111","moderateMean":8.26,"moderateRange":"3 - 14","majorMean":0.68,"majorRange":"0 - 3"},{"year":2037,"minorMean":100.1,"minorRange":"83 - 118","moderateMean":8.91,"moderateRange":"4 - 15","majorMean":0.78,"majorRange":"0 - 3"},{"year":2038,"minorMean":106.95,"minorRange":"89 - 125","moderateMean":9.75,"moderateRange":"4 - 16","majorMean":0.83,"majorRange":"0 - 3"},{"year":2039,"minorMean":114.02,"minorRange":"96 - 133","moderateMean":10.63,"moderateRange":"5 - 17","majorMean":0.91,"majorRange":"0 - 3"},{"year":2040,"minorMean":122.32,"minorRange":"104 - 141","moderateMean":11.45,"moderateRange":"5 - 18","majorMean":1.11,"majorRange":"0 - 4"},{"year":2041,"minorMean":130.63,"minorRange":"112 - 150","moderateMean":12.27,"moderateRange":"6 - 19","majorMean":1.32,"majorRange":"0 - 4"},{"year":2042,"minorMean":139.11,"minorRange":"120 - 159","moderateMean":13.49,"moderateRange":"7 - 21","majorMean":1.42,"majorRange":"0 - 4"},{"year":2043,"minorMean":147.74,"minorRange":"128 - 168","moderateMean":14.33,"moderateRange":"8 - 22","majorMean":1.64,"majorRange":"0 - 4"},{"year":2044,"minorMean":158.19,"minorRange":"138 - 179","moderateMean":15.46,"moderateRange":"8 - 23","majorMean":1.89,"majorRange":"0 - 5"},{"year":2045,"minorMean":167.5,"minorRange":"147 - 188","moderateMean":16.94,"moderateRange":"9 - 25","majorMean":1.95,"majorRange":"0 - 5"},{"year":2046,"minorMean":178.7,"minorRange":"158 - 200","moderateMean":18.67,"moderateRange":"11 - 27","majorMean":2.02,"majorRange":"0 - 5"},{"year":2047,"minorMean":189.78,"minorRange":"168 - 211","moderateMean":20.53,"moderateRange":"12 - 30","majorMean":2.14,"majorRange":"0 - 5"},{"year":2048,"minorMean":200.72,"minorRange":"179 - 223","moderateMean":22.89,"moderateRange":"14 - 32","majorMean":2.34,"majorRange":"0 - 6"},{"year":2049,"minorMean":210.95,"minorRange":"189 - 233","moderateMean":25.45,"moderateRange":"16 - 35","majorMean":2.38,"majorRange":"0 - 6"},{"year":2050,"minorMean":221.28,"minorRange":"199 - 244","moderateMean":28.43,"moderateRange":"19 - 39","majorMean":2.71,"majorRange":"0 - 6"},{"year":2051,"minorMean":231.65,"minorRange":"209 - 254","moderateMean":31.58,"moderateRange":"21 - 43","majorMean":3.07,"majorRange":"0 - 7"},{"year":2052,"minorMean":242.24,"minorRange":"219 - 265","moderateMean":34.66,"moderateRange":"24 - 46","majorMean":3.53,"majorRange":"0 - 8"},{"year":2053,"minorMean":252.24,"minorRange":"229 - 276","moderateMean":37.94,"moderateRange":"27 - 50","majorMean":3.87,"majorRange":"1 - 8"},{"year":2054,"minorMean":262.26,"minorRange":"239 - 286","moderateMean":41.92,"moderateRange":"30 - 54","majorMean":4.18,"majorRange":"1 - 9"},{"year":2055,"minorMean":271.9,"minorRange":"248 - 296","moderateMean":46.26,"moderateRange":"34 - 59","majorMean":4.48,"majorRange":"1 - 9"},{"year":2056,"minorMean":281.67,"minorRange":"258 - 306","moderateMean":51,"moderateRange":"38 - 64","majorMean":5.01,"majorRange":"1 - 10"},{"year":2057,"minorMean":288.89,"minorRange":"265 - 313","moderateMean":56.74,"moderateRange":"43 - 71","majorMean":5.34,"majorRange":"1 - 10"},{"year":2058,"minorMean":297.74,"minorRange":"273 - 322","moderateMean":62.38,"moderateRange":"48 - 77","majorMean":5.84,"majorRange":"2 - 11"},{"year":2059,"minorMean":304.97,"minorRange":"280 - 330","moderateMean":68.59,"moderateRange":"54 - 84","majorMean":6.38,"majorRange":"2 - 12"},{"year":2060,"minorMean":313.79,"minorRange":"289 - 339","moderateMean":75.24,"moderateRange":"60 - 91","majorMean":7.11,"majorRange":"2 - 13"},{"year":2061,"minorMean":320.83,"minorRange":"296 - 346","moderateMean":82.24,"moderateRange":"66 - 99","majorMean":7.89,"majorRange":"3 - 14"},{"year":2062,"minorMean":327.92,"minorRange":"303 - 353","moderateMean":89.7,"moderateRange":"73 - 107","majorMean":8.57,"majorRange":"3 - 15"},{"year":2063,"minorMean":333.05,"minorRange":"308 - 358","moderateMean":98.52,"moderateRange":"81.98 - 116","majorMean":9.49,"majorRange":"4 - 16"},{"year":2064,"minorMean":338.73,"minorRange":"313 - 364","moderateMean":107.78,"moderateRange":"90 - 126","majorMean":10.69,"majorRange":"5 - 17"},{"year":2065,"minorMean":340.76,"minorRange":"315 - 366","moderateMean":116.82,"moderateRange":"99 - 135","majorMean":11.96,"majorRange":"6 - 19"},{"year":2066,"minorMean":343.24,"minorRange":"317 - 369","moderateMean":127.77,"moderateRange":"109 - 147","majorMean":13.22,"majorRange":"7 - 21"},{"year":2067,"minorMean":344.95,"minorRange":"319 - 371","moderateMean":138.68,"moderateRange":"120 - 158","majorMean":14.84,"majorRange":"8 - 23"},{"year":2068,"minorMean":347.49,"minorRange":"322 - 373","moderateMean":150.33,"moderateRange":"131 - 171","majorMean":16.29,"majorRange":"9 - 24"},{"year":2069,"minorMean":345.32,"minorRange":"319 - 371","moderateMean":162.54,"moderateRange":"142 - 183","majorMean":18.02,"majorRange":"10 - 27"},{"year":2070,"minorMean":341.74,"minorRange":"316 - 368","moderateMean":175.74,"moderateRange":"155 - 197","majorMean":20.24,"majorRange":"12 - 29"},{"year":2071,"minorMean":336.49,"minorRange":"310 - 362","moderateMean":189.9,"moderateRange":"169 - 211","majorMean":22.72,"majorRange":"14 - 32"},{"year":2072,"minorMean":333.12,"minorRange":"308 - 359","moderateMean":203.58,"moderateRange":"182 - 226","majorMean":25.85,"majorRange":"17 - 36"},{"year":2073,"minorMean":327.16,"minorRange":"302 - 353","moderateMean":216.35,"moderateRange":"194 - 239","majorMean":29.45,"majorRange":"20 - 40"},{"year":2074,"minorMean":321.1,"minorRange":"296 - 346","moderateMean":228.97,"moderateRange":"207 - 252","majorMean":33.76,"majorRange":"23 - 45"},{"year":2075,"minorMean":315.21,"minorRange":"290 - 341","moderateMean":241.31,"moderateRange":"218 - 264","majorMean":37.99,"majorRange":"27 - 50"}],"IntermediateHigh":[{"year":2026,"minorMean":46.51,"minorRange":"34 - 60","moderateMean":4.17,"moderateRange":"1 - 9","majorMean":0.33,"majorRange":"0 - 2"},{"year":2027,"minorMean":49.87,"minorRange":"37 - 63","moderateMean":4.49,"moderateRange":"1 - 9","majorMean":0.42,"majorRange":"0 - 2"},{"year":2028,"minorMean":54.66,"minorRange":"41 - 69","moderateMean":4.78,"moderateRange":"1 - 9","majorMean":0.45,"majorRange":"0 - 2"},{"year":2029,"minorMean":59.05,"minorRange":"45 - 73","moderateMean":5.08,"moderateRange":"1 - 10","majorMean":0.48,"majorRange":"0 - 2"},{"year":2030,"minorMean":63.83,"minorRange":"50 - 79","moderateMean":5.42,"moderateRange":"1 - 10","majorMean":0.55,"majorRange":"0 - 2"},{"year":2031,"minorMean":69.14,"minorRange":"54 - 84","moderateMean":5.86,"moderateRange":"2 - 11","majorMean":0.55,"majorRange":"0 - 2"},{"year":2032,"minorMean":74.73,"minorRange":"60 - 91","moderateMean":6.47,"moderateRange":"2 - 12","majorMean":0.55,"majorRange":"0 - 2"},{"year":2033,"minorMean":80.56,"minorRange":"65 - 97","moderateMean":7.15,"moderateRange":"2 - 13","majorMean":0.62,"majorRange":"0 - 3"},{"year":2034,"minorMean":87.06,"minorRange":"71 - 104","moderateMean":7.67,"moderateRange":"3 - 13","majorMean":0.67,"majorRange":"0 - 3"},{"year":2035,"minorMean":94.55,"minorRange":"78 - 112","moderateMean":8.36,"moderateRange":"3 - 14","majorMean":0.69,"majorRange":"0 - 3"},{"year":2036,"minorMean":102.87,"minorRange":"86 - 121","moderateMean":9.26,"moderateRange":"4 - 16","majorMean":0.81,"majorRange":"0 - 3"},{"year":2037,"minorMean":110.88,"minorRange":"93 - 129","moderateMean":10.23,"moderateRange":"5 - 17","majorMean":0.86,"majorRange":"0 - 3"},{"year":2038,"minorMean":119.96,"minorRange":"102 - 139","moderateMean":11.29,"moderateRange":"5 - 18","majorMean":1.05,"majorRange":"0 - 3"},{"year":2039,"minorMean":130.37,"minorRange":"112 - 150","moderateMean":12.24,"moderateRange":"6 - 19","majorMean":1.32,"majorRange":"0 - 4"},{"year":2040,"minorMean":141.23,"minorRange":"122 - 161","moderateMean":13.72,"moderateRange":"7 - 21","majorMean":1.46,"majorRange":"0 - 4"},{"year":2041,"minorMean":151.92,"minorRange":"132 - 172","moderateMean":14.74,"moderateRange":"8 - 23","majorMean":1.75,"majorRange":"0 - 5"},{"year":2042,"minorMean":164.1,"minorRange":"144 - 185","moderateMean":16.35,"moderateRange":"9 - 25","majorMean":1.93,"majorRange":"0 - 5"},{"year":2043,"minorMean":177.56,"minorRange":"157 - 199","moderateMean":18.47,"moderateRange":"11 - 27","majorMean":2,"majorRange":"0 - 5"},{"year":2044,"minorMean":192.03,"minorRange":"171 - 214","moderateMean":20.94,"moderateRange":"13 - 30","majorMean":2.18,"majorRange":"0 - 5"},{"year":2045,"minorMean":204.55,"minorRange":"183 - 227","moderateMean":23.81,"moderateRange":"15 - 34","majorMean":2.34,"majorRange":"0 - 6"},{"year":2046,"minorMean":217.92,"minorRange":"196 - 240","moderateMean":27.45,"moderateRange":"18 - 38","majorMean":2.58,"majorRange":"0 - 6"},{"year":2047,"minorMean":230.84,"minorRange":"208 - 253","moderateMean":31.43,"moderateRange":"21 - 42","majorMean":3.07,"majorRange":"0 - 7"},{"year":2048,"minorMean":244.38,"minorRange":"222 - 267","moderateMean":35.34,"moderateRange":"25 - 47","majorMean":3.59,"majorRange":"0 - 8"},{"year":2049,"minorMean":257.42,"minorRange":"234 - 281","moderateMean":39.86,"moderateRange":"28 - 52","majorMean":4.01,"majorRange":"1 - 8"},{"year":2050,"minorMean":269.78,"minorRange":"246 - 293","moderateMean":45.33,"moderateRange":"33 - 58","majorMean":4.4,"majorRange":"1 - 9"},{"year":2051,"minorMean":281.29,"minorRange":"257 - 305","moderateMean":51.38,"moderateRange":"39 - 65","majorMean":5,"majorRange":"1 - 10"},{"year":2052,"minorMean":293.17,"minorRange":"269 - 317.02","moderateMean":58.95,"moderateRange":"45 - 73","majorMean":5.55,"majorRange":"1 - 11"},{"year":2053,"minorMean":302.72,"minorRange":"279 - 327","moderateMean":66.58,"moderateRange":"52 - 82","majorMean":6.18,"majorRange":"2 - 11"},{"year":2054,"minorMean":312.83,"minorRange":"288 - 338","moderateMean":74.96,"moderateRange":"60 - 91","majorMean":7.08,"majorRange":"2 - 13"},{"year":2055,"minorMean":323.09,"minorRange":"298 - 348","moderateMean":84.31,"moderateRange":"68 - 101","majorMean":8.1,"majorRange":"3 - 14"},{"year":2056,"minorMean":332.14,"minorRange":"307 - 358","moderateMean":95.29,"moderateRange":"78 - 113","majorMean":9.14,"majorRange":"4 - 15"},{"year":2057,"minorMean":337.38,"minorRange":"312 - 363","moderateMean":106.92,"moderateRange":"89 - 125","majorMean":10.59,"majorRange":"5 - 17"},{"year":2058,"minorMean":341.53,"minorRange":"316 - 367","moderateMean":119.65,"moderateRange":"101 - 138","majorMean":12.28,"majorRange":"6 - 19"},{"year":2059,"minorMean":343.82,"minorRange":"318 - 370","moderateMean":134.08,"moderateRange":"115 - 154","majorMean":14.17,"majorRange":"7 - 22"},{"year":2060,"minorMean":347.31,"minorRange":"321 - 373","moderateMean":149.56,"moderateRange":"130 - 170","majorMean":16.18,"majorRange":"9 - 24"},{"year":2061,"minorMean":344.77,"minorRange":"319 - 371","moderateMean":165.79,"moderateRange":"145 - 187","majorMean":18.57,"majorRange":"11 - 27"},{"year":2062,"minorMean":338.94,"minorRange":"313 - 365","moderateMean":184.3,"moderateRange":"163 - 206","majorMean":21.64,"majorRange":"13 - 31"},{"year":2063,"minorMean":332.32,"minorRange":"306 - 358","moderateMean":202.35,"moderateRange":"181 - 224","majorMean":25.64,"majorRange":"17 - 36"},{"year":2064,"minorMean":326.5,"minorRange":"301 - 352","moderateMean":220.62,"moderateRange":"198 - 243","majorMean":30.78,"majorRange":"21 - 42"},{"year":2065,"minorMean":317.3,"minorRange":"292 - 342","moderateMean":236.99,"moderateRange":"214 - 260","majorMean":36.51,"majorRange":"26 - 48"},{"year":2066,"minorMean":306.68,"minorRange":"282 - 332","moderateMean":254.28,"moderateRange":"231 - 278","majorMean":42.64,"majorRange":"31 - 55"},{"year":2067,"minorMean":295.54,"minorRange":"271 - 320","moderateMean":270.37,"moderateRange":"247 - 294","majorMean":50.16,"majorRange":"37 - 64"},{"year":2068,"minorMean":284.75,"minorRange":"261 - 309","moderateMean":285.98,"moderateRange":"262 - 310","majorMean":59.18,"majorRange":"46 - 74"},{"year":2069,"minorMean":270.91,"minorRange":"247 - 295","moderateMean":298.86,"moderateRange":"275 - 323","majorMean":69.36,"majorRange":"55 - 85"},{"year":2070,"minorMean":255.68,"minorRange":"232 - 279","moderateMean":311.19,"moderateRange":"287 - 336","majorMean":80.74,"majorRange":"65 - 97"},{"year":2071,"minorMean":238.94,"minorRange":"216 - 262","moderateMean":324.13,"moderateRange":"299 - 349","majorMean":93.78,"majorRange":"77 - 111"},{"year":2072,"minorMean":222.07,"minorRange":"200 - 245","moderateMean":334.36,"moderateRange":"309 - 360","majorMean":109.25,"majorRange":"92 - 127"},{"year":2073,"minorMean":203.85,"minorRange":"182 - 226","moderateMean":340.07,"moderateRange":"315 - 366","majorMean":125.74,"majorRange":"107 - 145"},{"year":2074,"minorMean":185.64,"minorRange":"165 - 207","moderateMean":343.84,"moderateRange":"318 - 370","majorMean":145.24,"majorRange":"126 - 165"},{"year":2075,"minorMean":167.21,"minorRange":"147 - 188","moderateMean":346.18,"moderateRange":"320 - 372","majorMean":166.05,"majorRange":"146 - 187"}],"High":[{"year":2026,"minorMean":46.42,"minorRange":"34 - 59","moderateMean":4.17,"moderateRange":"1 - 9","majorMean":0.33,"majorRange":"0 - 2"},{"year":2027,"minorMean":49.75,"minorRange":"37 - 63","moderateMean":4.48,"moderateRange":"1 - 9","majorMean":0.41,"majorRange":"0 - 2"},{"year":2028,"minorMean":54.55,"minorRange":"41 - 68","moderateMean":4.77,"moderateRange":"1 - 9","majorMean":0.45,"majorRange":"0 - 2"},{"year":2029,"minorMean":59.12,"minorRange":"45 - 74","moderateMean":5.08,"moderateRange":"1 - 10","majorMean":0.48,"majorRange":"0 - 2"},{"year":2030,"minorMean":64.11,"minorRange":"50 - 79","moderateMean":5.45,"moderateRange":"1 - 10","majorMean":0.55,"majorRange":"0 - 2"},{"year":2031,"minorMean":69.82,"minorRange":"55 - 85","moderateMean":5.93,"moderateRange":"2 - 11","majorMean":0.56,"majorRange":"0 - 2"},{"year":2032,"minorMean":75.89,"minorRange":"61 - 92","moderateMean":6.61,"moderateRange":"2 - 12","majorMean":0.57,"majorRange":"0 - 2"},{"year":2033,"minorMean":82.61,"minorRange":"67 - 99","moderateMean":7.3,"moderateRange":"3 - 13","majorMean":0.65,"majorRange":"0 - 3"},{"year":2034,"minorMean":89.92,"minorRange":"74 - 107","moderateMean":7.93,"moderateRange":"3 - 14","majorMean":0.67,"majorRange":"0 - 3"},{"year":2035,"minorMean":98.86,"minorRange":"82 - 116","moderateMean":8.78,"moderateRange":"4 - 15","majorMean":0.75,"majorRange":"0 - 3"},{"year":2036,"minorMean":108.43,"minorRange":"91 - 127","moderateMean":9.91,"moderateRange":"4 - 16","majorMean":0.85,"majorRange":"0 - 3"},{"year":2037,"minorMean":118.15,"minorRange":"100 - 137","moderateMean":11.12,"moderateRange":"5 - 18","majorMean":1,"majorRange":"0 - 3"},{"year":2038,"minorMean":130.12,"minorRange":"111 - 149","moderateMean":12.23,"moderateRange":"6 - 19","majorMean":1.32,"majorRange":"0 - 4"},{"year":2039,"minorMean":142.28,"minorRange":"123 - 162","moderateMean":13.82,"moderateRange":"7 - 21","majorMean":1.48,"majorRange":"0 - 4"},{"year":2040,"minorMean":156.11,"minorRange":"136 - 177","moderateMean":15.24,"moderateRange":"8 - 23","majorMean":1.84,"majorRange":"0 - 5"},{"year":2041,"minorMean":170.48,"minorRange":"150 - 192","moderateMean":17.41,"moderateRange":"10 - 26","majorMean":1.96,"majorRange":"0 - 5"},{"year":2042,"minorMean":186.96,"minorRange":"166 - 208","moderateMean":20.05,"moderateRange":"12 - 29","majorMean":2.1,"majorRange":"0 - 5"},{"year":2043,"minorMean":202.94,"minorRange":"181 - 225","moderateMean":23.45,"moderateRange":"15 - 33","majorMean":2.34,"majorRange":"0 - 6"},{"year":2044,"minorMean":219.64,"minorRange":"197 - 242","moderateMean":27.79,"moderateRange":"18 - 38","majorMean":2.63,"majorRange":"0 - 6"},{"year":2045,"minorMean":234.62,"minorRange":"212 - 257","moderateMean":32.51,"moderateRange":"22 - 44","majorMean":3.22,"majorRange":"0 - 7"},{"year":2046,"minorMean":250.62,"minorRange":"228 - 274","moderateMean":37.48,"moderateRange":"26 - 49","majorMean":3.8,"majorRange":"1 - 8"},{"year":2047,"minorMean":266.45,"minorRange":"243 - 290","moderateMean":43.74,"moderateRange":"32 - 56","majorMean":4.29,"majorRange":"1 - 9"},{"year":2048,"minorMean":281.38,"minorRange":"258 - 305","moderateMean":51.19,"moderateRange":"38 - 65","majorMean":4.98,"majorRange":"1 - 10"},{"year":2049,"minorMean":294.25,"minorRange":"270 - 319","moderateMean":60.16,"moderateRange":"46 - 75","majorMean":5.64,"majorRange":"2 - 11"},{"year":2050,"minorMean":306.9,"minorRange":"282 - 331","moderateMean":70.04,"moderateRange":"55 - 85","majorMean":6.54,"majorRange":"2 - 12"},{"year":2051,"minorMean":319.51,"minorRange":"295 - 344","moderateMean":81.03,"moderateRange":"65 - 97","majorMean":7.76,"majorRange":"3 - 14"},{"year":2052,"minorMean":331.38,"minorRange":"306 - 357","moderateMean":94.14,"moderateRange":"77 - 111","majorMean":9.03,"majorRange":"4 - 15"},{"year":2053,"minorMean":338.02,"minorRange":"313 - 364","moderateMean":108.66,"moderateRange":"91 - 127","majorMean":10.83,"majorRange":"5 - 18"},{"year":2054,"minorMean":342.65,"minorRange":"317 - 369","moderateMean":125.43,"moderateRange":"107 - 145","majorMean":12.96,"majorRange":"7 - 20"},{"year":2055,"minorMean":345.86,"minorRange":"320 - 372","moderateMean":143.72,"moderateRange":"124 - 164","majorMean":15.47,"majorRange":"8 - 23"},{"year":2056,"minorMean":345.78,"minorRange":"320 - 372","moderateMean":164.83,"moderateRange":"144 - 186","majorMean":18.4,"majorRange":"11 - 27"},{"year":2057,"minorMean":337.57,"minorRange":"312 - 364","moderateMean":187.49,"moderateRange":"166 - 209","majorMean":22.34,"majorRange":"14 - 32"},{"year":2058,"minorMean":329.69,"minorRange":"304 - 355","moderateMean":210.02,"moderateRange":"188 - 232","majorMean":27.68,"majorRange":"18 - 38"},{"year":2059,"minorMean":319.27,"minorRange":"294 - 345","moderateMean":231.67,"moderateRange":"209 - 255","majorMean":34.74,"majorRange":"24 - 46"},{"year":2060,"minorMean":307.94,"minorRange":"283 - 333","moderateMean":254.38,"moderateRange":"231 - 278","majorMean":42.66,"majorRange":"31 - 55"},{"year":2061,"minorMean":292.9,"minorRange":"268 - 318","moderateMean":274.12,"moderateRange":"250 - 298","majorMean":52.03,"majorRange":"39 - 66"},{"year":2062,"minorMean":277.42,"minorRange":"253 - 301","moderateMean":292.12,"moderateRange":"268 - 316","majorMean":64.3,"majorRange":"50 - 79"},{"year":2063,"minorMean":259.53,"minorRange":"236 - 283","moderateMean":308.8,"moderateRange":"284 - 334","majorMean":78.28,"majorRange":"63 - 95"},{"year":2064,"minorMean":238.43,"minorRange":"216 - 261","moderateMean":325.76,"moderateRange":"301 - 351","majorMean":94.98,"majorRange":"78 - 112"},{"year":2065,"minorMean":215.27,"minorRange":"193 - 238","moderateMean":336.02,"moderateRange":"310 - 362","majorMean":114.64,"majorRange":"97 - 133"},{"year":2066,"minorMean":192.42,"minorRange":"171 - 214","moderateMean":342.62,"moderateRange":"317 - 368","majorMean":137.81,"majorRange":"119 - 157"},{"year":2067,"minorMean":168.9,"minorRange":"148 - 190","moderateMean":345.87,"moderateRange":"320 - 372","majorMean":164.27,"majorRange":"144 - 185"},{"year":2068,"minorMean":147.64,"minorRange":"128 - 168","moderateMean":343.26,"moderateRange":"317 - 369","majorMean":195.47,"majorRange":"174 - 217"},{"year":2069,"minorMean":127.69,"minorRange":"109 - 147","moderateMean":332.02,"moderateRange":"306 - 358","majorMean":228.94,"majorRange":"207 - 251"},{"year":2070,"minorMean":107.07,"minorRange":"89 - 125","moderateMean":320.24,"moderateRange":"295 - 346","majorMean":263.73,"majorRange":"241 - 286"},{"year":2071,"minorMean":89.78,"minorRange":"73 - 107","moderateMean":305.47,"moderateRange":"281 - 330","majorMean":299.46,"majorRange":"276 - 322"},{"year":2072,"minorMean":73.36,"minorRange":"58 - 89","moderateMean":289.12,"moderateRange":"265 - 314","majorMean":336.51,"majorRange":"314 - 359"},{"year":2073,"minorMean":57.97,"minorRange":"44 - 72","moderateMean":268.68,"moderateRange":"245 - 292","majorMean":371.96,"majorRange":"349 - 395"},{"year":2074,"minorMean":45.9,"minorRange":"34 - 59","moderateMean":244.71,"moderateRange":"222 - 268","majorMean":409.37,"majorRange":"386 - 432"},{"year":2075,"minorMean":36.11,"minorRange":"25 - 48","moderateMean":218.29,"moderateRange":"196 - 241","majorMean":446.56,"majorRange":"424 - 469"}]};
+const PETSS_JSON_CANDIDATES = [
+  "data/petss_forecast.json",
+  "./data/petss_forecast.json",
+  "/data/petss_forecast.json",
+  `data/petss_forecast_${COOPS_STATION}_mllw.json`,
+  `./data/petss_forecast_${COOPS_STATION}_mllw.json`,
+  `/data/petss_forecast_${COOPS_STATION}_mllw.json`,
+  "data/petss_forecast_8536889_mllw.json"
+];
+const PEAKS_JSON_FILE = "peaks_navd88.json";
+const PEAKS_JSON_PATH_CANDIDATES = [
+  `data/${PEAKS_JSON_FILE}`,
+  `./data/${PEAKS_JSON_FILE}`,
+  `../data/${PEAKS_JSON_FILE}`,
+  `/data/${PEAKS_JSON_FILE}`
+];
+let PEAKS_JSON_URL = PEAKS_JSON_PATH_CANDIDATES[0];
 
-  const sorted = [...new Set(years)]
-    .filter(y => Number.isFinite(y))
-    .sort((a,b)=>a-b);
+async function boot(){
+  renderGaugeStaticText();
 
-  const parts = [];
-  let start = sorted[0];
-  let prev = sorted[0];
-
-  for(let i=1;i<sorted.length;i++){
-    const y = sorted[i];
-    if(y === prev + 1){
-      prev = y;
-      continue;
-    }
-    parts.push(start === prev ? `${start}` : `${start}-${prev}`);
-    start = y;
-    prev = y;
-  }
-
-  parts.push(start === prev ? `${start}` : `${start}-${prev}`);
-  return parts.join("; ");
-}
-
-/* Sparse = fewer than half the median number of events of "normal" years.
-   This now uses the SAME event history instead of daily-values coverage.
-*/
-function computeSparseYearsFromEvents(eventsNavd){
-  const T = THRESH.NAVD88;
-  const curYear = new Date().getFullYear();
-
-  // Count qualifying flood events by year
-  const byYear = new Map();
-  let minYear = Infinity;
-  let maxYear = -Infinity;
-
-  for(const e of (eventsNavd || [])){
-    const y = Number.isFinite(+e.y) ? +e.y : new Date(e.t).getUTCFullYear();
-    if(!Number.isFinite(y) || y >= curYear) continue;
-
-    if(y < minYear) minYear = y;
-    if(y > maxYear) maxYear = y;
-
-    const ft = Number(e.ft);
-    if(!Number.isFinite(ft)) continue;
-
-    if(ft >= T.minorLow){
-      byYear.set(y, (byYear.get(y) || 0) + 1);
-    }else{
-      // still ensure year exists even if it has 0 qualifying floods
-      if(!byYear.has(y)) byYear.set(y, 0);
-    }
-  }
-
-  if(!Number.isFinite(minYear) || !Number.isFinite(maxYear)) return [];
-
-  // Build a continuous year list so missing years count as zero
-  const years = [];
-  for(let y = minYear; y <= maxYear; y++){
-    if(y >= curYear) continue;
-    years.push(y);
-    if(!byYear.has(y)) byYear.set(y, 0);
-  }
-
-  if(!years.length) return [];
-
-  const counts = years
-    .map(y => byYear.get(y) || 0)
-    .sort((a,b)=>a-b);
-
-  const median = counts.length % 2
-    ? counts[(counts.length - 1) / 2]
-    : (counts[counts.length/2 - 1] + counts[counts.length/2]) / 2;
-
-  const cutoff = Math.max(1, median * 0.5);
-
-  return years.filter(y => (byYear.get(y) || 0) < cutoff);
-}
-
-function renderAnnualSparseDataNote(){
-  if(!annualSparseNote) return;
-
-  const sparseYears = computeSparseYearsFromEvents(HIGH_TIDES_NAVD);
-
-  if(!sparseYears.length){
-    annualSparseNote.style.display = "none";
-    annualSparseNote.textContent = "";
-    return;
-  }
-
-  annualSparseNote.innerHTML = `<b>Sparse Data:</b> ${compressYearRanges(sparseYears)}`;
-  annualSparseNote.style.display = "block";
-}
-
-/* =========================
-Boot
-========================= */
-/* =========================
-Boot
-========================= */
-
-      // Build datum dropdown options (obvious + matches DATUMS order)
   if(datumSelect){
     datumSelect.innerHTML = DATUMS.map(d => `<option value="${d}">${d}</option>`).join("");
     datumSelect.value = DISPLAY_DATUM;
   }
 
-async function boot(){
+  buildAnnualArrays();
   updateUnitsAndBadges();
   renderTopTen();
 
     hookMonthViewSwitch();
   hookAnnualViewSwitch();
+  hookAnnualPredictionControls();
 
 
-    // Map accordion hook (runs once)
+    
   hookGaugeMapAccordion();
 
-  // If map accordion is already open for some reason, init immediately
+  
   const mapAcc = document.getElementById("mapAcc");
   if(mapAcc && mapAcc.open){
     ensureGaugeMap();
   }
 
 
-  // Alerts can run independently
+  
 
 
 await Promise.allSettled([ updateAlerts() ]);
 
 
- // 1) Must load history first (HIGH_TIDES_NAVD)
+ 
 const hist = await Promise.allSettled([
-  initJSONBackedHistory() /* or initTXTBackedHistory() */
+  initJSONBackedHistory()
 ]);
 
 if (hist[0].status === "rejected") {
@@ -4498,9 +4164,7 @@ if (hist[0].status === "rejected") {
   if (monthAvgMeta)  monthAvgMeta.textContent = "History load failed (monthly averages unavailable).";
 }
 
-//   NEW: DOY cumulative panel (daily stats from USGS API; no TXT)
-
-  // 2) Live counts rely on history for current-year bar overwrite
+  
   const live = await Promise.allSettled([ updateLiveAndAnnualCounts() ]);
   if(live[0].status === "rejected"){
     console.error("Live init failed:", live[0].reason);
@@ -4510,14 +4174,14 @@ if (hist[0].status === "rejected") {
     curMetaEl.textContent="Updated: —";
   }
 
-  // 3) Timeseries does not depend on history
+  
   await Promise.allSettled([ updateTimeseries() ]);
 }
 
 
-/* =========================
-Controls
-========================= */
+
+
+
 const applyBtn = $("applyBtn");
 if(applyBtn) applyBtn.addEventListener("click", applyFilter);
 
@@ -4541,21 +4205,21 @@ function setDatum(newDatum){
 
   const oldDatum = DISPLAY_DATUM;
 
-  // Read current filter inputs (old datum)
+  
   const vMin = parseFloat(minElevEl.value);
   const vMax = parseFloat(maxElevEl.value);
 
-  // Convert current input values OLD -> NAVD (stable internal)
+  
   const navdMin = Number.isFinite(vMin) ? datumToDatum(vMin, oldDatum, "NAVD88") : null;
   const navdMax = Number.isFinite(vMax) ? datumToDatum(vMax, oldDatum, "NAVD88") : null;
 
-  // Switch datum
+  
   DISPLAY_DATUM = newDatum;
 
-  // Update dropdown + button text immediately
+  
   if(datumSelect) datumSelect.value = DISPLAY_DATUM;
 
-  // Convert NAVD -> NEW datum for showing in the boxes
+  
   const newMin = (navdMin === null) ? null : datumToDatum(navdMin, "NAVD88", DISPLAY_DATUM);
   const newMax = (navdMax === null) ? null : datumToDatum(navdMax, "NAVD88", DISPLAY_DATUM);
 
@@ -4565,25 +4229,24 @@ function setDatum(newDatum){
 
   maxElevEl.value = (newMax === null) ? "" : newMax.toFixed(2);
 
-  // Recompute DOY + YTD in new datum (you already built this)
+  
 refreshDOYFromHistory();
-renderAnnualSparseDataNote();
 
-  // Refresh everything that depends on DISPLAY_DATUM
+  
   updateUnitsAndBadges();
   renderTopTen();
   applyFilter();
   updateMonthAveragesFromHistory();
   renderAnnual();
 
-  // Live card refresh (STATE.lastNavd is NAVD)
+  
 if(STATE.lastNavd){
   curFtEl.textContent = toDisplayFtFromNavd(STATE.lastNavd.ft).toFixed(2);
   setStage(STATE.lastNavd.ft);
   setCurrentNumberColorByNavd(STATE.lastNavd.ft);
 }
 
-// Daily range refresh
+
 if(STATE.todayNavd && STATE.todayNavd.length){
   const dmx = maxPoint(STATE.todayNavd), dmn = minPoint(STATE.todayNavd);
   dayMaxFtEl.textContent = toDisplayFtFromNavd(dmx.ft).toFixed(2);
@@ -4599,20 +4262,19 @@ if(STATE.todayNavd && STATE.todayNavd.length){
 }
 
 
-  // Charts that depend on display datum
-  updatePred24RangeCard();
+  
   updateTsChartFromState();
   updateFloodOutlook48();
 }
 
-/* Start */
+
 boot().catch(err=>{
   console.error(err);
   stageTextEl.textContent="LIVE DATA UNAVAILABLE";
   lastPill.textContent="Last updated: —";
 });
 
-/* Auto-refresh (LIVE only — don’t reload TXT every time) */
+
 setInterval(async ()=>{
   try{
     await Promise.allSettled([
