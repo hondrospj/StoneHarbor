@@ -3179,10 +3179,6 @@ function annualNumber(v){
 }
 
 function annualSourceName(source){
-  if(source === "stoneHarbor") return "Stone Harbor";
-  if(source === "atlanticCity") return "Atlantic City fallback";
-  if(source === "live") return "Stone Harbor live";
-  if(source === "prediction") return ANNUAL_SCENARIO;
   return "";
 }
 
@@ -3413,11 +3409,11 @@ function annualColors(kind){
     major:"167,139,250"
   }[kind];
 
-  return annualSource.map(source => {
-    if(source === "prediction") return `rgba(${base},.42)`;
-    if(source === "atlanticCity") return `rgba(${base},.52)`;
-    return `rgba(${base},.88)`;
-  });
+  return annualSource.map(source =>
+    source === "prediction"
+      ? `rgba(${base},.42)`
+      : `rgb(${base})`
+  );
 }
 
 function annualPredictionRange(year, label){
@@ -3510,13 +3506,7 @@ function ensureAnnual(){
       return sum + (Number.isFinite(v) ? v : 0);
     }, 0);
 
-  const idx = items?.[0]?.dataIndex;
-  const source = Number.isFinite(idx) ? annualSource[idx] : "";
-  const totalTxt = String(Math.floor(total));
-  const sourceTxt = annualSourceName(source);
-  return sourceTxt
-    ? `Total: ${totalTxt} · ${sourceTxt}`
-    : `Total: ${totalTxt}`;
+  return `Total: ${Math.floor(total)}`;
 }
 
           }
