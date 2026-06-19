@@ -4306,9 +4306,11 @@ function renderDOYCumPanel(){
           maxRotation:0,
           callback:(value)=>{
             const numeric = Number(value);
-            const idxA = Number.isFinite(numeric) ? Math.round(numeric) : NaN;
-            const idxB = Number.isFinite(numeric) ? Math.round(numeric) - 1 : NaN;
-            const dayIndex = mStarts.includes(idxA) ? idxA : idxB;
+            if(!Number.isFinite(numeric)) return "";
+
+            const dayIndex = Math.round(numeric);
+            if(Math.abs(numeric - dayIndex) > 0.001) return "";
+
             const m = mStarts.indexOf(dayIndex);
             return (m >= 0) ? mNames[m] : "";
           }
