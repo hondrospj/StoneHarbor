@@ -1015,21 +1015,90 @@ thead th{
     }
     .scenarioChoice input{accent-color:#ef4444}
 
-    .historicControls select{min-height:40px}
-    .historicTableWrap{overflow-x:auto}
-    #historicTable{min-width:620px}
-    #historicTable th:nth-child(2),
-    #historicTable td:nth-child(2){width:70px;text-align:center}
-    #historicTable th:nth-child(3),
-    #historicTable td:nth-child(3){width:150px}
-    .seaLevelHeader{
+    .paneControlHeader{
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
       gap:12px;
       flex-wrap:wrap;
+      margin-bottom:8px;
+    }
+    .paneToggleGroup{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-left:auto;
+    }
+    .annualHeaderControls .seg{flex:0 1 auto}
+    .annualHeaderControls .predictionToggle{margin-left:auto}
+    .doyKeyHeader{margin-bottom:10px}
+    .doyPresetGrid{
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:7px;
+    }
+    .miniKeyBtn.isWide{
+      grid-column:span 2;
+    }
+    .doyPicker{
+      padding:8px;
+    }
+    .doyYearList{
+      grid-template-columns:repeat(auto-fill, minmax(56px, 1fr));
+      gap:5px;
+      max-height:192px;
+    }
+    .doyYearChoice{
+      min-height:31px;
+      padding:6px 5px;
+    }
+    .historicControls{
+      display:grid;
+      grid-template-columns:
+        minmax(132px, 1fr)
+        minmax(132px, 1fr)
+        minmax(150px, 1fr)
+        minmax(150px, 1fr)
+        minmax(132px, .72fr)
+        minmax(112px, .62fr)
+        auto
+        auto;
+      align-items:center;
+      gap:10px;
+      width:100%;
+    }
+    .historicControls .input,
+    .historicControls select,
+    .historicControls .btn{
+      width:100%;
+      min-width:0;
+      min-height:42px;
+    }
+    .historicControls .btn{
+      white-space:nowrap;
+      padding-left:14px;
+      padding-right:14px;
+    }
+    .historicControls select{min-height:42px}
+    .historicTableWrap{overflow-x:auto}
+    #historicTable{
+      width:100%;
+      min-width:720px;
+      table-layout:fixed;
+    }
+    #historicTable th:nth-child(1),
+    #historicTable td:nth-child(1){width:36%}
+    #historicTable th:nth-child(2),
+    #historicTable td:nth-child(2){width:12%;text-align:center}
+    #historicTable th:nth-child(3),
+    #historicTable td:nth-child(3){width:20%}
+    #historicTable th:nth-child(4),
+    #historicTable td:nth-child(4){width:32%}
+    .seaLevelHeader{
       margin-bottom:4px;
     }
+    .seaLevelMeta:empty{display:none}
     .seaLevelStats{
       display:flex;
       flex-wrap:wrap;
@@ -1056,39 +1125,43 @@ thead th{
       border-radius:99px;
       display:inline-block;
     }
-    .seaLevelKey{
-      display:none;
-      flex-wrap:wrap;
-      justify-content:center;
-      gap:8px;
-      margin-top:10px;
-    }
-    .seaLevelKey.isVisible{display:flex}
-    .seaLevelKeyItem{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      min-height:32px;
-      padding:7px 10px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.045);
-      color:var(--text);
-      font-size:12px;
-      font-weight:950;
-      white-space:nowrap;
-    }
-    .seaLevelSwatch{
-      width:20px;
+    .trendChip .lineChip{
+      width:22px;
       height:3px;
-      border-radius:99px;
-      display:inline-block;
+      border-radius:999px;
     }
     @media(max-width:520px){
-      #historicTable{min-width:540px}
+      .paneControlHeader{align-items:stretch}
+      .paneToggleGroup{
+        width:100%;
+        justify-content:stretch;
+        margin-left:0;
+      }
+      .paneToggleGroup .predictionToggle{flex:1 1 100%;justify-content:flex-start}
+      .annualHeaderControls .seg{width:100%}
+      .annualHeaderControls .predictionToggle{margin-left:0}
+      .doyPresetGrid{grid-template-columns:repeat(2, minmax(0, 1fr))}
+      .miniKeyBtn.isWide{grid-column:auto}
+      .doyYearList{grid-template-columns:repeat(auto-fill, minmax(52px, 1fr));max-height:168px}
+      #historicTable{min-width:560px}
       .seaLevelHeader{align-items:stretch}
       .seaLevelHeader .predictionToggle{width:100%;justify-content:flex-start}
-      .seaLevelKeyItem{flex:1 1 calc(50% - 8px);justify-content:center;font-size:11.5px}
+    }
+    @media(max-width:1120px){
+      .historicControls{
+        grid-template-columns:repeat(4, minmax(0, 1fr));
+      }
+      .historicControls .btn{min-width:0}
+    }
+    @media(max-width:680px){
+      .historicControls{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media(max-width:430px){
+      .historicControls{
+        grid-template-columns:1fr;
+      }
     }
     @media(max-width:520px){
       .annualControls{align-items:stretch}
@@ -1499,7 +1572,7 @@ a.brand *{
           <div class="doyKeyHeader">
             <div>
               <div class="doyKeyTitle">Year visibility</div>
-              <div class="doyKeySub">Compact presets first. Open custom years only when needed.</div>
+              
             </div>
             <div class="doyVisibleBadge" id="doyVisibleBadge">—</div>
           </div>
@@ -1513,13 +1586,13 @@ a.brand *{
           <div class="doyPresetGrid">
             <button class="miniKeyBtn" id="doySelectAll" type="button">All</button>
             <button class="miniKeyBtn" id="doySelectCurrent" type="button">Current</button>
+            <button class="miniKeyBtn" id="doySelectRecent" type="button">Recent 5</button>
             <button class="miniKeyBtn isDanger" id="doySelectNone" type="button">None</button>
             <button class="miniKeyBtn isWide" id="doyPickerToggle" type="button" aria-expanded="false" aria-controls="doyPicker">Custom years</button>
           </div>
         </div>
 
         <div class="doyPicker" id="doyPicker" aria-label="Specific year picker">
-          <p class="doyPickerHint">Tap years to show or hide them. Average and Historic Range stay visible.</p>
           <div class="doyYearList" id="doyYearList"></div>
         </div>
       </aside>
@@ -1537,7 +1610,7 @@ a.brand *{
 
     <div class="accBody">
       
-      <div class="filterRow" style="margin-bottom:8px;">
+      <div class="filterRow paneControlHeader annualHeaderControls">
         <div class="seg" id="annualViewSeg" aria-label="Annual floods view">
           <button class="segBtn isActive" type="button" data-val="total">Total</button>
           <button class="segBtn" type="button" data-val="minor">Minor</button>
@@ -1569,23 +1642,31 @@ a.brand *{
     </summary>
 
     <div class="accBody">
-      <div class="seaLevelHeader">
+      <div class="seaLevelHeader paneControlHeader">
         <div>
-          <div class="hint" id="seaLevelMeta">Loading monthly sea level...</div>
+          <div class="hint seaLevelMeta" id="seaLevelMeta"></div>
           <div class="seaLevelStats" id="seaLevelStats"></div>
         </div>
-        <button class="btn predictionToggle" id="seaLevelProjectionToggle" type="button" aria-pressed="false">
-          <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
-          <span class="predictionToggleMeta">
-            <span class="predictionToggleLabel">Annual projections</span>
-            <span class="predictionToggleState">OFF · click to turn on</span>
-          </span>
-        </button>
+        <div class="paneToggleGroup seaLevelToggleGroup">
+          <button class="btn predictionToggle" id="seaLevelTrendToggle" type="button" aria-pressed="false">
+            <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
+            <span class="predictionToggleMeta">
+              <span class="predictionToggleLabel">Linear trend</span>
+              <span class="predictionToggleState">OFF · click to turn on</span>
+            </span>
+          </button>
+          <button class="btn predictionToggle" id="seaLevelProjectionToggle" type="button" aria-pressed="false">
+            <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
+            <span class="predictionToggleMeta">
+              <span class="predictionToggleLabel">Annual projections</span>
+              <span class="predictionToggleState">OFF · click to turn on</span>
+            </span>
+          </button>
+        </div>
       </div>
 
       <div style="height:10px"></div>
       <div class="chartWrapTall"><canvas id="seaLevelChart"></canvas></div>
-      <div class="seaLevelKey" id="seaLevelScenarioKey" aria-label="Sea level projection key"></div>
     </div>
   </details>
 
@@ -1942,8 +2023,8 @@ const annualPredictionToggle = $("annualPredictionToggle");
 const annualScenarioKey = $("annualScenarioKey");
 const seaLevelMeta = $("seaLevelMeta");
 const seaLevelStats = $("seaLevelStats");
+const seaLevelTrendToggle = $("seaLevelTrendToggle");
 const seaLevelProjectionToggle = $("seaLevelProjectionToggle");
-const seaLevelScenarioKey = $("seaLevelScenarioKey");
 const doyYearList = $("doyYearList");
 const doyVisibleBadge = $("doyVisibleBadge");
 const doyPicker = $("doyPicker");
@@ -1960,6 +2041,7 @@ let MONTH_VIEW = "total";
 let ANNUAL_VIEW = "total"; 
 let ANNUAL_PREDICTIONS_ENABLED = false;
 let ANNUAL_SCENARIO = "Baseline";
+let SEA_LEVEL_TREND_ENABLED = false;
 let SEA_LEVEL_PROJECTIONS_ENABLED = false;
 
 
@@ -3611,7 +3693,7 @@ function ensureAnnual(){
               const value = Math.floor(v);
               const spread = annualPredictionSpread(year, ctx.dataset.label, value);
               return Number.isFinite(spread)
-                ? `${ctx.dataset.label}: ${value} floods (+/- ${spread} floods)`
+                ? `${ctx.dataset.label}: ${value} floods (+/- ${spread})`
                 : `${ctx.dataset.label}: ${value} floods`;
             },
          footer: (items) => {
@@ -3941,6 +4023,18 @@ let seaLevelChart = null;
 let SEA_LEVEL_STATE = null;
 
 function renderSeaLevelProjectionControls(){
+  if(seaLevelTrendToggle){
+    seaLevelTrendToggle.classList.toggle("isOn", SEA_LEVEL_TREND_ENABLED);
+    seaLevelTrendToggle.setAttribute("aria-pressed", SEA_LEVEL_TREND_ENABLED ? "true" : "false");
+    seaLevelTrendToggle.innerHTML = `
+      <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
+      <span class="predictionToggleMeta">
+        <span class="predictionToggleLabel">Linear trend</span>
+        <span class="predictionToggleState">${SEA_LEVEL_TREND_ENABLED ? "ON · click to turn off" : "OFF · click to turn on"}</span>
+      </span>
+    `;
+  }
+
   if(seaLevelProjectionToggle){
     seaLevelProjectionToggle.classList.toggle("isOn", SEA_LEVEL_PROJECTIONS_ENABLED);
     seaLevelProjectionToggle.setAttribute("aria-pressed", SEA_LEVEL_PROJECTIONS_ENABLED ? "true" : "false");
@@ -3952,22 +4046,17 @@ function renderSeaLevelProjectionControls(){
       </span>
     `;
   }
-
-  if(!seaLevelScenarioKey) return;
-  seaLevelScenarioKey.classList.toggle("isVisible", SEA_LEVEL_PROJECTIONS_ENABLED);
-  const items = [
-    { label:"Baseline", color:"rgba(255,255,255,.95)" },
-    { label:"Low", color:"rgba(45,212,191,.95)" },
-    { label:"Intermediate", color:"rgba(251,191,36,.95)" },
-    { label:"High", color:"rgba(251,113,133,.95)" }
-  ];
-  seaLevelScenarioKey.innerHTML = items.map(item => `
-    <div class="seaLevelKeyItem"><span class="seaLevelSwatch" style="background:${item.color}"></span>${item.label}</div>
-  `).join("");
 }
 
 function hookSeaLevelControls(){
   renderSeaLevelProjectionControls();
+  if(seaLevelTrendToggle){
+    seaLevelTrendToggle.addEventListener("click", ()=>{
+      SEA_LEVEL_TREND_ENABLED = !SEA_LEVEL_TREND_ENABLED;
+      renderSeaLevelProjectionControls();
+      renderSeaLevelChart();
+    });
+  }
   if(seaLevelProjectionToggle){
     seaLevelProjectionToggle.addEventListener("click", ()=>{
       SEA_LEVEL_PROJECTIONS_ENABLED = !SEA_LEVEL_PROJECTIONS_ENABLED;
@@ -4088,18 +4177,41 @@ function seaLevelScenarioColor(id){
 
 function buildSeaLevelDatasets(labels, state){
   const observedByMonth = new Map(state.relative.map(r => [r.month, r.relFt]));
+  const lastObservedMonth = state.relative[state.relative.length - 1]?.month || "";
   const datasets = [{
     label:"Monthly mean",
     data:labels.map(m => observedByMonth.has(m) ? observedByMonth.get(m) : null),
     borderColor:"rgba(45,212,191,.95)",
-    backgroundColor:"rgba(45,212,191,.20)",
-    borderWidth:2,
+    backgroundColor:"rgba(45,212,191,.95)",
+    borderWidth:2.4,
+    pointStyle:"line",
     pointRadius:0,
     pointHitRadius:6,
     spanGaps:false,
     tension:.16,
     order:20
   }];
+
+  if(SEA_LEVEL_TREND_ENABLED && state.regression){
+    datasets.push({
+      label:"Linear trend",
+      data:labels.map(m => {
+        if(lastObservedMonth && m > lastObservedMonth) return null;
+        const x = decimalYearFromMonth(m);
+        return state.regression.intercept + state.regression.slope * x;
+      }),
+      borderColor:"rgba(255,255,255,.88)",
+      backgroundColor:"rgba(255,255,255,.88)",
+      borderWidth:2.2,
+      borderDash:[6,5],
+      pointStyle:"line",
+      pointRadius:0,
+      pointHitRadius:6,
+      spanGaps:false,
+      tension:0,
+      order:15
+    });
+  }
 
   if(!SEA_LEVEL_PROJECTIONS_ENABLED || !state.regression) return datasets;
 
@@ -4112,6 +4224,7 @@ function buildSeaLevelDatasets(labels, state){
     borderColor:seaLevelScenarioColor("Baseline"),
     backgroundColor:seaLevelScenarioColor("Baseline"),
     borderWidth:2.5,
+    pointStyle:"line",
     pointRadius:0,
     pointHitRadius:6,
     tension:.12,
@@ -4131,6 +4244,7 @@ function buildSeaLevelDatasets(labels, state){
       borderColor:seaLevelScenarioColor(scenario.id),
       backgroundColor:seaLevelScenarioColor(scenario.id),
       borderWidth:2.2,
+      pointStyle:"line",
       pointRadius:0,
       pointHitRadius:6,
       spanGaps:false,
@@ -4149,10 +4263,10 @@ function renderSeaLevelStats(state){
     return;
   }
   const latest = state.relative[state.relative.length - 1];
-  const inchesPerDecade = state.regression.annualFt * 120;
+  const mmPerYear = state.regression.annualFt * 304.8;
   seaLevelStats.innerHTML = `
-    <div class="trendChip"><span style="background:rgba(45,212,191,.95)"></span>Latest ${latest.month}: ${latest.relFt.toFixed(2)} ft</div>
-    <div class="trendChip"><span style="background:rgba(255,255,255,.95)"></span>Trend ${inchesPerDecade.toFixed(2)} in/decade</div>
+    <div class="trendChip">Latest ${latest.month}: ${latest.relFt.toFixed(2)} ft</div>
+    <div class="trendChip"><span class="lineChip" style="background:rgba(255,255,255,.88)"></span>Trend ${mmPerYear.toFixed(1)} mm/year</div>
   `;
 }
 
@@ -4174,7 +4288,14 @@ function renderSeaLevelChart(){
     plugins:{
       legend:{
         position:"bottom",
-        labels:{ color:"rgba(234,240,255,.88)", font:{weight:"950"}, boxWidth:16 }
+        labels:{
+          color:"rgba(234,240,255,.88)",
+          font:{weight:"950"},
+          usePointStyle:true,
+          pointStyleWidth:28,
+          boxWidth:28,
+          boxHeight:4
+        }
       },
       tooltip:{
         callbacks:{
@@ -4266,7 +4387,7 @@ async function updateSeaLevelTrends(){
     if(!relative || !relative.length) throw new Error("No monthly sea level values available");
     const regression = seaLevelRegression(relative);
     SEA_LEVEL_STATE = { monthly, relative, regression, source };
-    seaLevelMeta.textContent = `${relative[0].month} - ${relative[relative.length - 1].month} · relative to year 2000 · ${source}`;
+    seaLevelMeta.textContent = "";
     renderSeaLevelChart();
   }catch(e){
     console.warn("Sea level trends failed:", e);
