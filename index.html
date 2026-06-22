@@ -1837,7 +1837,7 @@ a.brand *{
   <div style="height:14px"></div>
 
   
-  <details class="acc" id="annualAcc">
+  <details class="acc" id="annualAcc" open>
     <summary class="accHeader">
       <h2 class="accTitle">Flooding over the years </h2>
       <span class="chev"></span>
@@ -1900,7 +1900,7 @@ a.brand *{
   <div style="height:14px"></div>
 
   
-  <details class="acc">
+  <details class="acc" open>
     <summary class="accHeader">
       <h2 class="accTitle">Average number of floods per month</h2>
       <span class="chev"></span>
@@ -1942,7 +1942,7 @@ a.brand *{
   <div style="height:14px"></div>
 
   
-  <details class="acc" id="historicFloodAcc">
+  <details class="acc" id="historicFloodAcc" open>
     <summary class="accHeader">
       <h2 class="accTitle">Historic flooding filter (enter a range)</h2>
       <span class="chev"></span>
@@ -1991,7 +1991,7 @@ a.brand *{
   <div style="height:14px"></div>
 
   
-  <details class="acc" id="mapAcc">
+  <details class="acc" id="mapAcc" open>
     <summary class="accHeader">
       <h2 class="accTitle">NJ tide gauge map</h2>
       <span class="chev"></span>
@@ -4171,31 +4171,69 @@ function renderAnnual(){
 
 
 
-function buildDailyTickCallbackSkipFirstDay(labels){
-  const stepCountForHours = (hours)=>{
-    const step = (typeof TS_STEP_MS === "number" && TS_STEP_MS > 0) ? TS_STEP_MS : 15 * 60 * 1000;
-    return Math.max(1, Math.round((hours * 3600 * 1000) / step));
-  };
-  const sixHourStep = stepCountForHours(6);
+function compactTimeLabel(iso){
+  return fmtESTTime(iso).replace(":00", "").replace(" AM", "a").replace(" PM", "p");
+}
 
-  return (value, index)=>{
-    const iso = labels?.[index];
+function buildDailyTickCallbackSkipFirstDay(labels){
+  return function(value){
+    const numericValue = Number(value);
+    const idx = Number.isFinite(numericValue) ? Math.round(numericValue) : 0;
+    const iso = labels?.[idx] || (typeof this?.getLabelForValue === "function" ? this.getLabelForValue(value) : null);
     if(!iso) return "";
 
-    const dayStr = fmtESTDay(iso);
-    const prevIso = labels?.[index - 1];
-    const prevDay = prevIso ? fmtESTDay(prevIso) : "";
+    const d = new Date(iso);
+    if(Number.isNaN(d.getTime())) return "";
 
-    if(index === 0) return dayStr;
-    if(dayStr !== prevDay) return dayStr;
-
-    if(index % sixHourStep === 0){
-      return fmtESTTime(iso).replace(":00", "");
-    }
-
-    return "";
+    return [fmtESTDay(iso), compactTimeLabel(iso)];
   };
 }
+
+function maxTsDateTicks(){
+  const w = Math.max(document.documentElement?.clientWidth || 0, window.innerWidth || 0);
+  if(w < 380) return 4;
+  if(w < 560) return 5;
+  if(w < 760) return 6;
+  if(w < 1100) return 8;
+  if(w < 1500) return 10;
+  return 12;
+}
+
+function applyTsDateAxis(labels){
+  if(!tsChart?.options?.scales?.x) return;
+
+  const x = tsChart.options.scales.x;
+  x.ticks = {
+    ...(x.ticks || {}),
+    color:"rgba(169,182,211,.9)",
+    autoSkip:true,
+    maxTicksLimit:maxTsDateTicks(),
+    maxRotation:0,
+    minRotation:0,
+    padding:8,
+    callback:buildDailyTickCallbackSkipFirstDay(labels)
+  };
+
+  x.grid = {
+    ...(x.grid || {}),
+    display:false,
+    drawTicks:true,
+    color:"rgba(255,255,255,.045)"
+  };
+}
+
+function refreshTsDateAxisForViewport(){
+  if(!tsChart?.data?.labels?.length) return;
+  applyTsDateAxis(tsChart.data.labels);
+  tsChart.update("none");
+}
+
+let TS_AXIS_RESIZE_TIMER = null;
+window.addEventListener("resize", ()=>{
+  if(!tsChart?.data?.labels?.length) return;
+  clearTimeout(TS_AXIS_RESIZE_TIMER);
+  TS_AXIS_RESIZE_TIMER = setTimeout(refreshTsDateAxisForViewport, 120);
+});
 
 
 function ensureTsChart(){
@@ -4303,11 +4341,14 @@ function ensureTsChart(){
           title:{display:true, text:"Date", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks:{
             color:"rgba(169,182,211,.9)",
-            autoSkip:false,
+            autoSkip:true,
+            maxTicksLimit:8,
             maxRotation:0,
-            callback:()=>"" 
+            minRotation:0,
+            padding:8,
+            callback:()=>""
           },
-          grid:{ color:"rgba(255,255,255,.06)" }
+          grid:{ display:false, color:"rgba(255,255,255,.045)" }
         },
         y:{
           ticks:{
@@ -4851,8 +4892,7 @@ function updateTsChartFromState(){
   tsChart.options.plugins.legend.labels.pointStyleWidth = 22;
   tsChart.options.plugins.legend.labels.boxWidth = 22;
   tsChart.options.plugins.legend.labels.boxHeight = 6;
-  tsChart.options.scales.x.grid.display = true;
-  tsChart.options.scales.x.ticks.callback = buildDailyTickCallbackSkipFirstDay(labels);
+  applyTsDateAxis(labels);
   tsChart.options.scales.x.title.text = "Date";
   tsChart.options.scales.y.title.text = unitText();
 
@@ -6413,7 +6453,12 @@ const PEAKS_JSON_PATH_CANDIDATES = [
 ];
 let PEAKS_JSON_URL = PEAKS_JSON_PATH_CANDIDATES[0];
 
+function openAllAccordionsOnLoad(){
+  document.querySelectorAll("details.acc").forEach(d => { d.open = true; });
+}
+
 async function boot(){
+  openAllAccordionsOnLoad();
   renderGaugeStaticText();
 
   if(datumSelect){
