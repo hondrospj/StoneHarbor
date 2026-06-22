@@ -4079,8 +4079,21 @@ function ensureTsChart(){
             label:(ctx)=>{
               const v = ctx.parsed?.y;
               if(!Number.isFinite(v)) return null;
-              const risk = ctx.dataset?._riskFlags?.[ctx.dataIndex];
-              return risk ? `${ctx.dataset.label}: ${v.toFixed(2)} ${unitText()} - Heightened Risk Of Flooding` : `${ctx.dataset.label}: ${v.toFixed(2)} ${unitText()}`;
+
+              const ds = ctx.dataset || {};
+              const adj = ds._seasonalAdjusted?.[ctx.dataIndex];
+              const adjTxt = Number.isFinite(adj) ? `; seasonal adj. ${adj.toFixed(2)} ${unitText()}` : "";
+
+              if(ds._kind === "nearFloodHigh"){
+                return `Near-flood high: ${v.toFixed(2)} ${unitText()}${adjTxt}`;
+              }
+
+              if(ds._kind === "tidalHighs"){
+                return `NOAA tidal high: ${v.toFixed(2)} ${unitText()}${adjTxt}`;
+              }
+
+              const risk = ds?._riskFlags?.[ctx.dataIndex];
+              return risk ? `${ds.label}: ${v.toFixed(2)} ${unitText()} - Heightened Risk Of Flooding` : `${ds.label}: ${v.toFixed(2)} ${unitText()}`;
             }
           }
         }
@@ -4268,11 +4281,19 @@ function annualMonthTickCallback(labels){
 
 function styleTsLegendAsLines(){
   if(!tsChart) return;
+
   for(const ds of tsChart.data.datasets.slice(0, 2)){
+    if(!ds) continue;
     ds.pointStyle = "line";
-    ds.pointRadius = 0;
-    ds.pointHoverRadius = 0;
+    ds.pointHitRadius = 8;
   }
+
+  for(const ds of tsChart.data.datasets.slice(2)){
+    if(!ds) continue;
+    ds.pointStyle = "circle";
+    ds.pointHitRadius = 10;
+  }
+
   const labels = tsChart.options.plugins.legend.labels;
   labels.usePointStyle = true;
   labels.pointStyleWidth = 28;
@@ -4363,27 +4384,35 @@ function currentAnnualForecastInfo(year){
 
 function updateTsAnnualForecastChartFromState(){
   ensureTsChart();
-  styleTsLegendAsLines();
 
   if(!TS_ANNUAL_FORECAST_POINTS.length){
     loadTsAnnualForecastPoints();
   }
 
   const endISO = nowISO();
-  const rawFutureHighs = TS_ANNUAL_FORECAST_POINTS
-    .filter(p => new Date(p.t).getTime() >= new Date(endISO).getTime());
-  const dailyCrestMap = new Map();
-  for(const p of rawFutureHighs){
-    const adjustedMllw = Number(p.ft) + seasonalOffsetForISO(p.t);
-    const displayFt = toDisplayFtFromMllw(adjustedMllw);
-    if(!Number.isFinite(displayFt)) continue;
-    const d = new Date(p.t);
-    if(Number.isNaN(d.getTime())) continue;
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
-    const existing = dailyCrestMap.get(key);
-    if(!existing || displayFt > existing.ft) dailyCrestMap.set(key, { t:p.t, ft:displayFt });
-  }
-  const dailyCrests = Array.from(dailyCrestMap.values())
+  const nowMs = new Date(endISO).getTime();
+
+  const {minor, moderate, major} = thresholdsDisplay();
+  const nearFloodCutoff = minor - 0.5;
+
+  const tidalHighs = TS_ANNUAL_FORECAST_POINTS
+    .map(p=>{
+      const tMs = new Date(p.t).getTime();
+      const rawMllw = Number(p.ft);
+      if(!Number.isFinite(tMs) || !Number.isFinite(rawMllw) || tMs < nowMs) return null;
+
+      const plottedFt = toDisplayFtFromMllw(rawMllw);
+      const seasonallyAdjustedFt = toDisplayFtFromMllw(rawMllw + seasonalOffsetForISO(p.t));
+      if(!Number.isFinite(plottedFt) || !Number.isFinite(seasonallyAdjustedFt)) return null;
+
+      return {
+        t:p.t,
+        ft:plottedFt,
+        seasonalFt:seasonallyAdjustedFt,
+        nearFlood:seasonallyAdjustedFt >= nearFloodCutoff
+      };
+    })
+    .filter(Boolean)
     .sort((a,b)=>new Date(a.t)-new Date(b.t));
 
   const observedPoints = (STATE.obs24Navd || [])
@@ -4397,43 +4426,92 @@ function updateTsAnnualForecastChartFromState(){
     .sort((a,b)=>new Date(a.t)-new Date(b.t));
   const latestObserved = observedPoints.length ? observedPoints[observedPoints.length - 1] : null;
 
-  const labelSet = new Set(dailyCrests.map(p=>p.t));
+  const labelSet = new Set(tidalHighs.map(p=>p.t));
   if(latestObserved) labelSet.add(latestObserved.t);
   const labels = Array.from(labelSet).sort((a,b)=>new Date(a)-new Date(b));
+
   const obsMap = new Map();
   if(latestObserved) obsMap.set(latestObserved.t, latestObserved.ft);
 
-  const forecastMap = new Map();
-  for(const p of dailyCrests){
-    forecastMap.set(p.t, p.ft);
+  const highMap = new Map();
+  const seasonalMap = new Map();
+  const nearFloodMap = new Map();
+
+  for(const p of tidalHighs){
+    highMap.set(p.t, p.ft);
+    seasonalMap.set(p.t, p.seasonalFt);
+    if(p.nearFlood) nearFloodMap.set(p.t, p.ft);
   }
 
-  const minor = thresholdsDisplay().minor;
-  const riskFlags = labels.map(iso=>{
-    const v = forecastMap.get(iso);
-    return Number.isFinite(v) && v >= minor - 0.5;
-  });
+  if(tsChart.data.datasets.length < 3){
+    tsChart.data.datasets.push({
+      label:"Near-Flood Highs (≤0.5 ft, seasonal adj.)",
+      data:[],
+      borderWidth:0,
+      showLine:false,
+      pointStyle:"circle",
+      pointRadius:0,
+      pointHoverRadius:0,
+      pointHitRadius:10,
+      pointBackgroundColor:"rgba(239,68,68,1)",
+      pointBorderColor:"rgba(255,255,255,.96)",
+      pointBorderWidth:1.6,
+      spanGaps:false,
+      _kind:"nearFloodHigh",
+      _drawLast:true
+    });
+  }
+
+  styleTsLegendAsLines();
+
+  const observedDs = tsChart.data.datasets[0];
+  const highsDs = tsChart.data.datasets[1];
+  const nearDs = tsChart.data.datasets[2];
 
   tsChart.data.labels = labels;
-  tsChart.data.datasets[0].label = "Observed (USGS)";
-  tsChart.data.datasets[0].data = labels.map(iso => obsMap.has(iso) ? obsMap.get(iso) : null);
-  tsChart.data.datasets[0].pointRadius = labels.map(iso => obsMap.has(iso) ? 3.5 : 0);
-  tsChart.data.datasets[0].pointHoverRadius = labels.map(iso => obsMap.has(iso) ? 5.5 : 0);
-  tsChart.data.datasets[0].pointBackgroundColor = "rgba(45,212,191,1)";
-  tsChart.data.datasets[0].pointBorderColor = "rgba(255,255,255,.9)";
-  tsChart.data.datasets[0].borderWidth = 2.4;
-  tsChart.data.datasets[1].label = "Predicted (NOAA)";
-  tsChart.data.datasets[1].data = labels.map(iso => forecastMap.has(iso) ? forecastMap.get(iso) : null);
-  tsChart.data.datasets[1]._riskFlags = riskFlags;
-  tsChart.data.datasets[1].borderDash = [];
-  tsChart.data.datasets[1].borderDashOffset = 0;
-  tsChart.data.datasets[1].borderWidth = 2.6;
-  tsChart.data.datasets[1].tension = 0.32;
-  tsChart.data.datasets[1].pointRadius = riskFlags.map(v => v ? 4.5 : 0);
-  tsChart.data.datasets[1].pointHoverRadius = riskFlags.map(v => v ? 7 : 0);
-  tsChart.data.datasets[1].pointBackgroundColor = riskFlags.map(v => v ? "rgba(239,68,68,1)" : "rgba(45,212,191,.95)");
-  tsChart.data.datasets[1].pointBorderColor = riskFlags.map(v => v ? "rgba(255,255,255,.95)" : "rgba(45,212,191,.95)");
-  tsChart.data.datasets[1].pointBorderWidth = riskFlags.map(v => v ? 1.5 : 0);
+
+  observedDs.label = "Observed (USGS)";
+  observedDs._kind = "observed";
+  observedDs.data = labels.map(iso => obsMap.has(iso) ? obsMap.get(iso) : null);
+  observedDs.pointRadius = labels.map(iso => obsMap.has(iso) ? 3.8 : 0);
+  observedDs.pointHoverRadius = labels.map(iso => obsMap.has(iso) ? 6 : 0);
+  observedDs.pointBackgroundColor = "rgba(45,212,191,1)";
+  observedDs.pointBorderColor = "rgba(255,255,255,.92)";
+  observedDs.pointBorderWidth = 1.4;
+  observedDs.borderWidth = 2.4;
+  observedDs.borderDash = [];
+  delete observedDs._seasonalAdjusted;
+  delete observedDs._riskFlags;
+
+  highsDs.label = "NOAA Tidal Highs";
+  highsDs._kind = "tidalHighs";
+  highsDs.data = labels.map(iso => highMap.has(iso) ? highMap.get(iso) : null);
+  highsDs._seasonalAdjusted = labels.map(iso => seasonalMap.has(iso) ? seasonalMap.get(iso) : null);
+  highsDs.borderDash = [];
+  highsDs.borderDashOffset = 0;
+  highsDs.borderWidth = 2.2;
+  highsDs.tension = 0.18;
+  highsDs.spanGaps = true;
+  highsDs.pointRadius = labels.map(iso => highMap.has(iso) ? 2.3 : 0);
+  highsDs.pointHoverRadius = labels.map(iso => highMap.has(iso) ? 5.5 : 0);
+  highsDs.pointBackgroundColor = labels.map(iso => highMap.has(iso) ? "rgba(45,212,191,.95)" : "rgba(45,212,191,0)");
+  highsDs.pointBorderColor = labels.map(iso => highMap.has(iso) ? "rgba(10,16,28,.85)" : "rgba(45,212,191,0)");
+  highsDs.pointBorderWidth = labels.map(iso => highMap.has(iso) ? 0.8 : 0);
+  delete highsDs._riskFlags;
+
+  nearDs.label = "Near-Flood Highs (≤0.5 ft, seasonal adj.)";
+  nearDs._kind = "nearFloodHigh";
+  nearDs._drawLast = true;
+  nearDs.data = labels.map(iso => nearFloodMap.has(iso) ? nearFloodMap.get(iso) : null);
+  nearDs._seasonalAdjusted = labels.map(iso => seasonalMap.has(iso) ? seasonalMap.get(iso) : null);
+  nearDs.showLine = false;
+  nearDs.borderWidth = 0;
+  nearDs.pointStyle = "circle";
+  nearDs.pointRadius = labels.map(iso => nearFloodMap.has(iso) ? 5.2 : 0);
+  nearDs.pointHoverRadius = labels.map(iso => nearFloodMap.has(iso) ? 7.8 : 0);
+  nearDs.pointBackgroundColor = "rgba(239,68,68,1)";
+  nearDs.pointBorderColor = "rgba(255,255,255,.96)";
+  nearDs.pointBorderWidth = 1.7;
 
   tsChart.options.scales.x.ticks.callback = annualMonthTickCallback(labels);
   tsChart.options.scales.x.grid.display = false;
@@ -4441,12 +4519,14 @@ function updateTsAnnualForecastChartFromState(){
   tsChart.options.scales.y.title.text = unitText();
 
   const ys = [
-    ...tsChart.data.datasets[0].data,
-    ...tsChart.data.datasets[1].data,
-    thresholdsDisplay().minor,
-    thresholdsDisplay().moderate,
-    thresholdsDisplay().major
+    ...observedDs.data,
+    ...highsDs.data,
+    ...nearDs.data,
+    minor,
+    moderate,
+    major
   ].filter(v => Number.isFinite(v));
+
   if(ys.length){
     const yMinRaw = Math.min(...ys);
     const yMaxRaw = Math.max(...ys);
@@ -4543,12 +4623,20 @@ const predValsDisplay = labels.map(iso=>{
   
   
   ensureTsChart();
+  if(tsChart.data.datasets.length > 2){
+    tsChart.data.datasets.splice(2);
+  }
   styleTsLegendAsLines();
   tsChart.data.labels = labels;
   tsChart.data.datasets[0].label = "Observed (USGS)";
   tsChart.data.datasets[1].label = "Predicted (NOAA)";
+  tsChart.data.datasets[0]._kind = "observed";
+  tsChart.data.datasets[1]._kind = "prediction";
   tsChart.data.datasets[0].data = obsFiltered;     
   tsChart.data.datasets[1].data = predValsDisplay;
+  delete tsChart.data.datasets[0]._seasonalAdjusted;
+  delete tsChart.data.datasets[0]._riskFlags;
+  delete tsChart.data.datasets[1]._seasonalAdjusted;
   delete tsChart.data.datasets[1]._riskFlags;
   tsChart.data.datasets[0].pointRadius = 0;
   tsChart.data.datasets[0].pointHoverRadius = 0;
