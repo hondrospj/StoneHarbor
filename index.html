@@ -1536,6 +1536,40 @@ a.brand *{
   }
 }
 
+
+/* Final forecast toggle state colors: green when ON, red when OFF. */
+.predictionToggle{
+  transition:background .18s ease, border-color .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.predictionToggle:not(.isOn){
+  background:rgba(251,113,133,.10) !important;
+  border-color:rgba(251,113,133,.30) !important;
+}
+.predictionToggle:not(.isOn) .predictionToggleTrack{
+  background:rgba(251,113,133,.20) !important;
+  border-color:rgba(251,113,133,.36) !important;
+}
+.predictionToggle:not(.isOn) .predictionToggleKnob{
+  background:#fb7185 !important;
+}
+.predictionToggle:not(.isOn) .predictionToggleState{
+  color:#fecdd3 !important;
+}
+.predictionToggle.isOn{
+  background:rgba(45,212,191,.12) !important;
+  border-color:rgba(45,212,191,.30) !important;
+}
+.predictionToggle.isOn .predictionToggleTrack{
+  background:rgba(45,212,191,.30) !important;
+  border-color:rgba(45,212,191,.38) !important;
+}
+.predictionToggle.isOn .predictionToggleKnob{
+  background:#2dd4bf !important;
+}
+.predictionToggle.isOn .predictionToggleState{
+  color:#99f6e4 !important;
+}
+
   </style>
 </head>
 
@@ -1714,7 +1748,7 @@ a.brand *{
           <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
           <span class="predictionToggleMeta">
             <span class="predictionToggleLabel">Forecast</span>
-            <span class="predictionToggleState">OFF · click to turn on</span>
+            <span class="predictionToggleState">OFF</span>
           </span>
         </button>
       </div>
@@ -1760,7 +1794,7 @@ a.brand *{
           <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
           <span class="predictionToggleMeta">
             <span class="predictionToggleLabel">Forecast</span>
-            <span class="predictionToggleState">OFF · click to turn on</span>
+            <span class="predictionToggleState">OFF</span>
           </span>
         </button>
       </div>
@@ -1822,7 +1856,7 @@ a.brand *{
           <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
           <span class="predictionToggleMeta">
             <span class="predictionToggleLabel">Forecast</span>
-            <span class="predictionToggleState">OFF · click to turn on</span>
+            <span class="predictionToggleState">OFF</span>
           </span>
         </button>
       </div>
@@ -1852,7 +1886,7 @@ a.brand *{
             <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
             <span class="predictionToggleMeta">
               <span class="predictionToggleLabel">Forecast</span>
-              <span class="predictionToggleState">OFF · click to turn on</span>
+              <span class="predictionToggleState">OFF</span>
             </span>
           </button>
         </div>
@@ -2325,7 +2359,7 @@ function renderAnnualScenarioControls(){
       <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
       <span class="predictionToggleMeta">
         <span class="predictionToggleLabel">Forecast</span>
-        <span class="predictionToggleState">${ANNUAL_PREDICTIONS_ENABLED ? "ON · click to turn off" : "OFF · click to turn on"}</span>
+        <span class="predictionToggleState">${ANNUAL_PREDICTIONS_ENABLED ? "ON" : "OFF"}</span>
       </span>
     `;
   }
@@ -4331,7 +4365,7 @@ function renderForecastToggle(button, enabled){
     <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
     <span class="predictionToggleMeta">
       <span class="predictionToggleLabel">Forecast</span>
-      <span class="predictionToggleState">${enabled ? "ON · click to turn off" : "OFF · click to turn on"}</span>
+      <span class="predictionToggleState">${enabled ? "ON" : "OFF"}</span>
     </span>
   `;
 }
@@ -4869,7 +4903,7 @@ function renderSeaLevelProjectionControls(){
       <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
       <span class="predictionToggleMeta">
         <span class="predictionToggleLabel">Forecast</span>
-        <span class="predictionToggleState">${SEA_LEVEL_PROJECTIONS_ENABLED ? "ON · click to turn off" : "OFF · click to turn on"}</span>
+        <span class="predictionToggleState">${SEA_LEVEL_PROJECTIONS_ENABLED ? "ON" : "OFF"}</span>
       </span>
     `;
   }
