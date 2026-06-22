@@ -1444,6 +1444,45 @@ a.brand *{
 .datumPick .datumSelect{
   background:#020814 !important;
 }
+
+/* Final DOY custom-year picker alignment and containment fix. */
+.doyPicker{
+  width:100%;
+  max-width:100%;
+  overflow:hidden;
+}
+.doyPicker.isOpen{
+  display:block;
+}
+.doyYearList{
+  display:flex !important;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:center;
+  align-content:flex-start;
+  gap:8px;
+  width:100%;
+  max-width:100%;
+  margin:0 auto;
+  padding:2px 4px 4px;
+  overflow:auto;
+}
+.doyYearChoice{
+  flex:0 0 auto;
+  min-width:74px;
+  max-width:92px;
+  justify-content:center;
+}
+@media(max-width:620px){
+  .doyYearList{
+    gap:6px;
+  }
+  .doyYearChoice{
+    min-width:66px;
+    max-width:86px;
+  }
+}
+
   </style>
 </head>
 
@@ -3089,8 +3128,23 @@ const annualForecastRangePlugin = {
     if (![yLow, yMean, yHigh].every(Number.isFinite)) return;
 
     const { ctx, chartArea } = chart;
-    const xClamped = Math.max(chartArea.left, Math.min(chartArea.right, x));
+
+    /* Keep the end-of-year forecast marker fully inside the plotting pane.
+       The x-scale places Dec. 31 on the far right edge, so the horizontal
+       caps and mean dot need a small inward pad instead of being centered
+       directly on chartArea.right. */
     const cap = 11;
+    const dotR = 6.5;
+    const sidePad = Math.max(cap, dotR) + 4;
+    const xClamped = Math.max(
+      chartArea.left + sidePad,
+      Math.min(chartArea.right - sidePad, x)
+    );
+
+    const yPad = 2;
+    const yLowClamped = Math.max(chartArea.top + yPad, Math.min(chartArea.bottom - yPad, yLow));
+    const yMeanClamped = Math.max(chartArea.top + dotR + yPad, Math.min(chartArea.bottom - dotR - yPad, yMean));
+    const yHighClamped = Math.max(chartArea.top + yPad, Math.min(chartArea.bottom - yPad, yHigh));
 
     ctx.save();
     ctx.lineCap = "round";
@@ -3100,20 +3154,20 @@ const annualForecastRangePlugin = {
 
     ctx.lineWidth = 3.2;
     ctx.beginPath();
-    ctx.moveTo(xClamped, yHigh);
-    ctx.lineTo(xClamped, yLow);
+    ctx.moveTo(xClamped, yHighClamped);
+    ctx.lineTo(xClamped, yLowClamped);
     ctx.stroke();
 
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(xClamped - cap, yHigh);
-    ctx.lineTo(xClamped + cap, yHigh);
-    ctx.moveTo(xClamped - cap, yLow);
-    ctx.lineTo(xClamped + cap, yLow);
+    ctx.moveTo(xClamped - cap, yHighClamped);
+    ctx.lineTo(xClamped + cap, yHighClamped);
+    ctx.moveTo(xClamped - cap, yLowClamped);
+    ctx.lineTo(xClamped + cap, yLowClamped);
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(xClamped, yMean, 6.5, 0, Math.PI * 2);
+    ctx.arc(xClamped, yMeanClamped, dotR, 0, Math.PI * 2);
     ctx.fill();
     ctx.lineWidth = 2;
     ctx.strokeStyle = "rgba(255,255,255,.96)";
