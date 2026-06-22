@@ -16,7 +16,7 @@
 
 :root{
   --bg:#0b1220;
-  --text:#eaf0ff;
+  --text:#eaf0ff;X
   --muted:#a9b6d3;
   --line:rgba(255,255,255,.085);
   --ok:#2dd4bf;
@@ -1031,8 +1031,33 @@ thead th{
       flex-wrap:wrap;
       margin-left:auto;
     }
+    .paneTitleBlock{min-width:0}
+    .obsHeaderControls,
+    .doyHeaderControls{
+      align-items:flex-start;
+    }
+    .chartActionBar{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      min-height:0;
+      margin:4px 0 6px;
+    }
+    .chartActionBar .zoomReset{
+      position:static;
+      top:auto;
+      right:auto;
+      box-shadow:none;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.055);
+    }
     .annualHeaderControls .seg{flex:0 1 auto}
     .annualHeaderControls .predictionToggle{margin-left:auto}
+    .doySidePanel{
+      position:relative;
+      min-height:0;
+    }
     .doyKeyHeader{margin-bottom:10px}
     .doyPresetGrid{
       grid-template-columns:repeat(3, minmax(0, 1fr));
@@ -1043,6 +1068,14 @@ thead th{
     }
     .doyPicker{
       padding:8px;
+      position:absolute;
+      left:0;
+      right:0;
+      top:var(--doy-picker-top, 172px);
+      z-index:8;
+      max-height:min(250px, 56vh);
+      overflow:auto;
+      box-shadow:0 18px 46px rgba(0,0,0,.38);
     }
     .doyYearList{
       grid-template-columns:repeat(auto-fill, minmax(56px, 1fr));
@@ -1052,6 +1085,15 @@ thead th{
     .doyYearChoice{
       min-height:31px;
       padding:6px 5px;
+      border-width:1px;
+      position:relative;
+      transition:background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+    .doyYearChoice.isChecked{
+      border-color:rgba(255,255,255,.72);
+      background:rgba(255,255,255,.105);
+      box-shadow:0 0 0 2px rgba(255,255,255,.08) inset;
+      color:#fff;
     }
     .historicControls{
       display:grid;
@@ -1130,6 +1172,21 @@ thead th{
       height:3px;
       border-radius:999px;
     }
+    .contactNote{
+      position:fixed;
+      right:12px;
+      bottom:10px;
+      z-index:20;
+      max-width:min(420px, calc(100vw - 24px));
+      padding:7px 10px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      background:rgba(5,11,22,.88);
+      color:rgba(234,240,255,.82);
+      font-size:11px;
+      font-weight:850;
+      backdrop-filter:blur(10px);
+    }
     @media(max-width:520px){
       .paneControlHeader{align-items:stretch}
       .paneToggleGroup{
@@ -1146,6 +1203,13 @@ thead th{
       #historicTable{min-width:560px}
       .seaLevelHeader{align-items:stretch}
       .seaLevelHeader .predictionToggle{width:100%;justify-content:flex-start}
+      .contactNote{
+        left:10px;
+        right:10px;
+        text-align:center;
+        white-space:normal;
+        border-radius:12px;
+      }
     }
     @media(max-width:1120px){
       .historicControls{
@@ -1524,9 +1588,17 @@ a.brand *{
 
   
   <div class="card">
-    <div class="hrow">
+    <div class="hrow paneControlHeader obsHeaderControls">
       <h2>Observations (USGS) & Predictions (NOAA)</h2>
-      <div class="kicker" style="text-transform:none"></div>
+      <div class="paneToggleGroup">
+        <button class="btn predictionToggle" id="tsAnnualForecastToggle" type="button" aria-pressed="false">
+          <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
+          <span class="predictionToggleMeta">
+            <span class="predictionToggleLabel">Annual Forecast</span>
+            <span class="predictionToggleState">OFF · click to turn on</span>
+          </span>
+        </button>
+      </div>
     </div>
 
     <div class="chartWrapTall">
@@ -1559,9 +1631,20 @@ a.brand *{
 
   
   <div class="card">
-    <div class="hrow">
-      <h2>Cumulative annual flooding</h2>
-      <div class="kicker" id="doyMeta">Computing…</div>
+    <div class="hrow paneControlHeader doyHeaderControls">
+      <div>
+        <h2>Cumulative annual flooding</h2>
+        <div class="kicker" id="doyMeta">Computing…</div>
+      </div>
+      <div class="paneToggleGroup">
+        <button class="btn predictionToggle" id="doyForecastToggle" type="button" aria-pressed="false">
+          <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
+          <span class="predictionToggleMeta">
+            <span class="predictionToggleLabel">Annual Forecast</span>
+            <span class="predictionToggleState">OFF · click to turn on</span>
+          </span>
+        </button>
+      </div>
     </div>
 
     <div style="height:10px"></div>
@@ -1620,7 +1703,7 @@ a.brand *{
         <button class="btn predictionToggle" id="annualPredictionToggle" type="button" aria-pressed="false">
           <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
           <span class="predictionToggleMeta">
-            <span class="predictionToggleLabel">Annual predictions</span>
+            <span class="predictionToggleLabel">Annual Forecast</span>
             <span class="predictionToggleState">OFF · click to turn on</span>
           </span>
         </button>
@@ -1643,22 +1726,14 @@ a.brand *{
 
     <div class="accBody">
       <div class="seaLevelHeader paneControlHeader">
-        <div>
+        <div class="paneTitleBlock">
           <div class="hint seaLevelMeta" id="seaLevelMeta"></div>
-          <div class="seaLevelStats" id="seaLevelStats"></div>
         </div>
         <div class="paneToggleGroup seaLevelToggleGroup">
-          <button class="btn predictionToggle" id="seaLevelTrendToggle" type="button" aria-pressed="false">
-            <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
-            <span class="predictionToggleMeta">
-              <span class="predictionToggleLabel">Linear trend</span>
-              <span class="predictionToggleState">OFF · click to turn on</span>
-            </span>
-          </button>
           <button class="btn predictionToggle" id="seaLevelProjectionToggle" type="button" aria-pressed="false">
             <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
             <span class="predictionToggleMeta">
-              <span class="predictionToggleLabel">Annual projections</span>
+              <span class="predictionToggleLabel">Annual Forecast</span>
               <span class="predictionToggleState">OFF · click to turn on</span>
             </span>
           </button>
@@ -2022,9 +2097,9 @@ const monthAvgMeta=$("monthAvgMeta"), monthAvgBody=$("monthAvgBody");
 const annualPredictionToggle = $("annualPredictionToggle");
 const annualScenarioKey = $("annualScenarioKey");
 const seaLevelMeta = $("seaLevelMeta");
-const seaLevelStats = $("seaLevelStats");
-const seaLevelTrendToggle = $("seaLevelTrendToggle");
 const seaLevelProjectionToggle = $("seaLevelProjectionToggle");
+const tsAnnualForecastToggle = $("tsAnnualForecastToggle");
+const doyForecastToggle = $("doyForecastToggle");
 const doyYearList = $("doyYearList");
 const doyVisibleBadge = $("doyVisibleBadge");
 const doyPicker = $("doyPicker");
@@ -2041,8 +2116,11 @@ let MONTH_VIEW = "total";
 let ANNUAL_VIEW = "total"; 
 let ANNUAL_PREDICTIONS_ENABLED = false;
 let ANNUAL_SCENARIO = "Baseline";
-let SEA_LEVEL_TREND_ENABLED = false;
 let SEA_LEVEL_PROJECTIONS_ENABLED = false;
+let TS_ANNUAL_FORECAST_ENABLED = false;
+let TS_ANNUAL_FORECAST_POINTS = [];
+let TS_ANNUAL_FORECAST_LOADING = false;
+let DOY_ANNUAL_FORECAST_ENABLED = false;
 
 
 function setSegActive(segEl, val){
@@ -2126,7 +2204,7 @@ function renderAnnualScenarioControls(){
     annualPredictionToggle.innerHTML = `
       <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
       <span class="predictionToggleMeta">
-        <span class="predictionToggleLabel">Annual predictions</span>
+        <span class="predictionToggleLabel">Annual Forecast</span>
         <span class="predictionToggleState">${ANNUAL_PREDICTIONS_ENABLED ? "ON · click to turn off" : "OFF · click to turn on"}</span>
       </span>
     `;
@@ -2155,6 +2233,7 @@ function hookAnnualPredictionControls(){
       renderAnnualScenarioControls();
       buildAnnualArrays();
       renderAnnual();
+      resetChartZoom(annualChart);
     });
   }
 
@@ -2166,6 +2245,7 @@ function hookAnnualPredictionControls(){
       renderAnnualScenarioControls();
       buildAnnualArrays();
       renderAnnual();
+      resetChartZoom(annualChart);
     });
   }
 }
@@ -3089,13 +3169,20 @@ function attachChartZoom(chart){
     parent.appendChild(box);
   }
 
-  let button = parent.querySelector(".zoomReset");
+  let actionBar = parent.previousElementSibling;
+  if(!actionBar || !actionBar.classList?.contains("chartActionBar")){
+    actionBar = document.createElement("div");
+    actionBar.className = "chartActionBar";
+    parent.parentElement?.insertBefore(actionBar, parent);
+  }
+
+  let button = actionBar.querySelector(".zoomReset");
   if(!button){
     button = document.createElement("button");
     button.type = "button";
     button.className = "zoomReset";
     button.textContent = "Reset zoom";
-    parent.appendChild(button);
+    actionBar.appendChild(button);
   }
 
   const state = { button, box, pointers:new Map(), pinch:null, drag:null };
@@ -3713,6 +3800,7 @@ function ensureAnnual(){
       scales: {
         x: {
           stacked: true,
+          title:{display:true, text:"Year", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks: {
             color: "rgba(169,182,211,.9)",
             maxRotation: 0,
@@ -3723,6 +3811,7 @@ function ensureAnnual(){
         },
         y: {
           stacked: true,
+          title:{display:true, text:"Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks: { color: "rgba(169,182,211,.9)", precision: 0 },
           grid: { color: "rgba(255,255,255,.06)" }
         }
@@ -3828,7 +3917,11 @@ function ensureTsChart(){
         legend:{
           labels:{
             color:"rgba(234,240,255,.88)",
-            font:{ weight:"950" }
+            font:{ weight:"950" },
+            usePointStyle:true,
+            pointStyleWidth:28,
+            boxWidth:28,
+            boxHeight:4
           }
         },
         tooltip:{
@@ -3842,7 +3935,8 @@ function ensureTsChart(){
             label:(ctx)=>{
               const v = ctx.parsed?.y;
               if(!Number.isFinite(v)) return null;
-              return `${ctx.dataset.label}: ${v.toFixed(2)} ${unitText()}`;
+              const risk = ctx.dataset?._riskFlags?.[ctx.dataIndex];
+              return risk ? `${ctx.dataset.label}: ${v.toFixed(2)} ${unitText()} - Heightened Risk Of Flooding` : `${ctx.dataset.label}: ${v.toFixed(2)} ${unitText()}`;
             }
           }
         }
@@ -3850,6 +3944,7 @@ function ensureTsChart(){
 
       scales:{
         x:{
+          title:{display:true, text:"Date", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks:{
             color:"rgba(169,182,211,.9)",
             autoSkip:false,
@@ -3900,7 +3995,253 @@ function build15MinLabels(startISO, endISO){
   return labels;
 }
 
+
+function renderForecastToggle(button, enabled){
+  if(!button) return;
+  button.classList.toggle("isOn", enabled);
+  button.setAttribute("aria-pressed", enabled ? "true" : "false");
+  button.innerHTML = `
+    <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
+    <span class="predictionToggleMeta">
+      <span class="predictionToggleLabel">Annual Forecast</span>
+      <span class="predictionToggleState">${enabled ? "ON · click to turn off" : "OFF · click to turn on"}</span>
+    </span>
+  `;
+}
+
+function hookForecastToggles(){
+  renderForecastToggle(tsAnnualForecastToggle, TS_ANNUAL_FORECAST_ENABLED);
+  renderForecastToggle(doyForecastToggle, DOY_ANNUAL_FORECAST_ENABLED);
+
+  if(tsAnnualForecastToggle){
+    tsAnnualForecastToggle.addEventListener("click", ()=>{
+      TS_ANNUAL_FORECAST_ENABLED = !TS_ANNUAL_FORECAST_ENABLED;
+      renderForecastToggle(tsAnnualForecastToggle, TS_ANNUAL_FORECAST_ENABLED);
+      updateTsChartFromState();
+    });
+  }
+
+  if(doyForecastToggle){
+    doyForecastToggle.addEventListener("click", ()=>{
+      DOY_ANNUAL_FORECAST_ENABLED = !DOY_ANNUAL_FORECAST_ENABLED;
+      renderForecastToggle(doyForecastToggle, DOY_ANNUAL_FORECAST_ENABLED);
+      renderDOYCumPanel();
+    });
+  }
+}
+
+function ymdUTC(d){
+  return `${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,"0")}${String(d.getUTCDate()).padStart(2,"0")}`;
+}
+
+function addDaysUTC(d, days){
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + days));
+}
+
+async function fetchNOAAHiloHighsChunked({ station, startDate, endDate, datum="MLLW" }){
+  const all = [];
+  for(let chunkStart = new Date(startDate); chunkStart <= endDate; chunkStart = addDaysUTC(chunkStart, 31)){
+    const chunkEnd = new Date(Math.min(addDaysUTC(chunkStart, 30).getTime(), endDate.getTime()));
+    try{
+      const highs = await fetchNOAAHiloHighs({
+        station,
+        beginYMD:ymdUTC(chunkStart),
+        endYMD:ymdUTC(chunkEnd),
+        datum
+      });
+      all.push(...highs);
+    }catch(e){
+      console.warn("NOAA annual harmonic chunk failed:", e);
+    }
+  }
+  return all.sort((a,b)=>new Date(a.t)-new Date(b.t));
+}
+
+function seaLevelSeasonalCycleByMonth(){
+  const out = new Array(12).fill(0);
+  const counts = new Array(12).fill(0);
+  const state = SEA_LEVEL_STATE;
+  if(!state?.relative?.length) return out;
+
+  for(const r of state.relative){
+    const m = Number(r.month?.slice(5,7));
+    if(!Number.isFinite(m) || m < 1 || m > 12) continue;
+    let v = Number(r.relFt);
+    if(state.regression){
+      const x = decimalYearFromMonth(r.month);
+      v -= state.regression.intercept + state.regression.slope * x;
+    }
+    if(Number.isFinite(v)){
+      out[m - 1] += v;
+      counts[m - 1] += 1;
+    }
+  }
+
+  for(let i=0;i<12;i++) out[i] = counts[i] ? out[i] / counts[i] : 0;
+  const mean = out.reduce((s,v)=>s+v,0) / 12;
+  return out.map(v => v - mean);
+}
+
+function seasonalOffsetForISO(iso){
+  const d = new Date(iso);
+  if(Number.isNaN(d.getTime())) return 0;
+  const cycle = seaLevelSeasonalCycleByMonth();
+  return cycle[d.getUTCMonth()] || 0;
+}
+
+async function loadTsAnnualForecastPoints(){
+  if(TS_ANNUAL_FORECAST_LOADING || TS_ANNUAL_FORECAST_POINTS.length) return;
+  TS_ANNUAL_FORECAST_LOADING = true;
+  try{
+    const { y: curYear } = getESTParts(new Date());
+    const now = new Date();
+    const end = new Date(Date.UTC(curYear, 11, 31, 23, 59, 59));
+    TS_ANNUAL_FORECAST_POINTS = await fetchNOAAHiloHighsChunked({
+      station:COOPS_STATION,
+      startDate:now,
+      endDate:end,
+      datum:"MLLW"
+    });
+  }finally{
+    TS_ANNUAL_FORECAST_LOADING = false;
+    if(TS_ANNUAL_FORECAST_ENABLED) updateTsChartFromState();
+  }
+}
+
+function annualMonthTickCallback(labels){
+  return (value, index)=>{
+    const iso = labels[index];
+    if(!iso) return "";
+    const d = new Date(iso);
+    if(Number.isNaN(d.getTime())) return "";
+    const prev = labels[index - 1] ? new Date(labels[index - 1]) : null;
+    const changed = !prev || prev.getUTCMonth() !== d.getUTCMonth();
+    return changed ? d.toLocaleString("en-US", { month:"short", timeZone:"UTC" }) : "";
+  };
+}
+
+function styleTsLegendAsLines(){
+  if(!tsChart) return;
+  for(const ds of tsChart.data.datasets.slice(0, 2)){
+    ds.pointStyle = "line";
+    ds.pointRadius = 0;
+    ds.pointHoverRadius = 0;
+  }
+  const labels = tsChart.options.plugins.legend.labels;
+  labels.usePointStyle = true;
+  labels.pointStyleWidth = 28;
+  labels.boxWidth = 28;
+  labels.boxHeight = 4;
+}
+
+function annualForecastComponentSpread(rec, prefix){
+  const minus = Number(rec?.[`${prefix}Minus`]);
+  const plus = Number(rec?.[`${prefix}Plus`]);
+  if(Number.isFinite(minus) && Number.isFinite(plus)){
+    return Math.max(Math.abs(minus), Math.abs(plus));
+  }
+  const mean = Number(rec?.[`${prefix}Mean`]);
+  const range = parseAnnualRange(rec?.[`${prefix}Range`]);
+  if(range && Number.isFinite(mean)){
+    return Math.max(Math.abs(mean - range.low), Math.abs(range.high - mean));
+  }
+  return 0;
+}
+
+function currentAnnualForecastInfo(year){
+  const rec = (FUTURE_FLOOD_PREDICTIONS[ANNUAL_SCENARIO] || [])
+    .find(r => Number(r.year) === Number(year));
+  if(!rec) return null;
+  const total = Math.floor(
+    annualNumber(rec.minorMean) +
+    annualNumber(rec.moderateMean) +
+    annualNumber(rec.majorMean)
+  );
+  const spread = Math.floor(
+    annualForecastComponentSpread(rec, "minor") +
+    annualForecastComponentSpread(rec, "moderate") +
+    annualForecastComponentSpread(rec, "major")
+  );
+  return { total, spread, year:Number(year) };
+}
+
+function updateTsAnnualForecastChartFromState(){
+  ensureTsChart();
+  styleTsLegendAsLines();
+
+  if(!TS_ANNUAL_FORECAST_POINTS.length){
+    loadTsAnnualForecastPoints();
+  }
+
+  const endISO = nowISO();
+  const startObsISO = new Date(new Date(endISO).getTime() - 24*3600*1000).toISOString();
+  const obsLabels = build15MinLabels(startObsISO, endISO);
+  const futureHighs = TS_ANNUAL_FORECAST_POINTS
+    .filter(p => new Date(p.t).getTime() >= new Date(endISO).getTime());
+
+  const labels = Array.from(new Set([...obsLabels, ...futureHighs.map(p=>p.t)])).sort((a,b)=>new Date(a)-new Date(b));
+  const obsMap = new Map();
+  for(const p of (STATE.obs24Navd || [])){
+    const t = new Date(p.t).getTime();
+    const ft = Number(p.ft);
+    if(!Number.isFinite(t) || !Number.isFinite(ft)) continue;
+    const snapped = Math.round(t/TS_STEP_MS)*TS_STEP_MS;
+    obsMap.set(new Date(snapped).toISOString(), toDisplayFtFromNavd(ft));
+  }
+
+  const forecastMap = new Map();
+  for(const p of futureHighs){
+    const adjustedMllw = Number(p.ft) + seasonalOffsetForISO(p.t);
+    forecastMap.set(p.t, toDisplayFtFromMllw(adjustedMllw));
+  }
+
+  const minor = thresholdsDisplay().minor;
+  const riskFlags = labels.map(iso=>{
+    const v = forecastMap.get(iso);
+    return Number.isFinite(v) && v >= minor - 0.25;
+  });
+
+  tsChart.data.labels = labels;
+  tsChart.data.datasets[0].label = "Observed (USGS)";
+  tsChart.data.datasets[0].data = labels.map(iso => obsMap.has(iso) ? obsMap.get(iso) : null);
+  tsChart.data.datasets[1].label = "Predicted (NOAA)";
+  tsChart.data.datasets[1].data = labels.map(iso => forecastMap.has(iso) ? forecastMap.get(iso) : null);
+  tsChart.data.datasets[1]._riskFlags = riskFlags;
+  tsChart.data.datasets[1].pointRadius = riskFlags.map(Boolean).map(v => v ? 4 : 0);
+  tsChart.data.datasets[1].pointHoverRadius = riskFlags.map(Boolean).map(v => v ? 6 : 0);
+  tsChart.data.datasets[1].pointBackgroundColor = riskFlags.map(v => v ? "rgba(239,68,68,1)" : "rgba(45,212,191,.95)");
+  tsChart.data.datasets[1].pointBorderColor = riskFlags.map(v => v ? "rgba(255,255,255,.95)" : "rgba(45,212,191,.95)");
+
+  tsChart.options.scales.x.ticks.callback = annualMonthTickCallback(labels);
+  tsChart.options.scales.x.title.text = "Date";
+  tsChart.options.scales.y.title.text = unitText();
+
+  const ys = [
+    ...tsChart.data.datasets[0].data,
+    ...tsChart.data.datasets[1].data,
+    thresholdsDisplay().minor,
+    thresholdsDisplay().moderate,
+    thresholdsDisplay().major
+  ].filter(v => Number.isFinite(v));
+  if(ys.length){
+    const yMinRaw = Math.min(...ys);
+    const yMaxRaw = Math.max(...ys);
+    const pad = Math.max(0.25, (yMaxRaw - yMinRaw) * 0.08);
+    tsChart.options.scales.y.min = Math.floor((yMinRaw - pad));
+    tsChart.options.scales.y.max = Math.ceil((yMaxRaw + pad));
+    tsChart.options.scales.y.ticks.stepSize = 1;
+  }
+
+  tsChart.update();
+  syncChartZoomToData(tsChart);
+}
+
 function updateTsChartFromState(){
+  if(TS_ANNUAL_FORECAST_ENABLED){
+    updateTsAnnualForecastChartFromState();
+    return;
+  }
+
   const endISO = nowISO();
   const startObsISO = new Date(new Date(endISO).getTime() - 24*3600*1000).toISOString();
 
@@ -3978,9 +4319,15 @@ const predValsDisplay = labels.map(iso=>{
   
   
   ensureTsChart();
+  styleTsLegendAsLines();
   tsChart.data.labels = labels;
+  tsChart.data.datasets[0].label = "Observed (USGS)";
+  tsChart.data.datasets[1].label = "Predicted (NOAA)";
   tsChart.data.datasets[0].data = obsFiltered;     
-  tsChart.data.datasets[1].data = predValsDisplay; 
+  tsChart.data.datasets[1].data = predValsDisplay;
+  delete tsChart.data.datasets[1]._riskFlags;
+  tsChart.data.datasets[1].pointRadius = 0;
+  tsChart.data.datasets[1].pointHoverRadius = 0; 
 
   tsChart.options.scales.x.ticks.callback = buildDailyTickCallbackSkipFirstDay(labels);
   tsChart.options.scales.y.title.text = unitText();
@@ -4023,25 +4370,13 @@ let seaLevelChart = null;
 let SEA_LEVEL_STATE = null;
 
 function renderSeaLevelProjectionControls(){
-  if(seaLevelTrendToggle){
-    seaLevelTrendToggle.classList.toggle("isOn", SEA_LEVEL_TREND_ENABLED);
-    seaLevelTrendToggle.setAttribute("aria-pressed", SEA_LEVEL_TREND_ENABLED ? "true" : "false");
-    seaLevelTrendToggle.innerHTML = `
-      <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
-      <span class="predictionToggleMeta">
-        <span class="predictionToggleLabel">Linear trend</span>
-        <span class="predictionToggleState">${SEA_LEVEL_TREND_ENABLED ? "ON · click to turn off" : "OFF · click to turn on"}</span>
-      </span>
-    `;
-  }
-
   if(seaLevelProjectionToggle){
     seaLevelProjectionToggle.classList.toggle("isOn", SEA_LEVEL_PROJECTIONS_ENABLED);
     seaLevelProjectionToggle.setAttribute("aria-pressed", SEA_LEVEL_PROJECTIONS_ENABLED ? "true" : "false");
     seaLevelProjectionToggle.innerHTML = `
       <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
       <span class="predictionToggleMeta">
-        <span class="predictionToggleLabel">Annual projections</span>
+        <span class="predictionToggleLabel">Annual Forecast</span>
         <span class="predictionToggleState">${SEA_LEVEL_PROJECTIONS_ENABLED ? "ON · click to turn off" : "OFF · click to turn on"}</span>
       </span>
     `;
@@ -4050,13 +4385,6 @@ function renderSeaLevelProjectionControls(){
 
 function hookSeaLevelControls(){
   renderSeaLevelProjectionControls();
-  if(seaLevelTrendToggle){
-    seaLevelTrendToggle.addEventListener("click", ()=>{
-      SEA_LEVEL_TREND_ENABLED = !SEA_LEVEL_TREND_ENABLED;
-      renderSeaLevelProjectionControls();
-      renderSeaLevelChart();
-    });
-  }
   if(seaLevelProjectionToggle){
     seaLevelProjectionToggle.addEventListener("click", ()=>{
       SEA_LEVEL_PROJECTIONS_ENABLED = !SEA_LEVEL_PROJECTIONS_ENABLED;
@@ -4179,7 +4507,7 @@ function buildSeaLevelDatasets(labels, state){
   const observedByMonth = new Map(state.relative.map(r => [r.month, r.relFt]));
   const lastObservedMonth = state.relative[state.relative.length - 1]?.month || "";
   const datasets = [{
-    label:"Monthly mean",
+    label:"Monthly Mean Sea Level",
     data:labels.map(m => observedByMonth.has(m) ? observedByMonth.get(m) : null),
     borderColor:"rgba(45,212,191,.95)",
     backgroundColor:"rgba(45,212,191,.95)",
@@ -4192,9 +4520,9 @@ function buildSeaLevelDatasets(labels, state){
     order:20
   }];
 
-  if(SEA_LEVEL_TREND_ENABLED && state.regression){
+  if(state.regression){
     datasets.push({
-      label:"Linear trend",
+      label:"Linear Trend",
       data:labels.map(m => {
         if(lastObservedMonth && m > lastObservedMonth) return null;
         const x = decimalYearFromMonth(m);
@@ -4257,17 +4585,7 @@ function buildSeaLevelDatasets(labels, state){
 }
 
 function renderSeaLevelStats(state){
-  if(!seaLevelStats) return;
-  if(!state?.relative?.length || !state.regression){
-    seaLevelStats.innerHTML = "";
-    return;
-  }
-  const latest = state.relative[state.relative.length - 1];
-  const mmPerYear = state.regression.annualFt * 304.8;
-  seaLevelStats.innerHTML = `
-    <div class="trendChip">Latest ${latest.month}: ${latest.relFt.toFixed(2)} ft</div>
-    <div class="trendChip"><span class="lineChip" style="background:rgba(255,255,255,.88)"></span>Trend ${mmPerYear.toFixed(1)} mm/year</div>
-  `;
+  return;
 }
 
 function renderSeaLevelChart(){
@@ -4310,17 +4628,23 @@ function renderSeaLevelChart(){
     },
     scales:{
       x:{
+        title:{display:true, text:"Year", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
         ticks:{
           color:"rgba(169,182,211,.9)",
           maxRotation:0,
           autoSkip:true,
           maxTicksLimit:8,
-          callback:(value, index)=> labels[index]?.slice(0,4) || ""
+          callback:function(value){
+            const label = this.getLabelForValue ? this.getLabelForValue(value) : labels[value];
+            if(!label) return "";
+            const span = Math.abs((Number(this.max) || labels.length - 1) - (Number(this.min) || 0));
+            return span <= 48 ? label : label.slice(0,4);
+          }
         },
         grid:{color:"rgba(255,255,255,.05)"}
       },
       y:{
-        title:{display:true, text:"Feet relative to 2000 mean", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
+        title:{display:true, text:"Feet", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
         ticks:{color:"rgba(169,182,211,.9)"},
         grid:{color:"rgba(255,255,255,.06)"}
       }
@@ -4522,6 +4846,8 @@ function hookDOYControls(){
   if(doyPickerToggle && doyPicker){
     doyPickerToggle.addEventListener("click", ()=>{
       const open = !doyPicker.classList.contains("isOpen");
+      const keyCard = doyPicker.previousElementSibling;
+      if(keyCard) doyPicker.style.setProperty("--doy-picker-top", `${keyCard.offsetHeight + 8}px`);
       doyPicker.classList.toggle("isOpen", open);
       doyPickerToggle.setAttribute("aria-expanded", open ? "true" : "false");
       doyPickerToggle.textContent = open ? "Hide custom" : "Custom years";
@@ -4710,7 +5036,9 @@ function renderDOYCumPanel(){
   }
 
   const { years, seriesByYear, avg, min, max, stageLabel } = DOY_CACHE;
-  const { y: CUR_Y } = getESTParts(new Date());
+  const nowParts = getESTParts(new Date());
+  const { y: CUR_Y } = nowParts;
+  const todayIdx = calIndex365(CUR_Y, nowParts.m, nowParts.d);
   const ytd = buildYTDSeriesFromEvents(HIGH_TIDES_NAVD) || emptyCurrentYTDSeries();
   const controlYears = years.includes(CUR_Y) ? years : [...years, CUR_Y].sort((a,b)=>a-b);
   DOY_CONTROL_YEARS = controlYears;
@@ -4806,9 +5134,38 @@ function renderDOYCumPanel(){
     order:1000
   };
 
+  const forecastInfo = DOY_ANNUAL_FORECAST_ENABLED ? currentAnnualForecastInfo(CUR_Y) : null;
+  const forecastDatasets = [];
+  if(forecastInfo && Number.isFinite(todayIdx)){
+    const forecastLine = new Array(365).fill(null);
+    const startIdx = Math.max(0, Math.min(364, todayIdx));
+    const currentVal = Number(ytd?.[startIdx]) || 0;
+    forecastLine[startIdx] = currentVal;
+    forecastLine[364] = forecastInfo.total;
+    forecastDatasets.push({
+      label:"Annual Forecast",
+      data:forecastLine,
+      _kind:"forecast",
+      _forecastTotal:forecastInfo.total,
+      _forecastSpread:forecastInfo.spread,
+      borderWidth:2.8,
+      borderDash:[8,5],
+      tension:0,
+      borderColor:"rgba(239,68,68,.95)",
+      backgroundColor:"rgba(239,68,68,.95)",
+      pointStyle:"triangle",
+      pointRotation:90,
+      pointRadius:(ctx)=>ctx.dataIndex === 364 ? 6 : 0,
+      pointHoverRadius:(ctx)=>ctx.dataIndex === 364 ? 8 : 0,
+      pointHitRadius:10,
+      fill:false,
+      order:1300
+    });
+  }
+
   const data = {
     labels,
-    datasets: [dsRangeFloor, dsRange, dsAvg, ...yearDatasets]
+    datasets: [dsRangeFloor, dsRange, dsAvg, ...forecastDatasets, ...yearDatasets]
   };
 
   const options = {
@@ -4832,7 +5189,7 @@ function renderDOYCumPanel(){
           usePointStyle:true,
           filter:(legendItem, chartData)=>{
             const ds = chartData?.datasets?.[legendItem.datasetIndex];
-            return ["Historic Range","Average","Current Year"].includes(ds?.label || "");
+            return ["Historic Range","Average","Current Year","Annual Forecast"].includes(ds?.label || "");
           }
         }
       },
@@ -4855,6 +5212,11 @@ function renderDOYCumPanel(){
             if(kind === "average"){
               return `Average: ${formatFloodStat(v)} floods`;
             }
+            if(kind === "forecast"){
+              return ctx.dataIndex === 364
+                ? `${ctx.dataset._forecastTotal} floods/ +/- ${ctx.dataset._forecastSpread} floods`
+                : `Annual Forecast: ${formatFloodStat(v)} floods`;
+            }
             if(ctx.dataset?._year){
               return `${ctx.dataset._year}: ${formatFloodStat(v)} floods`;
             }
@@ -4865,6 +5227,7 @@ function renderDOYCumPanel(){
     },
     scales:{
       x:{
+        title:{display:true, text:"Day of Year", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
         ticks:{
           color:"rgba(169,182,211,.9)",
           autoSkip:false,
@@ -4883,6 +5246,7 @@ function renderDOYCumPanel(){
         grid:{display:false}
       },
       y:{
+        title:{display:true, text:"Cumulative Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
         ticks:{color:"rgba(169,182,211,.9)"},
         grid:{color:"rgba(255,255,255,.06)"}
       }
@@ -5091,6 +5455,7 @@ function ensureMonthAvgChart(){
       scales:{
         x:{
           stacked:true,
+          title:{display:true, text:"Month", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks:{color:"rgba(169,182,211,.9)"},
           grid:{color:"rgba(255,255,255,.06)"}
         },
@@ -5098,6 +5463,7 @@ function ensureMonthAvgChart(){
         
         y:{
           stacked:true,
+          title:{display:true, text:"Average Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks:{
             color:"rgba(169,182,211,.9)",
 
@@ -5434,6 +5800,7 @@ async function boot(){
   hookAnnualViewSwitch();
   hookAnnualPredictionControls();
   hookSeaLevelControls();
+  hookForecastToggles();
   hookDOYControls();
 
 
@@ -5594,5 +5961,6 @@ setInterval(async ()=>{
     
 
     </script>
+<div class="contactNote">For any questions or concerns, email pj@cupajoe.live</div>
 </body>
 </html>
