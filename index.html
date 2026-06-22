@@ -1090,20 +1090,24 @@ thead th{
       grid-column:span 2;
     }
     .doyPicker{
-      padding:8px;
-      position:absolute;
-      left:0;
-      right:0;
-      top:var(--doy-picker-top, 172px);
-      z-index:8;
-      max-height:min(250px, 56vh);
-      overflow:auto;
-      box-shadow:0 18px 46px rgba(0,0,0,.38);
+      padding:10px;
+      position:static !important;
+      left:auto !important;
+      right:auto !important;
+      top:auto !important;
+      z-index:auto;
+      width:100%;
+      max-height:none;
+      overflow:visible;
+      box-shadow:none;
+      margin-top:10px;
     }
     .doyYearList{
-      grid-template-columns:repeat(auto-fill, minmax(56px, 1fr));
-      gap:5px;
-      max-height:192px;
+      grid-template-columns:repeat(auto-fill, minmax(58px, 1fr));
+      gap:6px;
+      max-height:184px;
+      overflow:auto;
+      padding-right:3px;
     }
     .doyYearChoice{
       min-height:31px;
@@ -3057,6 +3061,69 @@ const drawDatasetLastPlugin = {
 
 Chart.register(drawDatasetLastPlugin);
 
+const annualForecastRangePlugin = {
+  id: "annualForecastRange",
+  afterDatasetsDraw(chart) {
+    if (chart?.canvas?.id !== "doyCumChart") return;
+
+    const dsIndex = chart.data.datasets.findIndex(d => d && d._kind === "forecastMarker");
+    if (dsIndex < 0) return;
+
+    const ds = chart.data.datasets[dsIndex];
+    const meta = chart.getDatasetMeta(dsIndex);
+    if (!meta || meta.hidden) return;
+
+    const idx = Number.isFinite(ds._forecastIndex) ? ds._forecastIndex : chart.data.labels.length - 1;
+    const marker = meta.data?.[idx];
+    const x = Number.isFinite(marker?.x) ? marker.x : chart.scales?.x?.getPixelForValue(idx);
+
+    const yScale = chart.scales?.y;
+    const low = Number(ds._forecastLow);
+    const mean = Number(ds._forecastMean);
+    const high = Number(ds._forecastHigh);
+    if (![x, low, mean, high].every(Number.isFinite) || !yScale) return;
+
+    const yLow = yScale.getPixelForValue(low);
+    const yMean = yScale.getPixelForValue(mean);
+    const yHigh = yScale.getPixelForValue(high);
+    if (![yLow, yMean, yHigh].every(Number.isFinite)) return;
+
+    const { ctx, chartArea } = chart;
+    const xClamped = Math.max(chartArea.left, Math.min(chartArea.right, x));
+    const cap = 11;
+
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = ds.borderColor || "rgba(251,191,36,.98)";
+    ctx.fillStyle = ds.backgroundColor || "rgba(251,191,36,.98)";
+
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    ctx.moveTo(xClamped, yHigh);
+    ctx.lineTo(xClamped, yLow);
+    ctx.stroke();
+
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(xClamped - cap, yHigh);
+    ctx.lineTo(xClamped + cap, yHigh);
+    ctx.moveTo(xClamped - cap, yLow);
+    ctx.lineTo(xClamped + cap, yLow);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(xClamped, yMean, 6.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255,255,255,.96)";
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+Chart.register(annualForecastRangePlugin);
+
 const CHART_ZOOM_STATE = new WeakMap();
 
 function chartLabels(chart){
@@ -4173,6 +4240,28 @@ function annualForecastComponentSpread(rec, prefix){
   return 0;
 }
 
+function annualForecastComponentMinus(rec, prefix){
+  const minus = Number(rec?.[`${prefix}Minus`]);
+  if(Number.isFinite(minus)) return Math.max(0, Math.abs(minus));
+
+  const mean = Number(rec?.[`${prefix}Mean`]);
+  const range = parseAnnualRange(rec?.[`${prefix}Range`]);
+  if(range && Number.isFinite(mean)) return Math.max(0, mean - range.low);
+
+  return annualForecastComponentSpread(rec, prefix);
+}
+
+function annualForecastComponentPlus(rec, prefix){
+  const plus = Number(rec?.[`${prefix}Plus`]);
+  if(Number.isFinite(plus)) return Math.max(0, Math.abs(plus));
+
+  const mean = Number(rec?.[`${prefix}Mean`]);
+  const range = parseAnnualRange(rec?.[`${prefix}Range`]);
+  if(range && Number.isFinite(mean)) return Math.max(0, range.high - mean);
+
+  return annualForecastComponentSpread(rec, prefix);
+}
+
 function currentAnnualForecastInfo(year){
   const rows = (FUTURE_FLOOD_PREDICTIONS[ANNUAL_SCENARIO] || [])
     .filter(r => Number.isFinite(Number(r.year)))
@@ -4182,17 +4271,40 @@ function currentAnnualForecastInfo(year){
     || rows.find(r => Number(r.year) > targetYear)
     || rows[rows.length - 1];
   if(!rec) return null;
-  const total = Math.floor(
+
+  const meanRaw =
     annualNumber(rec.minorMean) +
     annualNumber(rec.moderateMean) +
-    annualNumber(rec.majorMean)
-  );
-  const spread = Math.floor(
-    annualForecastComponentSpread(rec, "minor") +
-    annualForecastComponentSpread(rec, "moderate") +
-    annualForecastComponentSpread(rec, "major")
-  );
-  return { total, spread, year:targetYear, sourceYear:Number(rec.year) };
+    annualNumber(rec.majorMean);
+
+  const minusRaw =
+    annualForecastComponentMinus(rec, "minor") +
+    annualForecastComponentMinus(rec, "moderate") +
+    annualForecastComponentMinus(rec, "major");
+
+  const plusRaw =
+    annualForecastComponentPlus(rec, "minor") +
+    annualForecastComponentPlus(rec, "moderate") +
+    annualForecastComponentPlus(rec, "major");
+
+  const total = Math.floor(meanRaw);
+  const minus = Math.floor(minusRaw);
+  const plus = Math.floor(plusRaw);
+  const spread = Math.max(minus, plus);
+  const low = Math.max(0, Math.floor(meanRaw - minusRaw));
+  const high = Math.ceil(meanRaw + plusRaw);
+
+  return {
+    total,
+    mean: total,
+    low,
+    high,
+    minus,
+    plus,
+    spread,
+    year:targetYear,
+    sourceYear:Number(rec.year)
+  };
 }
 
 function updateTsAnnualForecastChartFromState(){
@@ -5204,32 +5316,71 @@ function renderDOYCumPanel(){
   const forecastInfo = DOY_ANNUAL_FORECAST_ENABLED ? currentAnnualForecastInfo(CUR_Y) : null;
   const forecastDatasets = [];
   if(forecastInfo && Number.isFinite(todayIdx)){
-    const forecastLine = new Array(365).fill(null);
-    const startIdx = Math.max(0, Math.min(364, todayIdx));
-    const currentVal = Number(ytd?.[startIdx]) || 0;
-    forecastLine[startIdx] = currentVal;
-    forecastLine[364] = forecastInfo.total;
-    forecastDatasets.push({
-      label:"Annual Forecast",
-      data:forecastLine,
-      _kind:"forecast",
-      _forecastTotal:forecastInfo.total,
-      _forecastSpread:forecastInfo.spread,
-      borderWidth:3.4,
-      borderDash:[10,4],
-      tension:0,
-      borderColor:"rgba(251,191,36,.98)",
-      backgroundColor:"rgba(251,191,36,.98)",
-      pointStyle:"triangle",
-      pointRotation:90,
-      pointRadius:(ctx)=>ctx.dataIndex === 364 ? 8 : 0,
-      pointHoverRadius:(ctx)=>ctx.dataIndex === 364 ? 10 : 0,
-      pointBorderWidth:1.5,
-      pointBorderColor:"rgba(255,255,255,.95)",
-      pointHitRadius:14,
-      fill:false,
-      order:1
-    });
+    const endIdx = 364;
+
+    const forecastMean = new Array(365).fill(null);
+    const forecastLowScale = new Array(365).fill(null);
+    const forecastHighScale = new Array(365).fill(null);
+
+    forecastMean[endIdx] = forecastInfo.mean;
+    forecastLowScale[endIdx] = forecastInfo.low;
+    forecastHighScale[endIdx] = forecastInfo.high;
+
+    forecastDatasets.push(
+      {
+        label:"Annual Forecast",
+        data:forecastMean,
+        _kind:"forecastMarker",
+        _forecastIndex:endIdx,
+        _forecastMean:forecastInfo.mean,
+        _forecastLow:forecastInfo.low,
+        _forecastHigh:forecastInfo.high,
+        _forecastMinus:forecastInfo.minus,
+        _forecastPlus:forecastInfo.plus,
+        _forecastSourceYear:forecastInfo.sourceYear,
+        showLine:false,
+        borderWidth:0,
+        tension:0,
+        borderColor:"rgba(251,191,36,.98)",
+        backgroundColor:"rgba(251,191,36,.98)",
+        pointStyle:"circle",
+        pointRadius:0,
+        pointHoverRadius:0,
+        pointHitRadius:18,
+        fill:false,
+        order:1
+      },
+      {
+        label:"Forecast range low",
+        data:forecastLowScale,
+        _legendHidden:true,
+        _kind:"forecastScale",
+        showLine:false,
+        borderWidth:0,
+        borderColor:"rgba(251,191,36,0)",
+        backgroundColor:"rgba(251,191,36,0)",
+        pointRadius:0,
+        pointHoverRadius:0,
+        pointHitRadius:0,
+        fill:false,
+        order:2
+      },
+      {
+        label:"Forecast range high",
+        data:forecastHighScale,
+        _legendHidden:true,
+        _kind:"forecastScale",
+        showLine:false,
+        borderWidth:0,
+        borderColor:"rgba(251,191,36,0)",
+        backgroundColor:"rgba(251,191,36,0)",
+        pointRadius:0,
+        pointHoverRadius:0,
+        pointHitRadius:0,
+        fill:false,
+        order:2
+      }
+    );
   }
 
   const data = {
@@ -5258,6 +5409,7 @@ function renderDOYCumPanel(){
           usePointStyle:true,
           filter:(legendItem, chartData)=>{
             const ds = chartData?.datasets?.[legendItem.datasetIndex];
+            if(ds?._legendHidden) return false;
             return ["Historic Range","Average","Current Year","Annual Forecast"].includes(ds?.label || "");
           }
         }
@@ -5281,11 +5433,11 @@ function renderDOYCumPanel(){
             if(kind === "average"){
               return `Average: ${formatFloodStat(v)} floods`;
             }
-            if(kind === "forecast"){
-              return ctx.dataIndex === 364
-                ? `${ctx.dataset._forecastTotal} floods/ +/- ${ctx.dataset._forecastSpread} floods`
-                : `Annual Forecast: ${formatFloodStat(v)} floods`;
+            if(kind === "forecastMarker"){
+              if(ctx.dataIndex !== 364) return null;
+              return `Annual forecast: ${formatFloodStat(ctx.dataset._forecastMean)} floods (range ${formatFloodStat(ctx.dataset._forecastLow)}–${formatFloodStat(ctx.dataset._forecastHigh)})`;
             }
+            if(kind === "forecastScale") return null;
             if(ctx.dataset?._year){
               return `${ctx.dataset._year}: ${formatFloodStat(v)} floods`;
             }
