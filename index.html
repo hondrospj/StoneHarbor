@@ -16,7 +16,7 @@
 
 :root{
   --bg:#0b1220;
-  --text:#eaf0ff;X
+  --text:#eaf0ff;
   --muted:#a9b6d3;
   --line:rgba(255,255,255,.085);
   --ok:#2dd4bf;
@@ -1052,11 +1052,34 @@ thead th{
       border-radius:999px;
       background:rgba(255,255,255,.055);
     }
+    .chartWrapTall canvas,
+    .chartWrap canvas{
+      display:block;
+      width:100% !important;
+      height:100% !important;
+    }
     .annualHeaderControls .seg{flex:0 1 auto}
     .annualHeaderControls .predictionToggle{margin-left:auto}
+    .doyShell{
+      grid-template-columns:minmax(0, 1fr) !important;
+      gap:12px !important;
+      align-items:stretch;
+    }
+    .doyShell > .chartActionBar,
+    .doyShell > .chartWrapTall,
+    .doyShell > .doySidePanel{
+      grid-column:1 / -1;
+    }
+    .doyShell > .chartWrapTall{
+      width:100%;
+      min-width:0;
+    }
     .doySidePanel{
       position:relative;
       min-height:0;
+      border-left:0 !important;
+      border-top:1px solid var(--line);
+      padding:12px 0 0 !important;
     }
     .doyKeyHeader{margin-bottom:10px}
     .doyPresetGrid{
@@ -4018,6 +4041,7 @@ function hookForecastToggles(){
       TS_ANNUAL_FORECAST_ENABLED = !TS_ANNUAL_FORECAST_ENABLED;
       renderForecastToggle(tsAnnualForecastToggle, TS_ANNUAL_FORECAST_ENABLED);
       updateTsChartFromState();
+      resetChartZoom(tsChart);
     });
   }
 
@@ -4026,6 +4050,7 @@ function hookForecastToggles(){
       DOY_ANNUAL_FORECAST_ENABLED = !DOY_ANNUAL_FORECAST_ENABLED;
       renderForecastToggle(doyForecastToggle, DOY_ANNUAL_FORECAST_ENABLED);
       renderDOYCumPanel();
+      resetChartZoom(doyCumChart);
     });
   }
 }
@@ -4149,8 +4174,13 @@ function annualForecastComponentSpread(rec, prefix){
 }
 
 function currentAnnualForecastInfo(year){
-  const rec = (FUTURE_FLOOD_PREDICTIONS[ANNUAL_SCENARIO] || [])
-    .find(r => Number(r.year) === Number(year));
+  const rows = (FUTURE_FLOOD_PREDICTIONS[ANNUAL_SCENARIO] || [])
+    .filter(r => Number.isFinite(Number(r.year)))
+    .sort((a,b)=>Number(a.year)-Number(b.year));
+  const targetYear = Number(year);
+  const rec = rows.find(r => Number(r.year) === targetYear)
+    || rows.find(r => Number(r.year) > targetYear)
+    || rows[rows.length - 1];
   if(!rec) return null;
   const total = Math.floor(
     annualNumber(rec.minorMean) +
@@ -4162,7 +4192,7 @@ function currentAnnualForecastInfo(year){
     annualForecastComponentSpread(rec, "moderate") +
     annualForecastComponentSpread(rec, "major")
   );
-  return { total, spread, year:Number(year) };
+  return { total, spread, year:targetYear, sourceYear:Number(rec.year) };
 }
 
 function updateTsAnnualForecastChartFromState(){
@@ -4174,45 +4204,73 @@ function updateTsAnnualForecastChartFromState(){
   }
 
   const endISO = nowISO();
-  const startObsISO = new Date(new Date(endISO).getTime() - 24*3600*1000).toISOString();
-  const obsLabels = build15MinLabels(startObsISO, endISO);
-  const futureHighs = TS_ANNUAL_FORECAST_POINTS
+  const rawFutureHighs = TS_ANNUAL_FORECAST_POINTS
     .filter(p => new Date(p.t).getTime() >= new Date(endISO).getTime());
-
-  const labels = Array.from(new Set([...obsLabels, ...futureHighs.map(p=>p.t)])).sort((a,b)=>new Date(a)-new Date(b));
-  const obsMap = new Map();
-  for(const p of (STATE.obs24Navd || [])){
-    const t = new Date(p.t).getTime();
-    const ft = Number(p.ft);
-    if(!Number.isFinite(t) || !Number.isFinite(ft)) continue;
-    const snapped = Math.round(t/TS_STEP_MS)*TS_STEP_MS;
-    obsMap.set(new Date(snapped).toISOString(), toDisplayFtFromNavd(ft));
+  const dailyCrestMap = new Map();
+  for(const p of rawFutureHighs){
+    const adjustedMllw = Number(p.ft) + seasonalOffsetForISO(p.t);
+    const displayFt = toDisplayFtFromMllw(adjustedMllw);
+    if(!Number.isFinite(displayFt)) continue;
+    const d = new Date(p.t);
+    if(Number.isNaN(d.getTime())) continue;
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
+    const existing = dailyCrestMap.get(key);
+    if(!existing || displayFt > existing.ft) dailyCrestMap.set(key, { t:p.t, ft:displayFt });
   }
+  const dailyCrests = Array.from(dailyCrestMap.values())
+    .sort((a,b)=>new Date(a.t)-new Date(b.t));
+
+  const observedPoints = (STATE.obs24Navd || [])
+    .map(p=>{
+      const t = new Date(p.t).getTime();
+      const ft = Number(p.ft);
+      if(!Number.isFinite(t) || !Number.isFinite(ft)) return null;
+      return { t:new Date(Math.round(t/TS_STEP_MS)*TS_STEP_MS).toISOString(), ft:toDisplayFtFromNavd(ft) };
+    })
+    .filter(Boolean)
+    .sort((a,b)=>new Date(a.t)-new Date(b.t));
+  const latestObserved = observedPoints.length ? observedPoints[observedPoints.length - 1] : null;
+
+  const labelSet = new Set(dailyCrests.map(p=>p.t));
+  if(latestObserved) labelSet.add(latestObserved.t);
+  const labels = Array.from(labelSet).sort((a,b)=>new Date(a)-new Date(b));
+  const obsMap = new Map();
+  if(latestObserved) obsMap.set(latestObserved.t, latestObserved.ft);
 
   const forecastMap = new Map();
-  for(const p of futureHighs){
-    const adjustedMllw = Number(p.ft) + seasonalOffsetForISO(p.t);
-    forecastMap.set(p.t, toDisplayFtFromMllw(adjustedMllw));
+  for(const p of dailyCrests){
+    forecastMap.set(p.t, p.ft);
   }
 
   const minor = thresholdsDisplay().minor;
   const riskFlags = labels.map(iso=>{
     const v = forecastMap.get(iso);
-    return Number.isFinite(v) && v >= minor - 0.25;
+    return Number.isFinite(v) && v >= minor - 0.5;
   });
 
   tsChart.data.labels = labels;
   tsChart.data.datasets[0].label = "Observed (USGS)";
   tsChart.data.datasets[0].data = labels.map(iso => obsMap.has(iso) ? obsMap.get(iso) : null);
+  tsChart.data.datasets[0].pointRadius = labels.map(iso => obsMap.has(iso) ? 3.5 : 0);
+  tsChart.data.datasets[0].pointHoverRadius = labels.map(iso => obsMap.has(iso) ? 5.5 : 0);
+  tsChart.data.datasets[0].pointBackgroundColor = "rgba(45,212,191,1)";
+  tsChart.data.datasets[0].pointBorderColor = "rgba(255,255,255,.9)";
+  tsChart.data.datasets[0].borderWidth = 2.4;
   tsChart.data.datasets[1].label = "Predicted (NOAA)";
   tsChart.data.datasets[1].data = labels.map(iso => forecastMap.has(iso) ? forecastMap.get(iso) : null);
   tsChart.data.datasets[1]._riskFlags = riskFlags;
-  tsChart.data.datasets[1].pointRadius = riskFlags.map(Boolean).map(v => v ? 4 : 0);
-  tsChart.data.datasets[1].pointHoverRadius = riskFlags.map(Boolean).map(v => v ? 6 : 0);
+  tsChart.data.datasets[1].borderDash = [];
+  tsChart.data.datasets[1].borderDashOffset = 0;
+  tsChart.data.datasets[1].borderWidth = 2.6;
+  tsChart.data.datasets[1].tension = 0.32;
+  tsChart.data.datasets[1].pointRadius = riskFlags.map(v => v ? 4.5 : 0);
+  tsChart.data.datasets[1].pointHoverRadius = riskFlags.map(v => v ? 7 : 0);
   tsChart.data.datasets[1].pointBackgroundColor = riskFlags.map(v => v ? "rgba(239,68,68,1)" : "rgba(45,212,191,.95)");
   tsChart.data.datasets[1].pointBorderColor = riskFlags.map(v => v ? "rgba(255,255,255,.95)" : "rgba(45,212,191,.95)");
+  tsChart.data.datasets[1].pointBorderWidth = riskFlags.map(v => v ? 1.5 : 0);
 
   tsChart.options.scales.x.ticks.callback = annualMonthTickCallback(labels);
+  tsChart.options.scales.x.grid.display = false;
   tsChart.options.scales.x.title.text = "Date";
   tsChart.options.scales.y.title.text = unitText();
 
@@ -4326,8 +4384,17 @@ const predValsDisplay = labels.map(iso=>{
   tsChart.data.datasets[0].data = obsFiltered;     
   tsChart.data.datasets[1].data = predValsDisplay;
   delete tsChart.data.datasets[1]._riskFlags;
+  tsChart.data.datasets[0].pointRadius = 0;
+  tsChart.data.datasets[0].pointHoverRadius = 0;
   tsChart.data.datasets[1].pointRadius = 0;
-  tsChart.data.datasets[1].pointHoverRadius = 0; 
+  tsChart.data.datasets[1].pointHoverRadius = 0;
+  tsChart.data.datasets[1].pointBackgroundColor = "rgba(45,212,191,.95)";
+  tsChart.data.datasets[1].pointBorderColor = "rgba(45,212,191,.95)";
+  tsChart.data.datasets[1].borderDash = [8,6];
+  tsChart.data.datasets[1].borderDashOffset = 0;
+  tsChart.data.datasets[1].borderWidth = 2;
+  tsChart.data.datasets[1].tension = 0.25;
+  tsChart.options.scales.x.grid.display = true; 
 
   tsChart.options.scales.x.ticks.callback = buildDailyTickCallbackSkipFirstDay(labels);
   tsChart.options.scales.y.title.text = unitText();
@@ -5148,18 +5215,20 @@ function renderDOYCumPanel(){
       _kind:"forecast",
       _forecastTotal:forecastInfo.total,
       _forecastSpread:forecastInfo.spread,
-      borderWidth:2.8,
-      borderDash:[8,5],
+      borderWidth:3.4,
+      borderDash:[10,4],
       tension:0,
-      borderColor:"rgba(239,68,68,.95)",
-      backgroundColor:"rgba(239,68,68,.95)",
+      borderColor:"rgba(251,191,36,.98)",
+      backgroundColor:"rgba(251,191,36,.98)",
       pointStyle:"triangle",
       pointRotation:90,
-      pointRadius:(ctx)=>ctx.dataIndex === 364 ? 6 : 0,
-      pointHoverRadius:(ctx)=>ctx.dataIndex === 364 ? 8 : 0,
-      pointHitRadius:10,
+      pointRadius:(ctx)=>ctx.dataIndex === 364 ? 8 : 0,
+      pointHoverRadius:(ctx)=>ctx.dataIndex === 364 ? 10 : 0,
+      pointBorderWidth:1.5,
+      pointBorderColor:"rgba(255,255,255,.95)",
+      pointHitRadius:14,
       fill:false,
-      order:1300
+      order:1
     });
   }
 
