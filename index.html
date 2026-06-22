@@ -1200,18 +1200,19 @@ thead th{
       border-radius:999px;
     }
     .contactNote{
-      position:fixed;
-      right:12px;
-      bottom:10px;
-      z-index:20;
-      max-width:min(420px, calc(100vw - 24px));
-      padding:7px 10px;
+      position:static;
+      display:block;
+      width:max-content;
+      max-width:calc(100vw - 32px);
+      margin:16px auto 0;
+      padding:8px 12px;
       border:1px solid rgba(255,255,255,.12);
       border-radius:999px;
-      background:rgba(5,11,22,.88);
+      background:rgba(5,11,22,.72);
       color:rgba(234,240,255,.82);
       font-size:11px;
       font-weight:850;
+      text-align:center;
       backdrop-filter:blur(10px);
     }
     @media(max-width:520px){
@@ -1231,9 +1232,9 @@ thead th{
       .seaLevelHeader{align-items:stretch}
       .seaLevelHeader .predictionToggle{width:100%;justify-content:flex-start}
       .contactNote{
-        left:10px;
-        right:10px;
-        text-align:center;
+        width:auto;
+        max-width:calc(100vw - 20px);
+        margin:14px auto 0;
         white-space:normal;
         border-radius:12px;
       }
@@ -4030,18 +4031,46 @@ function renderAnnual(){
 
 
 function buildDailyTickCallbackSkipFirstDay(labels){
-  const seenDays = new Set();
-  let firstDay = null;
-  return (value, index)=>{
-    const iso = labels[index];
-    if(!iso) return "";
-    const dayStr = fmtESTDay(iso);
-    if(firstDay === null) firstDay = dayStr;
-    if(seenDays.has(dayStr)) return "";
-    seenDays.add(dayStr);
-    if(dayStr === firstDay) return "";
-    return dayStr;
-  };
+  const labelByIndex = new Map();
+  const cleanLabels = Array.isArray(labels) ? labels.filter(Boolean) : [];
+
+  if(cleanLabels.length){
+    const firstDay = fmtESTDay(cleanLabels[0]);
+    let lastDay = null;
+
+    for(let i = 0; i < labels.length; i++){
+      const iso = labels[i];
+      if(!iso) continue;
+
+      const dayStr = fmtESTDay(iso);
+      if(dayStr !== lastDay){
+        if(dayStr !== firstDay) labelByIndex.set(i, dayStr);
+        lastDay = dayStr;
+      }
+    }
+
+    /* When the forecast is switched off, the chart can be only the recent observation window.
+       In that case there may be no new day after the first day, so the old callback returned
+       nothing and the x-axis looked broken. Use stable, precomputed 6-hour labels instead. */
+    if(labelByIndex.size === 0){
+      for(let i = 0; i < labels.length; i++){
+        const iso = labels[i];
+        if(!iso) continue;
+
+        const d = new Date(iso);
+        if(Number.isNaN(d.getTime())) continue;
+
+        const everySixHours = Math.max(1, Math.round((6 * HOUR_MS) / TS_STEP_MS));
+        if(i === 0){
+          labelByIndex.set(i, fmtESTDay(iso));
+        }else if(i % everySixHours === 0){
+          labelByIndex.set(i, fmtESTTime(iso).replace(":00 ", " "));
+        }
+      }
+    }
+  }
+
+  return (value, index)=> labelByIndex.get(index) || "";
 }
 
 
