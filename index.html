@@ -1660,7 +1660,7 @@ a.brand *{
         <button class="btn predictionToggle" id="tsAnnualForecastToggle" type="button" aria-pressed="false">
           <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
           <span class="predictionToggleMeta">
-            <span class="predictionToggleLabel">Annual Forecast</span>
+            <span class="predictionToggleLabel">Forecast</span>
             <span class="predictionToggleState">OFF · click to turn on</span>
           </span>
         </button>
@@ -1706,7 +1706,7 @@ a.brand *{
         <button class="btn predictionToggle" id="doyForecastToggle" type="button" aria-pressed="false">
           <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
           <span class="predictionToggleMeta">
-            <span class="predictionToggleLabel">Annual Forecast</span>
+            <span class="predictionToggleLabel">Forecast</span>
             <span class="predictionToggleState">OFF · click to turn on</span>
           </span>
         </button>
@@ -1769,7 +1769,7 @@ a.brand *{
         <button class="btn predictionToggle" id="annualPredictionToggle" type="button" aria-pressed="false">
           <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
           <span class="predictionToggleMeta">
-            <span class="predictionToggleLabel">Annual Forecast</span>
+            <span class="predictionToggleLabel">Forecast</span>
             <span class="predictionToggleState">OFF · click to turn on</span>
           </span>
         </button>
@@ -1799,7 +1799,7 @@ a.brand *{
           <button class="btn predictionToggle" id="seaLevelProjectionToggle" type="button" aria-pressed="false">
             <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
             <span class="predictionToggleMeta">
-              <span class="predictionToggleLabel">Annual Forecast</span>
+              <span class="predictionToggleLabel">Forecast</span>
               <span class="predictionToggleState">OFF · click to turn on</span>
             </span>
           </button>
@@ -2183,7 +2183,7 @@ let ANNUAL_VIEW = "total";
 let ANNUAL_PREDICTIONS_ENABLED = false;
 let ANNUAL_SCENARIO = "Baseline";
 let SEA_LEVEL_PROJECTIONS_ENABLED = false;
-let TS_ANNUAL_FORECAST_ENABLED = false;
+let TS_ANNUAL_FORECAST_ENABLED = true;
 let TS_ANNUAL_FORECAST_POINTS = [];
 let TS_ANNUAL_FORECAST_LOADING = false;
 let DOY_ANNUAL_FORECAST_ENABLED = false;
@@ -2270,7 +2270,7 @@ function renderAnnualScenarioControls(){
     annualPredictionToggle.innerHTML = `
       <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
       <span class="predictionToggleMeta">
-        <span class="predictionToggleLabel">Annual Forecast</span>
+        <span class="predictionToggleLabel">Forecast</span>
         <span class="predictionToggleState">${ANNUAL_PREDICTIONS_ENABLED ? "ON · click to turn off" : "OFF · click to turn on"}</span>
       </span>
     `;
@@ -4206,7 +4206,7 @@ function renderForecastToggle(button, enabled){
   button.innerHTML = `
     <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
     <span class="predictionToggleMeta">
-      <span class="predictionToggleLabel">Annual Forecast</span>
+      <span class="predictionToggleLabel">Forecast</span>
       <span class="predictionToggleState">${enabled ? "ON · click to turn off" : "OFF · click to turn on"}</span>
     </span>
   `;
@@ -4419,7 +4419,7 @@ const TS_NEAR_FLOOD_WINDOW_FT = 0.5;
 
 function tsObservedDataset(data){
   return {
-    label:"Obs.",
+    label:"Obs. (USGS)",
     data:data || [],
     borderWidth:2.4,
     pointRadius:0,
@@ -4441,7 +4441,7 @@ function tsObservedDataset(data){
 
 function tsPredictedDataset(data){
   return {
-    label:"NOAA",
+    label:"Forecast · 72h",
     data:data || [],
     borderWidth:2,
     pointRadius:0,
@@ -4603,11 +4603,6 @@ function updateTsAnnualForecastChartFromState(){
 }
 
 function updateTsChartFromState(){
-  if(TS_ANNUAL_FORECAST_ENABLED){
-    updateTsAnnualForecastChartFromState();
-    return;
-  }
-
   const endISO = nowISO();
   const startObsISO = new Date(new Date(endISO).getTime() - 24*3600*1000).toISOString();
 
@@ -4620,8 +4615,9 @@ function updateTsChartFromState(){
   const predStartISO = new Date(predStartMs).toISOString();
   const predEndISO   = new Date(predStartMs + 72*3600*1000).toISOString();
   const predEndMs    = new Date(predEndISO).getTime();
+  const chartEndISO  = TS_ANNUAL_FORECAST_ENABLED ? predEndISO : endISO;
 
-  const labels = build15MinLabels(startObsISO, predEndISO);
+  const labels = build15MinLabels(startObsISO, chartEndISO);
 
   const obsMap = new Map();
   for(const p of (STATE.obs24Navd || [])){
@@ -4671,10 +4667,11 @@ function updateTsChartFromState(){
   ensureTsChart();
   styleTsLegendAsLines();
   tsChart.data.labels = labels;
-  tsChart.data.datasets = [
-    tsObservedDataset(obsFiltered),
-    tsPredictedDataset(predValsDisplay)
-  ];
+  const tsDatasets = [tsObservedDataset(obsFiltered)];
+  if(TS_ANNUAL_FORECAST_ENABLED){
+    tsDatasets.push(tsPredictedDataset(predValsDisplay));
+  }
+  tsChart.data.datasets = tsDatasets;
 
   tsChart.options.plugins.legend.labels.pointStyleWidth = 22;
   tsChart.options.plugins.legend.labels.boxWidth = 22;
@@ -4727,7 +4724,7 @@ function renderSeaLevelProjectionControls(){
     seaLevelProjectionToggle.innerHTML = `
       <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
       <span class="predictionToggleMeta">
-        <span class="predictionToggleLabel">Annual Forecast</span>
+        <span class="predictionToggleLabel">Forecast</span>
         <span class="predictionToggleState">${SEA_LEVEL_PROJECTIONS_ENABLED ? "ON · click to turn off" : "OFF · click to turn on"}</span>
       </span>
     `;
@@ -5500,7 +5497,7 @@ function renderDOYCumPanel(){
 
     forecastDatasets.push(
       {
-        label:"Annual Forecast",
+        label:"Forecast",
         data:forecastMean,
         _kind:"forecastMarker",
         _forecastIndex:endIdx,
@@ -5509,6 +5506,7 @@ function renderDOYCumPanel(){
         _forecastHigh:forecastInfo.high,
         _forecastMinus:forecastInfo.minus,
         _forecastPlus:forecastInfo.plus,
+        _forecastYear:forecastInfo.year,
         _forecastSourceYear:forecastInfo.sourceYear,
         showLine:false,
         borderWidth:0,
@@ -5519,6 +5517,24 @@ function renderDOYCumPanel(){
         pointRadius:0,
         pointHoverRadius:0,
         pointHitRadius:18,
+        fill:false,
+        order:1
+      },
+      {
+        label:"Forecast Range",
+        data:new Array(365).fill(null),
+        _kind:"forecastRangeLegend",
+        _legendOnly:true,
+        borderWidth:3,
+        borderColor:"rgba(251,191,36,.98)",
+        backgroundColor:"rgba(251,191,36,.98)",
+        pointBackgroundColor:"rgba(251,191,36,.98)",
+        pointBorderColor:"rgba(251,191,36,.98)",
+        pointStyle:"line",
+        pointRadius:0,
+        pointHoverRadius:0,
+        pointHitRadius:0,
+        tension:0,
         fill:false,
         order:1
       },
@@ -5582,7 +5598,7 @@ function renderDOYCumPanel(){
           filter:(legendItem, chartData)=>{
             const ds = chartData?.datasets?.[legendItem.datasetIndex];
             if(ds?._legendHidden) return false;
-            return ["Historic Range","Average","Current Year","Annual Forecast"].includes(ds?.label || "");
+            return ["Historic Range","Average","Current Year","Forecast","Forecast Range"].includes(ds?.label || "");
           }
         }
       },
@@ -5607,8 +5623,10 @@ function renderDOYCumPanel(){
             }
             if(kind === "forecastMarker"){
               if(ctx.dataIndex !== 364) return null;
-              return `Annual forecast: ${formatFloodStat(ctx.dataset._forecastMean)} floods (range ${formatFloodStat(ctx.dataset._forecastLow)}–${formatFloodStat(ctx.dataset._forecastHigh)})`;
+              const forecastYear = ctx.dataset?._forecastYear || new Date().getFullYear();
+              return `${forecastYear} forecast: ${formatFloodStat(ctx.dataset._forecastMean)} floods (range ${formatFloodStat(ctx.dataset._forecastLow)}–${formatFloodStat(ctx.dataset._forecastHigh)})`;
             }
+            if(kind === "forecastRangeLegend") return null;
             if(kind === "forecastScale") return null;
             if(ctx.dataset?._year){
               return `${ctx.dataset._year}: ${formatFloodStat(v)} floods`;
@@ -5962,25 +5980,25 @@ async function updateTimeseries(){
   const end = new Date();
   const start = new Date(end.getTime() - 24*3600*1000);
 
-  
-  const obs = await fetchObservedSeries({
-    startISO: start.toISOString(),
-    endISO: end.toISOString()
-  });
-  STATE.obs24Navd = obs || [];
+  try{
+    const obs = await fetchObservedSeries({
+      startISO: start.toISOString(),
+      endISO: end.toISOString()
+    });
+    STATE.obs24Navd = obs || [];
+  }catch(e){
+    console.warn("Observed water level failed:", e);
+    STATE.obs24Navd = [];
+  }
 
+  try{
+    const { points } = await fetchPETSSForecast_MLLW({ hours: 72 });
+    STATE.pred72Mllw = points || [];
+  }catch(e){
+    console.warn("Forecast failed:", e);
+    STATE.pred72Mllw = [];
+  }
 
-try {
-  const { points } = await fetchPETSSForecast_MLLW({ hours: 72 });
-  STATE.pred72Mllw = points || [];
-
-} catch (e) {
-  console.warn("PETSS forecast failed:", e);
-  STATE.pred72Mllw = [];
-}
-
-
-  
   updateTsChartFromState();
   updateFloodOutlook48();
 }
