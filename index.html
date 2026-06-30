@@ -3106,7 +3106,7 @@ function liveFeedLabel(){
   return GAUGE_TYPE === "NOAA" ? "NOAA" : "USGS";
 }
 
-function cachedHighTideFallbackSeries(){
+function cachedHighTideFallbackSeries({startISO=null,endISO=null}={}){
   const rows = Array.isArray(HIGH_TIDES_NAVD) ? HIGH_TIDES_NAVD : [];
   const pts = rows
     .map((p) => {
@@ -3120,34 +3120,21 @@ function cachedHighTideFallbackSeries(){
 
   if(!pts.length) return [];
 
-  const recentCutoff = Date.now() - 120 * 86400000;
-  const recent = pts.filter(p => new Date(p.t).getTime() >= recentCutoff);
-  const out = recent.length ? recent : pts.slice(-10);
-  out.isCachedHighTideFallback = true;
-  return out;
-}
-
-function liveFeedLabel(){
-  return GAUGE_TYPE === "NOAA" ? "NOAA" : "USGS";
-}
-
-function cachedHighTideFallbackSeries(){
-  const rows = Array.isArray(HIGH_TIDES_NAVD) ? HIGH_TIDES_NAVD : [];
-  const pts = rows
-    .map((p) => {
-      const dt = new Date(p?.t);
-      const ft = Number(p?.ft);
-      if(Number.isNaN(dt.getTime()) || !Number.isFinite(ft)) return null;
-      return { t: dt.toISOString(), ft };
-    })
-    .filter(Boolean)
-    .sort((a,b) => new Date(a.t) - new Date(b.t));
-
-  if(!pts.length) return [];
-
-  const recentCutoff = Date.now() - 120 * 86400000;
-  const recent = pts.filter(p => new Date(p.t).getTime() >= recentCutoff);
-  const out = recent.length ? recent : pts.slice(-10);
+  const startMs = startISO ? new Date(startISO).getTime() : NaN;
+  const endMs = endISO ? new Date(endISO).getTime() : NaN;
+  let out;
+  if(Number.isFinite(startMs) || Number.isFinite(endMs)){
+    out = pts.filter((p) => {
+      const t = new Date(p.t).getTime();
+      return Number.isFinite(t)
+        && (!Number.isFinite(startMs) || t >= startMs)
+        && (!Number.isFinite(endMs) || t <= endMs);
+    });
+  }else{
+    const recentCutoff = Date.now() - 120 * 86400000;
+    const recent = pts.filter(p => new Date(p.t).getTime() >= recentCutoff);
+    out = recent.length ? recent : pts.slice(-10);
+  }
   out.isCachedHighTideFallback = true;
   return out;
 }
@@ -4763,18 +4750,23 @@ function formatForecastPlusMinus(ds){
 
 const TS_NEAR_FLOOD_WINDOW_FT = 0.5;
 
-function tsObservedDataset(data){
+function tsObservedDataset(data, {cachedHighs=false}={}){
   return {
-    label:"Observed",
+    label: cachedHighs ? "Observed highs (cached)" : "Observed",
     data:data || [],
-    borderWidth:2.4,
-    pointRadius:0,
-    pointHoverRadius:0,
-    pointHitRadius:0,
+    borderWidth: cachedHighs ? 0 : 2.4,
+    pointRadius: cachedHighs ? 4.6 : 0,
+    pointHoverRadius: cachedHighs ? 6.4 : 0,
+    pointHitRadius: cachedHighs ? 10 : 0,
     tension:0.25,
     spanGaps:false,
-    pointStyle:"line",
+    showLine: !cachedHighs,
+    pointStyle: cachedHighs ? "circle" : "line",
     borderColor:"rgba(234,240,255,.86)",
+    backgroundColor:"rgba(234,240,255,.92)",
+    pointBackgroundColor:"rgba(234,240,255,.92)",
+    pointBorderColor:"rgba(9,17,33,.92)",
+    pointBorderWidth: cachedHighs ? 1.5 : 0,
     segment:{
       borderColor:(ctx)=>{
         const y = ctx?.p1?.parsed?.y;
@@ -5013,7 +5005,7 @@ function updateTsChartFromState(){
   ensureTsChart();
   styleTsLegendAsLines();
   tsChart.data.labels = labels;
-  const tsDatasets = [tsObservedDataset(obsFiltered)];
+  const tsDatasets = [tsObservedDataset(obsFiltered, {cachedHighs: !!STATE.obs24CachedHighs})];
   if(TS_ANNUAL_FORECAST_ENABLED){
     tsDatasets.push(tsPredictedDataset(predValsDisplay));
   }
@@ -6436,9 +6428,15 @@ async function updateTimeseries(){
       endISO: end.toISOString()
     });
     STATE.obs24Navd = obs || [];
+    STATE.obs24CachedHighs = false;
   }catch(e){
     console.warn("Observed water level failed:", e);
-    STATE.obs24Navd = [];
+    const cached = cachedHighTideFallbackSeries({
+      startISO: start.toISOString(),
+      endISO: end.toISOString()
+    });
+    STATE.obs24Navd = cached || [];
+    STATE.obs24CachedHighs = !!(cached && cached.isCachedHighTideFallback && cached.length);
   }
 
   try{
