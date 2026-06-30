@@ -3032,8 +3032,8 @@ async function fetchNOAAObservedSeries({startISO=null,endISO=null,period=null}={
   const start = startISO ? new Date(startISO) : new Date(startFromPeriod(period, end.toISOString()) || (end.getTime() - 7*86400000));
   if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) throw new Error("Invalid NOAA observed date range");
 
-  const stations = [...new Set([NOAA_OBS_STATION, COOPS_STATION, ...(NOAA_STATION_CANDIDATES || [])].filter(Boolean).map(String))];
-  const datums = ["NAVD", "MLLW", "MSL"];
+  const stations = [...new Set([...(NOAA_STATION_CANDIDATES || []), NOAA_OBS_STATION, COOPS_STATION].filter(Boolean).map(String))];
+  const datums = ["MLLW", "MSL", "NAVD"];
   const errors = [];
 
   for(const station of stations){
@@ -3056,7 +3056,17 @@ async function fetchNOAAObservedSeries({startISO=null,endISO=null,period=null}={
           url.searchParams.set("begin_date", yyyymmddUTC(cur));
           url.searchParams.set("end_date", yyyymmddUTC(actualEnd));
 
-          const res = await fetch(url.toString(), { cache:"no-store" });
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 8000);
+          let res;
+          try{
+            res = await fetch(url.toString(), { cache:"no-store", signal: controller.signal });
+          }catch(fetchErr){
+            if(fetchErr?.name === "AbortError") throw new Error("timeout after 8s");
+            throw fetchErr;
+          }finally{
+            clearTimeout(timer);
+          }
           if(!res.ok) throw new Error(`HTTP ${res.status}`);
           const j = await res.json();
           if(j?.error?.message) throw new Error(j.error.message);
@@ -3092,6 +3102,56 @@ async function fetchObservedSeries({startISO=null,endISO=null,period=null}={}){
 
 
 
+function liveFeedLabel(){
+  return GAUGE_TYPE === "NOAA" ? "NOAA" : "USGS";
+}
+
+function cachedHighTideFallbackSeries(){
+  const rows = Array.isArray(HIGH_TIDES_NAVD) ? HIGH_TIDES_NAVD : [];
+  const pts = rows
+    .map((p) => {
+      const dt = new Date(p?.t);
+      const ft = Number(p?.ft);
+      if(Number.isNaN(dt.getTime()) || !Number.isFinite(ft)) return null;
+      return { t: dt.toISOString(), ft };
+    })
+    .filter(Boolean)
+    .sort((a,b) => new Date(a.t) - new Date(b.t));
+
+  if(!pts.length) return [];
+
+  const recentCutoff = Date.now() - 120 * 86400000;
+  const recent = pts.filter(p => new Date(p.t).getTime() >= recentCutoff);
+  const out = recent.length ? recent : pts.slice(-10);
+  out.isCachedHighTideFallback = true;
+  return out;
+}
+
+function liveFeedLabel(){
+  return GAUGE_TYPE === "NOAA" ? "NOAA" : "USGS";
+}
+
+function cachedHighTideFallbackSeries(){
+  const rows = Array.isArray(HIGH_TIDES_NAVD) ? HIGH_TIDES_NAVD : [];
+  const pts = rows
+    .map((p) => {
+      const dt = new Date(p?.t);
+      const ft = Number(p?.ft);
+      if(Number.isNaN(dt.getTime()) || !Number.isFinite(ft)) return null;
+      return { t: dt.toISOString(), ft };
+    })
+    .filter(Boolean)
+    .sort((a,b) => new Date(a.t) - new Date(b.t));
+
+  if(!pts.length) return [];
+
+  const recentCutoff = Date.now() - 120 * 86400000;
+  const recent = pts.filter(p => new Date(p.t).getTime() >= recentCutoff);
+  const out = recent.length ? recent : pts.slice(-10);
+  out.isCachedHighTideFallback = true;
+  return out;
+}
+
 async function fetchRecentObservedSeriesWithFallback(){
   const tries = ["P7D", "P30D", "P120D"];
   const errs = [];
@@ -3106,7 +3166,10 @@ async function fetchRecentObservedSeriesWithFallback(){
     }
   }
 
-  throw new Error("No recent USGS tidal elevation data returned. " + errs.join(" | "));
+  const cached = cachedHighTideFallbackSeries();
+  if(cached.length) return cached;
+
+  throw new Error(`No recent ${liveFeedLabel()} tidal elevation data returned. ${errs.join(" | ")}`);
 }
 
 function hoursSinceISO(iso){
@@ -6291,7 +6354,10 @@ async function updateLiveAndAnnualCounts(){
   renderAnnual();
 
   const recent = await fetchRecentObservedSeriesWithFallback();
-  if(!recent.length) throw new Error("no recent water-level data returned from USGS");
+  if(!recent.length) throw new Error("no recent water-level data returned");
+
+  const usingCachedHighTides = !!recent.isCachedHighTideFallback;
+  const sourceLabel = liveFeedLabel();
 
   STATE.lastNavd = recent[recent.length - 1];
 
@@ -6299,10 +6365,16 @@ async function updateLiveAndAnnualCounts(){
   const isStale = ageHours > 6;
 
   curFtEl.textContent = toDisplayFtFromNavd(STATE.lastNavd.ft).toFixed(2);
-  curMetaEl.textContent = "Updated: " + fmtESTFull(STATE.lastNavd.t);
+  curMetaEl.textContent = (usingCachedHighTides ? "Cached high tide: " : "Updated: ") + fmtESTFull(STATE.lastNavd.t);
 
-  if(isStale){
-    lastPill.textContent = "Last USGS reading: " + fmtESTFull(STATE.lastNavd.t);
+  if(usingCachedHighTides){
+    const c = classifyByNavd(STATE.lastNavd.ft);
+    lastPill.textContent = `Live ${sourceLabel} feed unavailable; latest cached high tide: ${fmtESTFull(STATE.lastNavd.t)}`;
+    stageTextEl.textContent = `CACHED HIGH: ${c.short.toUpperCase()}`;
+    stageDotEl.style.background = c.color;
+    stageDotEl.style.boxShadow = `0 0 0 4px ${c.glow}`;
+  }else if(isStale){
+    lastPill.textContent = `Last ${sourceLabel} reading: ${fmtESTFull(STATE.lastNavd.t)}`;
     stageTextEl.textContent = "LIVE DATA STALE";
     stageDotEl.style.background = "var(--minor)";
     stageDotEl.style.boxShadow = "0 0 0 4px rgba(251,191,36,.18)";
@@ -6321,7 +6393,15 @@ async function updateLiveAndAnnualCounts(){
   const today = recent.filter(p => sameLocalDayISO(p.t, new Date().toISOString()));
   STATE.todayNavd = today;
 
-  if(today.length){
+  if(today.length && usingCachedHighTides){
+    const dmx = maxPoint(today);
+    dayMaxFtEl.textContent = toDisplayFtFromNavd(dmx.ft).toFixed(2);
+    dayMinFtEl.textContent = "—";
+
+    if(dayMaxWhenEl) dayMaxWhenEl.textContent = fmtESTTime(dmx.t);
+    if(dayMinWhenEl) dayMinWhenEl.textContent = "—";
+    if(dayRangeMeta) dayRangeMeta.textContent = `Live ${sourceLabel} feed unavailable; cached values are high tides only.`;
+  }else if(today.length){
     const dmx = maxPoint(today), dmn = minPoint(today);
 
     dayMaxFtEl.textContent = toDisplayFtFromNavd(dmx.ft).toFixed(2);
@@ -6335,7 +6415,9 @@ async function updateLiveAndAnnualCounts(){
     dayMinFtEl.textContent = "—";
     if(dayMaxWhenEl) dayMaxWhenEl.textContent = "—";
     if(dayMinWhenEl) dayMinWhenEl.textContent = "—";
-    if(dayRangeMeta) dayRangeMeta.textContent = isStale ? "USGS feed has no observations for today." : "";
+    if(dayRangeMeta) dayRangeMeta.textContent = usingCachedHighTides
+      ? `Live ${sourceLabel} feed unavailable; no cached high tide exists for today.`
+      : (isStale ? `${sourceLabel} feed has no observations for today.` : "");
   }
 }
 
