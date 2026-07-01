@@ -2267,7 +2267,7 @@ const doySelectRecent = $("doySelectRecent");
 let MONTH_VIEW = "total";  
 let ANNUAL_VIEW = "total"; 
 let ANNUAL_PREDICTIONS_ENABLED = false;
-let ANNUAL_SCENARIO = FUTURE_SCENARIOS[0]?.id || "Low";
+let ANNUAL_SCENARIO = "Baseline";
 let SEA_LEVEL_PROJECTIONS_ENABLED = false;
 let TS_ANNUAL_FORECAST_ENABLED = true;
 let TS_ANNUAL_FORECAST_POINTS = [];
@@ -2506,6 +2506,12 @@ function startOfYearEST_ISO(y){ return new Date(Date.UTC(y,0,1,5,0,0)).toISOStri
 function nowISO(){ return new Date().toISOString(); }
 
 
+
+function fetchWithTimeout(resource, options={}, timeoutMs=8000){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(resource, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
 
 function classifyByNavd(navdFt){
   const T = THRESH.NAVD88;
@@ -2921,7 +2927,7 @@ async function fetchNOAAHourlyPredictions({ station, beginYMD, endYMD, datum="ML
   url.searchParams.set("interval","h");
   url.searchParams.set("format","json");
 
-  const res = await fetch(url.toString(), { cache:"no-store" });
+  const res = await fetchWithTimeout(url.toString(), { cache:"no-store" }, 8000);
   if(!res.ok) throw new Error("NOAA hourly predictions failed " + res.status);
   const j = await res.json();
   const preds = j?.predictions || [];
@@ -2985,7 +2991,7 @@ async function fetchIV({startISO=null,endISO=null,period=null}={}){
   if(startISO) url.searchParams.set("startDT",startISO);
   if(endISO) url.searchParams.set("endDT",endISO);
 
-  const res=await fetch(url.toString(),{cache:"no-store"});
+  const res=await fetchWithTimeout(url.toString(),{cache:"no-store"},7000);
   if(!res.ok) throw new Error("USGS IV failed "+res.status);
   return res.json();
 }
@@ -3013,6 +3019,14 @@ function extractWaterLevelSeries_NAVD88(json){
     if(pts.length > best.length) best = pts;
   }
   return best;
+}
+
+function startOfUTCDate(date){
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function yyyymmddUTC(date){
+  return `${date.getUTCFullYear()}${String(date.getUTCMonth()+1).padStart(2,"0")}${String(date.getUTCDate()).padStart(2,"0")}`;
 }
 
 function isoFromNOAAPoint(t){
@@ -3254,7 +3268,7 @@ function sameLocalDayISO(aISO, bISO){
 async function updateAlerts(){
   try{
     const url = `https://api.weather.gov/alerts/active?point=${ALERT_POINT.lat},${ALERT_POINT.lon}`;
-    const res=await fetch(url,{cache:"no-store"});
+    const res=await fetchWithTimeout(url,{cache:"no-store"},5000);
     if(!res.ok) throw new Error("alerts "+res.status);
     const j=await res.json();
     const feats=j?.features||[];
@@ -3872,7 +3886,7 @@ async function fetchNOAAHiloHighs({ station, beginYMD, endYMD, datum="MLLW" }){
   url.searchParams.set("interval","hilo");
   url.searchParams.set("format","json");
 
-  const res = await fetch(url.toString(), { cache:"no-store" });
+  const res = await fetchWithTimeout(url.toString(), { cache:"no-store" }, 8000);
   if(!res.ok) throw new Error("NOAA hilo predictions failed " + res.status);
   const j = await res.json();
 
@@ -5476,7 +5490,7 @@ async function fetchUSGSDailySeaLevel(){
   url.searchParams.set("statCd","00003");
   url.searchParams.set("startDT","2000-01-01");
   url.searchParams.set("siteStatus","all");
-  const res = await fetch(url.toString(), { cache:"no-store" });
+  const res = await fetchWithTimeout(url.toString(), { cache:"no-store" }, 8000);
   if(!res.ok) throw new Error("USGS daily sea level failed " + res.status);
   const json = await res.json();
   const series = json?.value?.timeSeries?.[0]?.values?.[0]?.value || [];
@@ -5499,7 +5513,7 @@ async function fetchNOAAMonthlySeaLevel(){
       url.searchParams.set("format", "json");
       url.searchParams.set("begin_date", "20000101");
       url.searchParams.set("end_date", ymdCompactFromISO(nowISO()));
-      const res = await fetch(url.toString(), { cache:"no-store" });
+      const res = await fetchWithTimeout(url.toString(), { cache:"no-store" }, 8000);
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if(json?.error?.message) throw new Error(json.error.message);
@@ -5523,7 +5537,7 @@ async function fetchNOAAMonthlySeaLevel(){
 async function fetchDailySeaLevel(){
   if(GAUGE_TYPE === "NOAA") return fetchNOAAMonthlySeaLevel();
   try{
-    const daily = await fetchDailySeaLevel();
+    const daily = await fetchUSGSDailySeaLevel();
     if(daily.length) return daily;
   }catch(e){}
   return fetchNOAAMonthlySeaLevel();
@@ -5543,7 +5557,7 @@ async function fetchNOAAMonthlySeaLevel(){
       url.searchParams.set("format", "json");
       url.searchParams.set("begin_date", "20000101");
       url.searchParams.set("end_date", ymdCompactFromISO(nowISO()));
-      const res = await fetch(url.toString(), { cache:"no-store" });
+      const res = await fetchWithTimeout(url.toString(), { cache:"no-store" }, 8000);
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if(json?.error?.message) throw new Error(json.error.message);
@@ -5567,7 +5581,7 @@ async function fetchNOAAMonthlySeaLevel(){
 async function fetchDailySeaLevel(){
   if(GAUGE_TYPE === "NOAA") return fetchNOAAMonthlySeaLevel();
   try{
-    const daily = await fetchDailySeaLevel();
+    const daily = await fetchUSGSDailySeaLevel();
     if(daily.length) return daily;
   }catch(e){}
   return fetchNOAAMonthlySeaLevel();
@@ -6832,7 +6846,7 @@ async function boot(){
   
 
 
-await Promise.allSettled([ updateAlerts() ]);
+const alertTask = updateAlerts().catch(e => console.warn("Alerts init failed:", e));
 
 
  
@@ -6840,7 +6854,7 @@ const hist = await Promise.allSettled([
   initJSONBackedHistory()
 ]);
 
-await Promise.allSettled([ updateSeaLevelTrends() ]);
+const seaLevelTask = updateSeaLevelTrends().catch(e => console.warn("Sea level init failed:", e));
 
 if (hist[0].status === "rejected") {
   console.error("History init failed:", hist[0].reason);
@@ -6859,7 +6873,10 @@ if (hist[0].status === "rejected") {
   }
 
   
-  await Promise.allSettled([ updateTimeseries() ]);
+  const timeseriesTask = updateTimeseries().catch(e => console.warn("Timeseries init failed:", e));
+  void alertTask;
+  void seaLevelTask;
+  void timeseriesTask;
 }
 
 
