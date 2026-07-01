@@ -6318,7 +6318,11 @@ function renderDOYCumPanel(){
             if(Math.abs(numeric - dayIndex) > 0.001) return "";
 
             const m = mStarts.indexOf(dayIndex);
-            return (m >= 0) ? mNames[m] : "";
+            if(m < 0) return "";
+
+            const width = Math.max(document.documentElement?.clientWidth || 0, window.innerWidth || 0);
+            const monthStep = width < 420 ? 3 : width < 700 ? 2 : 1;
+            return (m % monthStep === 0) ? mNames[m] : "";
           }
         },
         grid:{display:false}
