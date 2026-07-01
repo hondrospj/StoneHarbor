@@ -5833,8 +5833,6 @@ function buildDoyHistoricalEvolutionRange(year, forecastInfo, meanSeries, series
     };
   }
 
-  const historicAnnualMean = annualTotals.reduce((s,v)=>s+v,0) / annualTotals.length;
-  const scale = forecastMean / Math.max(1, historicAnnualMean);
   const low = new Array(365).fill(0);
   const high = new Array(365).fill(0);
   const annualMinus = Math.max(0, forecastMean - forecastLow);
@@ -5842,19 +5840,23 @@ function buildDoyHistoricalEvolutionRange(year, forecastInfo, meanSeries, series
 
   for(let i=0;i<365;i++){
     const mean = Math.max(0, Number(meanSeries?.[i]) || 0);
-    const scaledHistory = priorYears.map(yr => (yr.cum[i] || 0) * scale);
-    const histLow = doyQuantile(scaledHistory, 0.03);
-    const histHigh = doyQuantile(scaledHistory, 0.97);
+    const historicProgress = priorYears
+      .filter(yr => yr.total > 0)
+      .map(yr => doyClamp01((yr.cum[i] || 0) / yr.total));
     const progress = forecastMean > 0 ? doyClamp01(mean / forecastMean) : doyClamp01(i / 364);
-    const earlySpread = Math.sqrt(progress);
-    const annualLow = mean - annualMinus * earlySpread;
-    const annualHigh = mean + annualPlus * earlySpread;
+    const fastHistoricProgress = doyQuantile(historicProgress, 0.90);
+    const slowHistoricProgress = doyQuantile(historicProgress, 0.10);
+    const growthFloor = Math.sqrt(progress);
+    const highSpreadProgress = doyClamp01(Math.max(growthFloor, fastHistoricProgress));
+    const lowSpreadProgress = doyClamp01(Math.max(growthFloor, progress + Math.max(0, progress - slowHistoricProgress)));
 
-    low[i] = Math.max(0, Math.min(mean, histLow, annualLow));
-    high[i] = Math.max(mean, histHigh, annualHigh);
+    low[i] = Math.max(0, Math.min(mean, mean - annualMinus * lowSpreadProgress));
+    high[i] = Math.min(forecastHigh, Math.max(mean, mean + annualPlus * highSpreadProgress));
   }
+  low[364] = forecastLow;
+  high[364] = forecastHigh;
 
-  return { low, high, source:"historical year evolution" };
+  return { low, high, source:"historical spread timing" };
 }
 
 function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear){
