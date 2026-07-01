@@ -2874,11 +2874,20 @@ function manualHistoricRowsNavd(){
   }).filter(r => r.t && Number.isFinite(r.ft));
 }
 
+function historicDateKey(r){
+  if(r?.t) return String(r.t).slice(0, 10);
+  const parts = String(r?.manualDate || "").split("-");
+  if(parts.length === 3){
+    return `${parts[2]}-${parts[0].padStart(2, "0")}-${parts[1].padStart(2, "0")}`;
+  }
+  return String(r?.manualDate || "");
+}
+
 function combinedHistoricRowsNavd(){
   const rows = [];
   const seen = new Set();
   for(const r of [...manualHistoricRowsNavd(), ...(HIGH_TIDES_NAVD || [])]){
-    const tKey = r.manualDate || (r.t ? r.t.slice(0,10) : "");
+    const tKey = historicDateKey(r);
     const key = `${tKey}|${Number(r.ft).toFixed(2)}`;
     if(seen.has(key)) continue;
     seen.add(key);
@@ -2890,7 +2899,9 @@ function combinedHistoricRowsNavd(){
 }
 
 function fmtHistoricDate(r){
-  return r.manualDate ? r.manualDate : fmtNiceDate(r.t);
+  if(r?.t) return fmtNiceDate(r.t);
+  const tKey = historicDateKey(r);
+  return tKey ? fmtNiceDate(`${tKey}T12:00:00Z`) : "";
 }
 
 function normalizePetssJsonToPoints(json){
@@ -4446,16 +4457,6 @@ function compactTimeLabel(iso){
   return fmtESTTime(iso).replace(":00", "").replace(" AM", "a").replace(" PM", "p");
 }
 
-function sixHourTimeLabel(iso){
-  const parts = getTZDateTimeParts(new Date(iso));
-  if(parts.mm !== 0 || parts.ss !== 0) return "";
-  if(parts.hh === 6) return "6am";
-  if(parts.hh === 12) return "12pm";
-  if(parts.hh === 18) return "6pm";
-  if(parts.hh === 0) return "12am";
-  return "";
-}
-
 function buildDailyTickCallbackSkipFirstDay(labels){
   return function(value){
     const numericValue = Number(value);
@@ -4466,8 +4467,10 @@ function buildDailyTickCallbackSkipFirstDay(labels){
     const d = new Date(iso);
     if(Number.isNaN(d.getTime())) return "";
 
-    const time = sixHourTimeLabel(iso);
-    return time ? [fmtESTDay(iso), time] : "";
+    const prevIso = labels?.[idx - 1] || "";
+    const currentDay = fmtESTDay(iso);
+    const prevDay = prevIso ? fmtESTDay(prevIso) : "";
+    return idx === 0 || currentDay !== prevDay ? currentDay : "";
   };
 }
 
