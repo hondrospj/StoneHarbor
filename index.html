@@ -5689,6 +5689,7 @@ async function updateSeaLevelTrends(){
     SEA_LEVEL_STATE = { monthly, relative, regression, source };
     seaLevelMeta.textContent = "";
     renderSeaLevelChart();
+    if(DOY_ANNUAL_FORECAST_ENABLED) renderDOYCumPanel();
   }catch(e){
     console.warn("Sea level trends failed:", e);
     seaLevelMeta.textContent = "Sea level data unavailable. Add data/sealevel.json or run the monthly sea-level cache.";
@@ -5753,6 +5754,75 @@ function formatFloodStat(v){
   if(!Number.isFinite(n)) return "";
   if(Number.isInteger(n)) return String(n);
   return n.toFixed(1).replace(/\.0$/, "");
+}
+
+function dateFromDoyIndex365(year, idx){
+  const leapSkip = isLeapYear(year) && idx >= 59 ? 1 : 0;
+  return new Date(Date.UTC(year, 0, 1 + idx + leapSkip, 12, 0, 0));
+}
+
+function doySeasonalDayWeight(year, idx){
+  const iso = dateFromDoyIndex365(year, idx).toISOString();
+  const offset = Number(seasonalOffsetForISO(iso));
+  if(!Number.isFinite(offset)) return 1;
+  return Math.max(0.12, Math.min(4, Math.exp(offset / 0.22)));
+}
+
+function buildDoyAnnualDayWeights(year){
+  return Array.from({length:365}, (_, idx)=>doySeasonalDayWeight(year, idx));
+}
+
+function buildDoyWeightedCumulative(targetValue, weights){
+  const out = new Array(365).fill(0);
+  const target = Math.max(0, Number(targetValue) || 0);
+  let weightSum = 0;
+
+  for(let i=0;i<365;i++){
+    const w = Number(weights?.[i]);
+    if(Number.isFinite(w) && w > 0) weightSum += w;
+  }
+
+  if(target <= 0 || weightSum <= 0) return out;
+
+  let run = 0;
+  for(let i=0;i<365;i++){
+    const w = Number(weights?.[i]);
+    if(Number.isFinite(w) && w > 0) run += target * (w / weightSum);
+    out[i] = run;
+  }
+  out[364] = target;
+  return out;
+}
+
+function buildDoySeasonalForecastPath(year, forecastInfo){
+  if(!forecastInfo) return null;
+  const weights = buildDoyAnnualDayWeights(year);
+  const hasSeasonalCycle = !!SEA_LEVEL_STATE?.relative?.length;
+
+  return {
+    mean:buildDoyWeightedCumulative(forecastInfo.mean, weights),
+    low:buildDoyWeightedCumulative(forecastInfo.low, weights),
+    high:buildDoyWeightedCumulative(forecastInfo.high, weights),
+    basis:hasSeasonalCycle ? "local seasonal cycle" : "even daily rate"
+  };
+}
+
+function seasonalHistoricForecastInfo(year, avg, min, max){
+  const mean = Math.max(0, Math.round(Number(avg?.[364]) || 0));
+  const low = Math.max(0, Math.floor(Number(min?.[364]) || mean));
+  const high = Math.max(mean, Math.ceil(Number(max?.[364]) || mean));
+  return {
+    total:mean,
+    mean,
+    low,
+    high,
+    minus:Math.max(0, mean - low),
+    plus:Math.max(0, high - mean),
+    spread:Math.max(Math.max(0, mean - low), Math.max(0, high - mean)),
+    year,
+    sourceYear:year,
+    historicalFallback:true
+  };
 }
 
 function ensureDOYSelectedYears(years){
@@ -6110,23 +6180,78 @@ function renderDOYCumPanel(){
     order:1000
   };
 
-  const forecastInfo = DOY_ANNUAL_FORECAST_ENABLED ? currentAnnualForecastInfo(CUR_Y) : null;
+  const forecastInfo = DOY_ANNUAL_FORECAST_ENABLED ? (currentAnnualForecastInfo(CUR_Y) || seasonalHistoricForecastInfo(CUR_Y, avg, min, max)) : null;
   const forecastDatasets = [];
   if(forecastInfo && Number.isFinite(todayIdx)){
     const endIdx = 364;
+    const seasonalForecast = buildDoySeasonalForecastPath(CUR_Y, forecastInfo);
 
     const forecastMean = new Array(365).fill(null);
-    const forecastLowScale = new Array(365).fill(null);
-    const forecastHighScale = new Array(365).fill(null);
-
     forecastMean[endIdx] = forecastInfo.mean;
-    forecastLowScale[endIdx] = forecastInfo.low;
-    forecastHighScale[endIdx] = forecastInfo.high;
 
     forecastDatasets.push(
       {
+        label:"Expected Range",
+        data:seasonalForecast?.low || new Array(365).fill(null),
+        _legendHidden:true,
+        _kind:"seasonalForecastRangeLow",
+        borderWidth:0,
+        tension:0.24,
+        borderColor:"rgba(251,191,36,0)",
+        backgroundColor:"rgba(251,191,36,0)",
+        pointRadius:0,
+        pointHoverRadius:0,
+        pointHitRadius:0,
+        hidden:!DOY_FORECAST_RANGE_VISIBLE,
+        fill:false,
+        order:930
+      },
+      {
+        label:"Expected Range",
+        data:seasonalForecast?.high || new Array(365).fill(null),
+        _legendHidden:true,
+        _kind:"seasonalForecastRangeHigh",
+        borderWidth:0,
+        tension:0.24,
+        borderColor:"rgba(251,191,36,0)",
+        backgroundColor:"rgba(251,191,36,.12)",
+        pointRadius:0,
+        pointHoverRadius:0,
+        pointHitRadius:10,
+        hidden:!DOY_FORECAST_RANGE_VISIBLE,
+        fill:"-1",
+        order:925
+      },
+      {
+        label:"Forecast",
+        data:seasonalForecast?.mean || forecastMean,
+        _kind:"seasonalForecast",
+        _forecastBasis:seasonalForecast?.basis || "local seasonal cycle",
+        _forecastIndex:endIdx,
+        _forecastMean:forecastInfo.mean,
+        _forecastLow:forecastInfo.low,
+        _forecastHigh:forecastInfo.high,
+        _forecastMinus:forecastInfo.minus,
+        _forecastPlus:forecastInfo.plus,
+        _forecastYear:forecastInfo.year,
+        _forecastSourceYear:forecastInfo.sourceYear,
+        borderWidth:2.8,
+        tension:0.24,
+        borderDash:[7,5],
+        borderColor:"rgba(251,191,36,.98)",
+        backgroundColor:"rgba(251,191,36,.98)",
+        pointStyle:"line",
+        pointRadius:0,
+        pointHoverRadius:0,
+        pointHitRadius:10,
+        hidden:!DOY_FORECAST_DOT_VISIBLE,
+        fill:false,
+        order:850
+      },
+      {
         label:"Forecast",
         data:forecastMean,
+        _legendHidden:true,
         _kind:"forecastMarker",
         _forecastIndex:endIdx,
         _forecastMean:forecastInfo.mean,
@@ -6178,7 +6303,7 @@ function renderDOYCumPanel(){
       },
       {
         label:"Forecast range low",
-        data:forecastLowScale,
+        data:seasonalForecast?.low || new Array(365).fill(null),
         _legendHidden:true,
         _kind:"forecastScale",
         showLine:false,
@@ -6194,7 +6319,7 @@ function renderDOYCumPanel(){
       },
       {
         label:"Forecast range high",
-        data:forecastHighScale,
+        data:seasonalForecast?.high || new Array(365).fill(null),
         _legendHidden:true,
         _kind:"forecastScale",
         showLine:false,
@@ -6246,9 +6371,13 @@ function renderDOYCumPanel(){
           const ds = chart?.data?.datasets?.[legendItem.datasetIndex];
           if(!chart || !ds) return;
 
-          if(ds._kind === "forecastMarker"){
+          if(ds._kind === "seasonalForecast" || ds._kind === "forecastMarker"){
             DOY_FORECAST_DOT_VISIBLE = !DOY_FORECAST_DOT_VISIBLE;
-            ds.hidden = !DOY_FORECAST_DOT_VISIBLE;
+            chart.data.datasets.forEach(d=>{
+              if(d?._kind === "seasonalForecast" || d?._kind === "forecastMarker"){
+                d.hidden = !DOY_FORECAST_DOT_VISIBLE;
+              }
+            });
             chart.update();
             return;
           }
@@ -6256,7 +6385,7 @@ function renderDOYCumPanel(){
           if(ds._kind === "forecastRangeLegend"){
             DOY_FORECAST_RANGE_VISIBLE = !DOY_FORECAST_RANGE_VISIBLE;
             chart.data.datasets.forEach(d=>{
-              if(d?._kind === "forecastRangeLegend" || d?._kind === "forecastScale"){
+              if(d?._kind === "forecastRangeLegend" || d?._kind === "forecastScale" || d?._kind === "seasonalForecastRangeLow" || d?._kind === "seasonalForecastRangeHigh"){
                 d.hidden = !DOY_FORECAST_RANGE_VISIBLE;
               }
             });
@@ -6285,6 +6414,18 @@ function renderDOYCumPanel(){
             }
             if(kind === "average"){
               return `Average: ${formatFloodStat(v)} floods`;
+            }
+            if(kind === "seasonalForecast"){
+              return `Expected path: ${formatFloodStat(v)} floods (${ctx.dataset?._forecastBasis || "local seasonal cycle"})`;
+            }
+            if(kind === "seasonalForecastRangeLow") return null;
+            if(kind === "seasonalForecastRangeHigh"){
+              const lowDs = ctx.chart?.data?.datasets?.find(d => d?._kind === "seasonalForecastRangeLow");
+              const low = Number(lowDs?.data?.[idx]);
+              if(Number.isFinite(low)){
+                return `Expected range: ${formatFloodStat(low)} - ${formatFloodStat(v)} floods`;
+              }
+              return `Expected range: ${formatFloodStat(v)} floods`;
             }
             if(kind === "forecastMarker"){
               if(ctx.dataIndex !== 364) return null;
