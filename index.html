@@ -3465,8 +3465,18 @@ const drawDatasetLastPlugin = {
     const meta = chart.getDatasetMeta(idx);
     if (!meta || meta.hidden) return;
 
-    
+    const { ctx, chartArea } = chart;
+    if(!ctx || !chartArea){
+      meta.controller.draw();
+      return;
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+    ctx.clip();
     meta.controller.draw();
+    ctx.restore();
   }
 };
 
@@ -6281,13 +6291,15 @@ function renderDOYCumPanel(){
       _drawLast:isCurrent,
       hidden:!selected,
       borderWidth:isCurrent ? 4 : 1.4,
-      tension:0.18,
+      tension:isCurrent ? 0 : 0.18,
+      stepped:isCurrent ? "after" : false,
       borderColor:color,
       backgroundColor:color,
       pointStyle:isCurrent ? "line" : "circle",
       pointRadius:0,
       pointHoverRadius:0,
       pointHitRadius:8,
+      clip:{left:0,right:0,top:0,bottom:0},
       spanGaps:false,
       fill:false,
       order:isCurrent ? 900 : 40 + idx
