@@ -159,10 +159,7 @@ function monthlyMeans(daily) {
     .sort((a, b) => a.month.localeCompare(b.month));
 }
 
-function regression(monthly) {
-  const points = monthly
-    .map((p) => ({ x: decimalYear(p.month), y: Number(p.ft) }))
-    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y) && Math.abs(p.y) < 100);
+function linearRegression(points) {
   const n = points.length;
   if (n < 24) return null;
   const sx = points.reduce((a, p) => a + p.x, 0);
@@ -174,6 +171,33 @@ function regression(monthly) {
   const slope = (n * sxy - sx * sy) / denom;
   const intercept = (sy - slope * sx) / n;
   return { slopeFtPerYear: slope, interceptFt: intercept, monthlyPoints: n };
+}
+
+function regression(monthly) {
+  const points = monthly
+    .map((p) => {
+      const month = String(p.month || "").slice(0, 7);
+      const monthNumber = Number(month.slice(5, 7));
+      return { month, monthNumber, x: decimalYear(month), y: Number(p.ft) };
+    })
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y) && Math.abs(p.y) < 100 && p.monthNumber >= 1 && p.monthNumber <= 12);
+  const raw = linearRegression(points);
+  if (!raw) return null;
+  const seasonal = {};
+  for (let month = 1; month <= 12; month += 1) {
+    const vals = points
+      .filter((p) => p.monthNumber === month)
+      .map((p) => p.y - (raw.interceptFt + raw.slopeFtPerYear * p.x));
+    seasonal[String(month).padStart(2, "0")] = vals.length ? vals.reduce((a, v) => a + v, 0) / vals.length : 0;
+  }
+  const adjusted = points.map((p) => ({ x: p.x, y: p.y - seasonal[String(p.monthNumber).padStart(2, "0")] }));
+  const deseasonalized = linearRegression(adjusted) || raw;
+  return {
+    ...deseasonalized,
+    method: "deseasonalized_monthly_mean_linear_regression",
+    rawRegression: raw,
+    seasonalAdjustmentsFt: Object.fromEntries(Object.entries(seasonal).map(([k, v]) => [k, Number(v.toFixed(6))]))
+  };
 }
 
 async function main() {
