@@ -1052,6 +1052,28 @@ thead th{
       border-radius:999px;
       background:rgba(255,255,255,.055);
     }
+    .zoomHint{
+      display:none;
+      align-items:center;
+      justify-content:center;
+      max-width:min(46vw, 132px);
+      min-height:28px;
+      padding:6px 10px;
+      border:1px solid rgba(191,219,254,.26);
+      border-radius:999px;
+      background:rgba(255,255,255,.055);
+      color:rgba(234,240,255,.86);
+      font-size:11px;
+      font-weight:950;
+      line-height:1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    @media(max-width:760px){
+      .chartActionBar{gap:6px;padding-right:max(2px, env(safe-area-inset-right, 0px))}
+      .zoomHint{display:inline-flex}
+    }
     .chartWrapTall canvas,
     .chartWrap canvas{
       display:block;
@@ -2437,7 +2459,7 @@ function fmtNiceDate(iso){
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: TZ,
     year: "numeric",
-    month: "short",
+    month: "long",
     day: "numeric"
   }).formatToParts(d);
 
@@ -2451,7 +2473,7 @@ function fmtNiceDate(iso){
     (dayN % 10 === 2) ? "nd" :
     (dayN % 10 === 3) ? "rd" : "th";
 
-  return `${month} ${dayN}${suffix} ${year}`;
+  return `${month} ${dayN}${suffix}, ${year}`;
 }
 
 function getESTParts(date=new Date()){
@@ -3571,6 +3593,36 @@ const annualForecastRangePlugin = {
 
 Chart.register(annualForecastRangePlugin);
 
+const mirrorRightYAxisPlugin = {
+  id: "mirrorRightYAxis",
+  afterDataLimits(chart, args){
+    const scale = args?.scale;
+    if(scale?.id !== "yRight") return;
+    const left = chart.scales?.y;
+    if(!left) return;
+    scale.min = left.min;
+    scale.max = left.max;
+  },
+  afterBuildTicks(chart, args){
+    const scale = args?.scale;
+    if(scale?.id !== "yRight") return;
+    const left = chart.scales?.y;
+    if(!left?.ticks?.length) return;
+    scale.ticks = left.ticks.map(t => ({...t}));
+  }
+};
+
+Chart.register(mirrorRightYAxisPlugin);
+
+function rightFloodAxisConfig(){
+  return {
+    position:"right",
+    title:{display:false},
+    ticks:{color:"rgba(169,182,211,.9)", precision:0},
+    grid:{drawOnChartArea:false, color:"rgba(255,255,255,.06)"}
+  };
+}
+
 const CHART_ZOOM_STATE = new WeakMap();
 
 function chartLabels(chart){
@@ -3720,6 +3772,14 @@ function attachChartZoom(chart){
     button.className = "zoomReset";
     button.textContent = "Reset zoom";
     actionBar.appendChild(button);
+  }
+
+  let hint = actionBar.querySelector(".zoomHint");
+  if(!hint){
+    hint = document.createElement("span");
+    hint.className = "zoomHint";
+    hint.textContent = "Pinch to zoom";
+    actionBar.appendChild(hint);
   }
 
   const state = { button, box, pointers:new Map(), pinch:null, drag:null };
@@ -4236,21 +4296,24 @@ function annualPredictionRange(year, label){
   return "";
 }
 
-function annualPredictionSpread(year, label, value){
+function annualPredictionBounds(year, label, value){
   const rec = annualPredictionLookup.get(Number(year));
   if(!rec) return null;
   const prefix = label === "Minor" ? "minor" : label === "Moderate" ? "moderate" : label === "Major" ? "major" : "";
-  if(prefix){
+  const center = Number(value);
+  if(prefix && Number.isFinite(center)){
     const minus = Number(rec[`${prefix}Minus`]);
     const plus = Number(rec[`${prefix}Plus`]);
     if(Number.isFinite(minus) && Number.isFinite(plus)){
-      return Math.floor(Math.max(Math.abs(minus), Math.abs(plus)));
+      return {
+        low:Math.max(0, Math.floor(center - Math.abs(minus))),
+        high:Math.ceil(center + Math.abs(plus))
+      };
     }
   }
   const range = parseAnnualRange(annualPredictionRange(year, label));
-  const center = Number(value);
-  if(!range || !Number.isFinite(center)) return null;
-  return Math.floor(Math.max(Math.abs(center - range.low), Math.abs(range.high - center)));
+  if(range) return { low:Math.max(0, Math.floor(range.low)), high:Math.ceil(range.high) };
+  return null;
 }
 
 
@@ -4315,9 +4378,9 @@ function ensureAnnual(){
               if (!Number.isFinite(v)) return null;
               const year = ctx.label;
               const value = Math.floor(v);
-              const spread = annualPredictionSpread(year, ctx.dataset.label, value);
-              return Number.isFinite(spread)
-                ? `${ctx.dataset.label}: ${value} floods (+/- ${spread})`
+              const bounds = annualPredictionBounds(year, ctx.dataset.label, value);
+              return bounds
+                ? `${ctx.dataset.label}: ${value} floods (${bounds.low} - ${bounds.high} floods)`
                 : `${ctx.dataset.label}: ${value} floods`;
             },
          footer: (items) => {
@@ -4351,7 +4414,8 @@ function ensureAnnual(){
           title:{display:true, text:"Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks: { color: "rgba(169,182,211,.9)", precision: 0 },
           grid: { color: "rgba(255,255,255,.06)" }
-        }
+        },
+        yRight: rightFloodAxisConfig()
       }
     }
   });
@@ -4382,6 +4446,16 @@ function compactTimeLabel(iso){
   return fmtESTTime(iso).replace(":00", "").replace(" AM", "a").replace(" PM", "p");
 }
 
+function sixHourTimeLabel(iso){
+  const parts = getTZDateTimeParts(new Date(iso));
+  if(parts.mm !== 0 || parts.ss !== 0) return "";
+  if(parts.hh === 6) return "6am";
+  if(parts.hh === 12) return "12pm";
+  if(parts.hh === 18) return "6pm";
+  if(parts.hh === 0) return "12am";
+  return "";
+}
+
 function buildDailyTickCallbackSkipFirstDay(labels){
   return function(value){
     const numericValue = Number(value);
@@ -4392,7 +4466,8 @@ function buildDailyTickCallbackSkipFirstDay(labels){
     const d = new Date(iso);
     if(Number.isNaN(d.getTime())) return "";
 
-    return [fmtESTDay(iso), compactTimeLabel(iso)];
+    const time = sixHourTimeLabel(iso);
+    return time ? [fmtESTDay(iso), time] : "";
   };
 }
 
@@ -4413,8 +4488,8 @@ function applyTsDateAxis(labels){
   x.ticks = {
     ...(x.ticks || {}),
     color:"rgba(169,182,211,.9)",
-    autoSkip:true,
-    maxTicksLimit:maxTsDateTicks(),
+    autoSkip:false,
+    maxTicksLimit:20,
     maxRotation:0,
     minRotation:0,
     padding:8,
@@ -4548,8 +4623,8 @@ function ensureTsChart(){
           title:{display:true, text:"Date", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks:{
             color:"rgba(169,182,211,.9)",
-            autoSkip:true,
-            maxTicksLimit:8,
+            autoSkip:false,
+            maxTicksLimit:20,
             maxRotation:0,
             minRotation:0,
             padding:8,
@@ -4823,17 +4898,19 @@ function currentAnnualForecastInfo(year){
 
 function formatForecastPlusMinus(ds){
   const year = ds?._forecastYear || new Date().getFullYear();
-  const mean = formatFloodStat(ds?._forecastMean);
+  const meanNumber = Number(ds?._forecastMean);
+  const mean = formatFloodStat(meanNumber);
   const minus = Number(ds?._forecastMinus);
   const plus = Number(ds?._forecastPlus);
-  const low = Number(ds?._forecastLow);
-  const high = Number(ds?._forecastHigh);
+  let low = Number(ds?._forecastLow);
+  let high = Number(ds?._forecastHigh);
 
-  if(Number.isFinite(minus) && Number.isFinite(plus)){
-    return `${year} Forecast: ${mean} floods (-${formatFloodStat(minus)}/+${formatFloodStat(plus)})`;
+  if((!Number.isFinite(low) || !Number.isFinite(high)) && Number.isFinite(meanNumber) && Number.isFinite(minus) && Number.isFinite(plus)){
+    low = Math.max(0, meanNumber - Math.abs(minus));
+    high = meanNumber + Math.abs(plus);
   }
   if(Number.isFinite(low) && Number.isFinite(high)){
-    return `${year} Forecast: ${mean} floods (${formatFloodStat(low)}–${formatFloodStat(high)})`;
+    return `${year} Forecast: ${mean} floods (${formatFloodStat(Math.max(0, Math.floor(low)))} - ${formatFloodStat(Math.ceil(high))} floods)`;
   }
   return `${year} Forecast: ${mean} floods`;
 }
@@ -6245,9 +6322,10 @@ function renderDOYCumPanel(){
       },
       y:{
         title:{display:true, text:"Cumulative Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
-        ticks:{color:"rgba(169,182,211,.9)"},
+        ticks:{color:"rgba(169,182,211,.9)", precision:0},
         grid:{color:"rgba(255,255,255,.06)"}
-      }
+      },
+      yRight: rightFloodAxisConfig()
     }
   };
 
