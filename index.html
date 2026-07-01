@@ -5778,15 +5778,86 @@ function doyQuantile(values, p){
   return vals[lo] + (vals[hi] - vals[lo]) * (pos - lo);
 }
 
+function doySmoothCircularSeries(values, radius=10){
+  const vals = (values || []).map(v => Number.isFinite(Number(v)) ? Number(v) : 0);
+  const n = vals.length;
+  if(!n || radius <= 0) return vals;
+  return vals.map((_, i) => {
+    let sum = 0;
+    let weight = 0;
+    for(let j=-radius;j<=radius;j++){
+      const k = (i + j + n) % n;
+      const w = radius + 1 - Math.abs(j);
+      sum += vals[k] * w;
+      weight += w;
+    }
+    return weight ? sum / weight : vals[i];
+  });
+}
+
+function doySmoothMonotoneUnitSeries(values, radius=10){
+  const vals = (values || []).map(doyClamp01);
+  const n = vals.length;
+  if(!n) return vals;
+  const smoothed = vals.map((_, i) => {
+    let sum = 0;
+    let weight = 0;
+    for(let j=-radius;j<=radius;j++){
+      const k = Math.max(0, Math.min(n - 1, i + j));
+      const w = radius + 1 - Math.abs(j);
+      sum += vals[k] * w;
+      weight += w;
+    }
+    return weight ? sum / weight : vals[i];
+  });
+
+  let last = 0;
+  for(let i=0;i<n;i++){
+    last = Math.max(last, doyClamp01(smoothed[i]));
+    smoothed[i] = last;
+  }
+
+  const end = smoothed[n - 1];
+  if(end > 0){
+    for(let i=0;i<n;i++) smoothed[i] = doyClamp01(smoothed[i] / end);
+  }
+  smoothed[n - 1] = 1;
+  return smoothed;
+}
+
+function doyInterpolatedSeasonalOffset(year, idx){
+  const cycle = typeof seaLevelSeasonalCycleByMonth === "function" ? seaLevelSeasonalCycleByMonth() : null;
+  if(!Array.isArray(cycle) || cycle.length < 12 || !cycle.some(v => Number.isFinite(Number(v)))){
+    const offset = Number(seasonalOffsetForISO(dateFromDoyIndex365(year, idx).toISOString()));
+    return Number.isFinite(offset) ? offset : 0;
+  }
+
+  const d = dateFromDoyIndex365(year, idx);
+  const month = d.getUTCMonth();
+  const day = d.getUTCDate();
+  const days = new Date(Date.UTC(d.getUTCFullYear(), month + 1, 0)).getUTCDate();
+  const frac = Math.max(0, Math.min(1, (day - 0.5) / Math.max(1, days)));
+  const smooth = t => {
+    const u = doyClamp01(t);
+    return u * u * (3 - 2 * u);
+  };
+  const mix = (a, b, t) => a + (b - a) * smooth(t);
+
+  const current = Number(cycle[month]) || 0;
+  if(frac < 0.5){
+    return mix(Number(cycle[(month + 11) % 12]) || 0, current, frac + 0.5);
+  }
+  return mix(current, Number(cycle[(month + 1) % 12]) || 0, frac - 0.5);
+}
+
 function doySeasonalDayWeight(year, idx){
-  const iso = dateFromDoyIndex365(year, idx).toISOString();
-  const offset = Number(seasonalOffsetForISO(iso));
+  const offset = doyInterpolatedSeasonalOffset(year, idx);
   if(!Number.isFinite(offset)) return 1;
   return Math.max(0.12, Math.min(4, Math.exp(offset / 0.22)));
 }
 
 function buildDoyAnnualDayWeights(year){
-  return Array.from({length:365}, (_, idx)=>doySeasonalDayWeight(year, idx));
+  return doySmoothCircularSeries(Array.from({length:365}, (_, idx)=>doySeasonalDayWeight(year, idx)), 10);
 }
 
 function buildDoyWeightedCumulative(targetValue, weights){
@@ -5835,6 +5906,8 @@ function buildDoyHistoricalEvolutionRange(year, forecastInfo, meanSeries, series
 
   const low = new Array(365).fill(0);
   const high = new Array(365).fill(0);
+  const rawLowSpread = new Array(365).fill(0);
+  const rawHighSpread = new Array(365).fill(0);
   const annualMinus = Math.max(0, forecastMean - forecastLow);
   const annualPlus = Math.max(0, forecastHigh - forecastMean);
 
@@ -5847,16 +5920,21 @@ function buildDoyHistoricalEvolutionRange(year, forecastInfo, meanSeries, series
     const fastHistoricProgress = doyQuantile(historicProgress, 0.90);
     const slowHistoricProgress = doyQuantile(historicProgress, 0.10);
     const growthFloor = Math.sqrt(progress);
-    const highSpreadProgress = doyClamp01(Math.max(growthFloor, fastHistoricProgress));
-    const lowSpreadProgress = doyClamp01(Math.max(growthFloor, progress + Math.max(0, progress - slowHistoricProgress)));
+    rawHighSpread[i] = doyClamp01(Math.max(growthFloor, fastHistoricProgress));
+    rawLowSpread[i] = doyClamp01(Math.max(growthFloor, progress + Math.max(0, progress - slowHistoricProgress)));
+  }
 
-    low[i] = Math.max(0, Math.min(mean, mean - annualMinus * lowSpreadProgress));
-    high[i] = Math.min(forecastHigh, Math.max(mean, mean + annualPlus * highSpreadProgress));
+  const highSpread = doySmoothMonotoneUnitSeries(rawHighSpread, 10);
+  const lowSpread = doySmoothMonotoneUnitSeries(rawLowSpread, 10);
+  for(let i=0;i<365;i++){
+    const mean = Math.max(0, Number(meanSeries?.[i]) || 0);
+    low[i] = Math.max(0, Math.min(mean, mean - annualMinus * lowSpread[i]));
+    high[i] = Math.min(forecastHigh, Math.max(mean, mean + annualPlus * highSpread[i]));
   }
   low[364] = forecastLow;
   high[364] = forecastHigh;
 
-  return { low, high, source:"historical spread timing" };
+  return { low, high, source:"smoothed historical spread timing" };
 }
 
 function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear){
