@@ -2052,11 +2052,13 @@ a.brand *{
     .shorelyLegendSwatch{flex:0 0 auto}
     .shorelyLegendSwatch.isLine{
       width:30px;
-      height:0;
-      border-top:3px solid var(--shorely-legend-color, rgba(234,240,255,.86));
+      height:3px;
+      background:var(--shorely-legend-color, rgba(234,240,255,.86));
       border-radius:999px;
     }
-    .shorelyLegendSwatch.isDashed{border-top-style:dashed}
+    .shorelyLegendSwatch.isDashed{
+      background:repeating-linear-gradient(90deg, var(--shorely-legend-color, rgba(234,240,255,.86)) 0 7px, transparent 7px 12px);
+    }
     .shorelyLegendSwatch.isBox{
       width:16px;
       height:13px;
@@ -2067,6 +2069,22 @@ a.brand *{
       min-width:0;
       overflow-wrap:anywhere;
     }
+    #threshKey .shorelyThresholdKey{
+      cursor:pointer;
+      min-height:40px;
+      max-width:100%;
+      white-space:normal;
+    }
+    #threshKey .shorelyThresholdKey .shorelyLegendCheck{margin-right:2px}
+    #threshKey .shorelyThresholdKey.isOff .shorelyLegendCheck{
+      border-color:rgba(248,113,113,.86);
+      background:rgba(248,113,113,.12);
+      color:rgba(248,113,113,.98);
+      box-shadow:0 0 0 2px rgba(248,113,113,.06);
+    }
+    #threshKey .shorelyThresholdKey.isOff .shorelyLegendCheck::before{content:"x"}
+    #threshKey .shorelyThresholdKey.isOff .chip,
+    #threshKey .shorelyThresholdKey.isOff .thNum{opacity:.48}
 
     @media(max-width:640px){
       .shorelyChartLegend{
@@ -2087,6 +2105,11 @@ a.brand *{
         font-size:15px;
       }
       .shorelyLegendSwatch.isLine{width:26px}
+      #threshKey{justify-content:flex-start}
+      #threshKey .shorelyThresholdKey{
+        min-height:42px;
+        padding:8px 10px !important;
+      }
       .historicControls{
         grid-template-columns:1fr 1fr !important;
         width:100% !important;
@@ -3995,14 +4018,20 @@ const floodBandsPlugin = {
 
 
 
-ctx.fillStyle = "rgba(251,191,36,.14)";   
+if(window.SHORELY_STAGE_BANDS_VISIBLE?.minor !== false){
+ctx.fillStyle = "rgba(251,191,36,.14)";
 ctx.fillRect(left, yModer, right - left, yMinor - yModer);
+}
 
-ctx.fillStyle = "rgba(251,113,133,.14)";  
+if(window.SHORELY_STAGE_BANDS_VISIBLE?.moderate !== false){
+ctx.fillStyle = "rgba(251,113,133,.14)";
 ctx.fillRect(left, yMajor, right - left, yModer - yMajor);
+}
 
-ctx.fillStyle = "rgba(167,139,250,.14)";  
+if(window.SHORELY_STAGE_BANDS_VISIBLE?.major !== false){
+ctx.fillStyle = "rgba(167,139,250,.14)";
 ctx.fillRect(left, chartArea.top, right - left, yMajor - chartArea.top);
+}
 
     
 
@@ -8747,8 +8776,14 @@ setInterval(async ()=>{
     return looksLikeLine ? (dashed ? "isLine isDashed" : "isLine") : "isBox";
   }
 
-  function legendSwatchColor(item, fallback){
+  function legendSwatchColor(item, fallback, swatchClass){
     const dataset = item?.dataset;
+    if(String(swatchClass || "").includes("isBox")){
+      return firstLegendColor(item?.fillStyle,
+        firstLegendColor(dataset?.backgroundColor,
+          firstLegendColor(item?.strokeStyle,
+            firstLegendColor(dataset?.borderColor, fallback))));
+    }
     return firstLegendColor(item?.strokeStyle,
       firstLegendColor(dataset?.borderColor,
         firstLegendColor(item?.fillStyle,
@@ -8797,7 +8832,8 @@ setInterval(async ()=>{
       const index = Number(item.datasetIndex);
       if(!Number.isInteger(index)) continue;
       const visible = legendItemVisible(chart, item);
-      const color = legendSwatchColor(item, "rgba(234,240,255,.86)");
+      const swatchClass = legendSwatchClass(item, chart);
+      const color = legendSwatchColor(item, "rgba(234,240,255,.86)", swatchClass);
       const button = document.createElement("button");
       button.type = "button";
       button.className = "shorelyLegendItem" + (visible ? "" : " isOff");
@@ -8809,10 +8845,9 @@ setInterval(async ()=>{
       check.setAttribute("aria-hidden", "true");
 
       const swatch = document.createElement("span");
-      swatch.className = "shorelyLegendSwatch " + legendSwatchClass(item, chart);
+      swatch.className = "shorelyLegendSwatch " + swatchClass;
       swatch.style.setProperty("--shorely-legend-color", color);
       if(swatch.classList.contains("isBox")) swatch.style.background = color;
-      else swatch.style.borderTopColor = color;
 
       const text = document.createElement("span");
       text.className = "shorelyLegendText";
@@ -8828,8 +8863,10 @@ setInterval(async ()=>{
   }
 
   function installHtmlLegend(chart){
-    if(!chart?.options?.plugins?.legend) return;
-    chart.options.plugins.legend.display = false;
+    const legendOptions = chart?.options?.plugins?.legend;
+    if(!legendOptions) return;
+    const needsRedraw = legendOptions.display !== false || !chart.$shorelyLegendInstalled;
+    legendOptions.display = false;
     if(!chart.$shorelyLegendUpdatePatched){
       const originalUpdate = chart.update.bind(chart);
       chart.update = function(...args){
@@ -8839,7 +8876,58 @@ setInterval(async ()=>{
       };
       chart.$shorelyLegendUpdatePatched = true;
     }
+    chart.$shorelyLegendInstalled = true;
+    if(needsRedraw){
+      try{
+        chart.update("none");
+        return;
+      }catch(e){}
+    }
     renderHtmlLegend(chart);
+  }
+
+  function installThresholdKeyCheckboxes(){
+    const key = document.getElementById("threshKey");
+    if(!key) return;
+    window.SHORELY_STAGE_BANDS_VISIBLE = window.SHORELY_STAGE_BANDS_VISIBLE || {minor:true, moderate:true, major:true};
+    const entries = [
+      {name:"minor", label:"Minor"},
+      {name:"moderate", label:"Moderate"},
+      {name:"major", label:"Major"}
+    ];
+    Array.from(key.querySelectorAll(".tag")).forEach((tag, index) => {
+      const entry = entries[index];
+      if(!entry) return;
+      tag.classList.add("shorelyThresholdKey");
+      tag.setAttribute("role", "button");
+      tag.setAttribute("tabindex", "0");
+      tag.setAttribute("aria-label", "Toggle " + entry.label + " flood band");
+      if(!tag.querySelector(":scope > .shorelyLegendCheck")){
+        const check = document.createElement("span");
+        check.className = "shorelyLegendCheck";
+        check.setAttribute("aria-hidden", "true");
+        tag.insertBefore(check, tag.firstChild);
+      }
+      const applyState = () => {
+        const visible = window.SHORELY_STAGE_BANDS_VISIBLE?.[entry.name] !== false;
+        tag.classList.toggle("isOff", !visible);
+        tag.setAttribute("aria-pressed", visible ? "true" : "false");
+      };
+      if(!tag.$shorelyThresholdClick){
+        const toggle = event => {
+          event.preventDefault();
+          window.SHORELY_STAGE_BANDS_VISIBLE[entry.name] = !(window.SHORELY_STAGE_BANDS_VISIBLE?.[entry.name] !== false);
+          applyState();
+          try{ if(typeof tsChart !== "undefined" && tsChart) tsChart.update("none"); }catch(e){}
+        };
+        tag.addEventListener("click", toggle);
+        tag.addEventListener("keydown", event => {
+          if(event.key === "Enter" || event.key === " ") toggle(event);
+        });
+        tag.$shorelyThresholdClick = true;
+      }
+      applyState();
+    });
   }
 
   function polishChartLegends(){
@@ -8860,11 +8948,13 @@ setInterval(async ()=>{
     prefillMobileHistoricDates();
     removeMonthlyZoomHint();
     polishChartLegends();
+    installThresholdKeyCheckboxes();
     [120, 450, 1000, 2200].forEach(ms => setTimeout(() => {
       installHelp();
       prefillMobileHistoricDates();
       removeMonthlyZoomHint();
       polishChartLegends();
+      installThresholdKeyCheckboxes();
     }, ms));
   }
 
