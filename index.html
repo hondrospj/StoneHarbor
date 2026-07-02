@@ -1592,6 +1592,248 @@ a.brand *{
   color:#99f6e4 !important;
 }
 
+
+    /* Shorely dashboard polish requested 2026-07-01. */
+    .top{
+      align-items:flex-start;
+      gap:10px;
+    }
+    .brand{
+      min-width:0;
+      flex:1 1 auto;
+      align-items:flex-start;
+    }
+    .brandLogo{
+      flex:0 0 auto;
+      padding:3px 5px;
+    }
+    .brandLogo img{
+      height:clamp(34px, 4vw, 42px);
+      max-width:min(180px, 32vw);
+    }
+    .brandTitle{
+      min-width:0;
+      padding-top:1px;
+    }
+    .kicker{
+      font-size:clamp(11px, 1.3vw, 14px);
+      line-height:1.05;
+    }
+    .name{
+      font-size:clamp(23px, 3vw, 31px);
+      line-height:1.04;
+    }
+    .topRight{
+      align-items:flex-start;
+    }
+    .chartActionBar{
+      justify-content:flex-end;
+      gap:8px;
+      margin:0 0 6px;
+      padding-right:max(2px, env(safe-area-inset-right, 0px));
+    }
+    .zoomHint{
+      display:inline-flex;
+      margin-left:auto;
+    }
+    #monthAvgChart{
+      touch-action:auto !important;
+    }
+    .shorely-has-help{
+      position:relative;
+    }
+    .shorely-has-help > .hrow:first-child,
+    .shorely-has-help > .accHeader{
+      padding-left:42px;
+    }
+    .shorelyHelpBtn{
+      position:absolute;
+      top:12px;
+      left:12px;
+      z-index:8;
+      width:28px;
+      height:28px;
+      display:inline-grid;
+      place-items:center;
+      border:1px solid rgba(191,219,254,.34);
+      border-radius:999px;
+      background:rgba(15,23,42,.94);
+      color:rgba(234,240,255,.96);
+      font-size:15px;
+      font-weight:950;
+      line-height:1;
+      cursor:pointer;
+      box-shadow:0 10px 24px rgba(0,0,0,.22);
+    }
+    .shorelyHelpBtn:hover,
+    .shorelyHelpBtn:focus-visible{
+      border-color:rgba(125,211,252,.72);
+      outline:none;
+    }
+    .shorelyHelpPopover{
+      position:fixed;
+      left:50%;
+      top:calc(16px + env(safe-area-inset-top, 0px));
+      transform:translateX(-50%);
+      width:min(340px, calc(100vw - 24px));
+      z-index:80;
+      padding:14px 15px 13px;
+      border:1px solid rgba(191,219,254,.30);
+      border-radius:14px;
+      background:rgba(9,17,33,.98);
+      color:var(--text);
+      box-shadow:0 22px 50px rgba(0,0,0,.48);
+    }
+    .shorelyHelpTitle{
+      margin:0 28px 6px 0;
+      font-size:14px;
+      font-weight:950;
+      line-height:1.15;
+    }
+    .shorelyHelpBody{
+      margin:0;
+      color:rgba(219,229,255,.86);
+      font-size:13px;
+      font-weight:750;
+      line-height:1.35;
+    }
+    .shorelyHelpClose{
+      position:absolute;
+      top:8px;
+      right:8px;
+      width:26px;
+      height:26px;
+      display:inline-grid;
+      place-items:center;
+      border:0;
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      color:var(--text);
+      font-weight:950;
+      cursor:pointer;
+    }
+    .doySidePanel{
+      gap:9px;
+    }
+    .doyKeyCard{
+      border-radius:12px;
+      padding:10px;
+      box-shadow:none;
+    }
+    .doyKeyTitle{
+      font-size:11px;
+    }
+    .doyVisibleBadge{
+      min-height:26px;
+      padding:5px 8px;
+      font-size:11px;
+    }
+    .doyPresetGrid{
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:7px;
+    }
+    .miniKeyBtn{
+      min-height:34px;
+      padding:8px 7px;
+      border-radius:10px;
+      font-size:11.5px;
+    }
+    .doyYearList{
+      grid-template-columns:repeat(auto-fill, minmax(54px, 1fr));
+    }
+    #historicTable th,
+    #historicTable td{
+      overflow-wrap:anywhere;
+    }
+    #gaugeMap{
+      min-height:320px;
+    }
+    @media(max-width:720px){
+      .top{
+        align-items:stretch;
+        gap:8px;
+      }
+      .brand{
+        align-items:flex-start;
+      }
+      .topRight{
+        gap:8px;
+      }
+      .brandLogo img{
+        height:34px;
+        max-width:118px;
+      }
+      .name{
+        font-size:clamp(21px, 6.4vw, 27px);
+      }
+      .kicker{
+        font-size:11px;
+      }
+      .shorely-has-help > .hrow:first-child,
+      .shorely-has-help > .accHeader{
+        padding-left:38px;
+      }
+      .shorelyHelpBtn{
+        top:10px;
+        left:10px;
+        width:27px;
+        height:27px;
+      }
+    }
+    @media(max-width:520px){
+      .chartActionBar{
+        min-height:30px;
+      }
+      .zoomHint{
+        max-width:132px;
+        min-height:26px;
+        padding:5px 9px;
+      }
+      .doySidePanel{
+        max-height:none;
+        overflow:visible;
+      }
+      .doyPresetGrid{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+      }
+      .doyPicker{
+        max-height:210px !important;
+        overflow:auto !important;
+      }
+      .historicControls{
+        grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+        gap:8px !important;
+      }
+      .historicControls .btn,
+      .historicControls .input,
+      .historicControls select{
+        min-height:38px !important;
+        padding:8px 8px !important;
+        font-size:12px !important;
+      }
+      .historicTableWrap{
+        overflow-x:visible !important;
+      }
+      #historicTable{
+        min-width:0 !important;
+        table-layout:fixed !important;
+        font-size:11px !important;
+      }
+      #historicTable th,
+      #historicTable td{
+        padding:7px 5px !important;
+      }
+      #historicTable .tag{
+        white-space:normal !important;
+        line-height:1.15 !important;
+      }
+    }
+    @media(max-width:390px){
+      .historicControls{
+        grid-template-columns:1fr !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -1808,7 +2050,7 @@ a.brand *{
   <div class="card">
     <div class="hrow paneControlHeader doyHeaderControls">
       <div>
-        <h2>Cumulative annual flooding</h2>
+        <h2>Flooding throughout the year</h2>
         <div class="kicker" id="doyMeta">Computing…</div>
       </div>
       <div class="paneToggleGroup">
@@ -1825,7 +2067,7 @@ a.brand *{
     <div style="height:10px"></div>
     <div class="doyShell">
       <div class="chartWrapTall"><canvas id="doyCumChart"></canvas></div>
-      <aside class="doySidePanel" aria-label="Cumulative annual flooding controls">
+      <aside class="doySidePanel" aria-label="Flooding throughout the year controls">
         <div class="doyKeyCard" aria-label="Year visibility key">
           <div class="doyKeyHeader">
             <div>
@@ -2116,8 +2358,18 @@ function ensureGaugeMap(){
   _gaugeLayer = L.layerGroup().addTo(_gaugeMap);
 
   const bounds = [];
+  const mapGauges = (Array.isArray(GAUGES) && GAUGES.length)
+    ? GAUGES
+    : [{
+      id: DEFAULT_GAUGE_ID,
+      name: GAUGE_DISPLAY_NAME,
+      agency: GAUGE_TYPE || "Gauge",
+      lat: Number(ALERT_POINT?.lat) || 40.2,
+      lon: Number(ALERT_POINT?.lon) || -74.0,
+      url: COOPS_STATION ? `https://tidesandcurrents.noaa.gov/stationhome.html?id=${COOPS_STATION}` : ""
+    }];
 
-  for(const g of GAUGES){
+  for(const g of mapGauges){
     const selected = String(g.id) === String(DEFAULT_GAUGE_ID);
     const m = L.marker([g.lat, g.lon], {
       icon: L.divIcon({
@@ -2142,7 +2394,7 @@ function ensureGaugeMap(){
   }
 
 
-const def = GAUGES.find(g => String(g.id) === DEFAULT_GAUGE_ID);
+const def = mapGauges.find(g => String(g.id) === DEFAULT_GAUGE_ID);
 
 if(def){
   _gaugeMap.setView([def.lat, def.lon], DEFAULT_GAUGE_ZOOM);
@@ -3799,7 +4051,7 @@ function attachChartZoom(chart){
   if(!hint){
     hint = document.createElement("span");
     hint.className = "zoomHint";
-    hint.textContent = "Pinch to zoom";
+    hint.textContent = window.matchMedia("(pointer: coarse), (max-width: 760px)").matches ? "Pinch to zoom" : "Drag to zoom";
     actionBar.appendChild(hint);
   }
 
@@ -4432,7 +4684,7 @@ function ensureAnnual(){
         },
         y: {
           stacked: true,
-          title:{display:true, text:"Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
+          title:{display:true, text:"floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks: { color: "rgba(169,182,211,.9)", precision: 0 },
           grid: { color: "rgba(255,255,255,.06)" }
         },
@@ -5419,7 +5671,7 @@ function buildSeaLevelDatasets(labels, state){
 
   if(state.regression){
     datasets.push({
-      label:"Linear Trend",
+      label:"Trend",
       data:labels.map(m => {
         if(lastObservedMonth && m > lastObservedMonth) return null;
         const x = decimalYearFromMonth(m);
@@ -5719,7 +5971,7 @@ function doyFloodStageDisplayFt(){
 
 function doyStageLabel(){
   const v = doyFloodStageDisplayFt();
-  return `Flood stage ≥ ${v.toFixed(2)} ft (${DISPLAY_DATUM})`;
+  return `≥ ${v.toFixed(2)} ft (${DISPLAY_DATUM})`;
 }
 
 function isLeapYear(y){
@@ -5947,6 +6199,46 @@ function buildDoyHistoricalEvolutionRange(year, forecastInfo, meanSeries, series
   return { low, high, source:"smoothed historical spread timing" };
 }
 
+
+function smoothDoyForecastRangeAnchorSeries(series, anchors){
+  const values = Array.isArray(series)
+    ? series.map(v => Math.max(0, Number(v) || 0))
+    : [];
+  if(values.length < 7) return values;
+
+  const last = values.length - 1;
+  const cleanAnchors = Array.from(new Set((anchors || [0, Math.floor(last / 2), last])
+    .map(v => Math.max(0, Math.min(last, Math.round(Number(v) || 0))))))
+    .sort((a,b)=>a-b);
+  if(cleanAnchors[0] !== 0) cleanAnchors.unshift(0);
+  if(cleanAnchors[cleanAnchors.length - 1] !== last) cleanAnchors.push(last);
+
+  const out = values.slice();
+  for(let a=0; a<cleanAnchors.length - 1; a++){
+    const start = cleanAnchors[a];
+    const end = cleanAnchors[a + 1];
+    if(end - start < 4) continue;
+    const radius = Math.min(9, Math.max(3, Math.round((end - start) / 18)));
+
+    for(let i=start + 1; i<end; i++){
+      let weighted = 0;
+      let weightTotal = 0;
+      for(let j=Math.max(start, i - radius); j<=Math.min(end, i + radius); j++){
+        const weight = radius + 1 - Math.abs(i - j);
+        weighted += values[j] * weight;
+        weightTotal += weight;
+      }
+      out[i] = weightTotal ? weighted / weightTotal : values[i];
+    }
+
+    out[start] = values[start];
+    out[end] = values[end];
+    for(let i=start + 1; i<end; i++) out[i] = Math.max(out[i], out[i - 1]);
+    for(let i=end - 1; i>start; i--) out[i] = Math.min(out[i], out[i + 1]);
+  }
+  return out;
+}
+
 function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear){
   if(!forecastInfo) return null;
   const weights = buildDoyAnnualDayWeights(year);
@@ -5954,10 +6246,20 @@ function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear){
   const mean = buildDoyWeightedCumulative(forecastInfo.mean, weights);
   const range = buildDoyHistoricalEvolutionRange(year, forecastInfo, mean, seriesByYear);
 
+  const anchorMid = Math.floor((mean.length - 1) / 2);
+  const low = smoothDoyForecastRangeAnchorSeries(range.low, [0, anchorMid, mean.length - 1])
+    .map((v, i) => Math.max(0, Math.min(Number(mean[i]) || 0, v)));
+  const high = smoothDoyForecastRangeAnchorSeries(range.high, [0, anchorMid, mean.length - 1])
+    .map((v, i) => Math.max(Number(mean[i]) || 0, v));
+  [0, anchorMid, mean.length - 1].forEach(i => {
+    low[i] = range.low[i];
+    high[i] = range.high[i];
+  });
+
   return {
     mean,
-    low:range.low,
-    high:range.high,
+    low,
+    high,
     basis:hasSeasonalCycle ? "local seasonal cycle" : "even daily rate",
     rangeBasis:range.source
   };
@@ -6542,7 +6844,7 @@ function renderDOYCumPanel(){
         grid:{display:false}
       },
       y:{
-        title:{display:true, text:"Cumulative Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
+        title:{display:true, text:"floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
         ticks:{color:"rgba(169,182,211,.9)", precision:0},
         grid:{color:"rgba(255,255,255,.06)"}
       },
@@ -6760,7 +7062,7 @@ function ensureMonthAvgChart(){
         
         y:{
           stacked:true,
-          title:{display:true, text:"Average Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
+          title:{display:true, text:"floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
           ticks:{
             color:"rgba(169,182,211,.9)",
 
@@ -6773,7 +7075,8 @@ function ensureMonthAvgChart(){
     }
   });
 
-  attachChartZoom(monthAvgChart);
+  // Average monthly floods is not zoomable.
+  monthAvgChart.canvas.style.touchAction = "auto";
 }
 
 function renderMonthAveragesChart(monthStats){
@@ -6783,7 +7086,7 @@ function renderMonthAveragesChart(monthStats){
   monthAvgChart.data.datasets[1].data = monthStats.map(r=>r.avgModerate);
   monthAvgChart.data.datasets[2].data = monthStats.map(r=>r.avgMajor);
   monthAvgChart.update();
-  syncChartZoomToData(monthAvgChart);
+  // Average monthly floods keeps its full-month view.
     applyMonthView();
 }
 
@@ -7293,5 +7596,145 @@ setInterval(async ()=>{
 
     </script>
 <div class="contactNote">For any questions or concerns, email pj@cupajoe.live</div>
+
+<script id="shorely-dashboard-requested-polish">
+(function(){
+  "use strict";
+
+  const helpItems = [
+    ["Live conditions", "Live conditions", "This shows the latest water level, today's high and low, and whether the next few days could reach flood levels."],
+    ["Observations", "Observations and forecast", "The solid line is measured water. The forecast line shows what water levels may do over the next few days."],
+    ["Flooding throughout the year", "Flooding throughout the year", "Each line counts floods as the year goes on. The forecast shows where this year may finish."],
+    ["Flooding over the years", "Flooding over the years", "This compares yearly flood counts so you can see whether flooding is becoming more common."],
+    ["Sea Level Trends", "Sea level trend", "This shows the long-term water-level pattern at the nearest reliable tide station."],
+    ["Average number of floods per month", "Average floods by month", "This shows which months usually have more coastal flooding in the historic record."],
+    ["Historic flooding filter", "Historic flooding filter", "Choose a water-height and date range to look up past flood events."],
+    ["NJ tide gauge map", "NJ tide gauge map", "This marks the tide gauge used for this dashboard, so the chart data has a place on the map."]
+  ];
+
+  function closeHelp(){
+    document.querySelectorAll(".shorelyHelpPopover").forEach(el => el.remove());
+  }
+
+  function openHelp(title, body){
+    closeHelp();
+    const pop = document.createElement("div");
+    pop.className = "shorelyHelpPopover";
+    pop.setAttribute("role", "dialog");
+    pop.setAttribute("aria-modal", "false");
+    pop.innerHTML = '<button class="shorelyHelpClose" type="button" aria-label="Close">x</button><h3 class="shorelyHelpTitle"></h3><p class="shorelyHelpBody"></p>';
+    pop.querySelector(".shorelyHelpTitle").textContent = title;
+    pop.querySelector(".shorelyHelpBody").textContent = body;
+    pop.querySelector(".shorelyHelpClose").addEventListener("click", closeHelp);
+    document.body.appendChild(pop);
+  }
+
+  function addHelp(host, title, body){
+    if(!host || host.querySelector(":scope > .shorelyHelpBtn")) return;
+    host.classList.add("shorely-has-help");
+    const btn = document.createElement("button");
+    btn.className = "shorelyHelpBtn";
+    btn.type = "button";
+    btn.textContent = "?";
+    btn.setAttribute("aria-label", "Explain this section");
+    btn.setAttribute("title", "Explain this section");
+    btn.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      openHelp(title, body);
+    });
+    host.insertBefore(btn, host.firstChild);
+  }
+
+  function installHelp(){
+    for(const [needle, title, body] of helpItems){
+      const heading = Array.from(document.querySelectorAll("h2, .panelTitle"))
+        .find(el => (el.textContent || "").toLowerCase().includes(needle.toLowerCase()));
+      const host = heading?.closest?.(".card, .acc, .panel") || null;
+      addHelp(host, title, body);
+    }
+  }
+
+  function prefillMobileHistoricDates(){
+    if(!window.matchMedia("(max-width: 640px)").matches) return;
+    const from = document.getElementById("fromDate");
+    const to = document.getElementById("toDate");
+    if(!from || !to) return;
+    const now = new Date();
+    const yyyy = String(now.getFullYear());
+    const today = now.toISOString().slice(0, 10);
+    let changed = false;
+    if(!from.value){
+      from.value = yyyy + "-01-01";
+      changed = true;
+    }
+    if(!to.value){
+      to.value = today;
+      changed = true;
+    }
+    if(changed && typeof applyFilter === "function"){
+      try{ applyFilter(); }catch(e){}
+    }
+  }
+
+  function removeMonthlyZoomHint(){
+    const chart = document.getElementById("monthAvgChart");
+    const wrap = chart?.parentElement;
+    const previous = wrap?.previousElementSibling;
+    if(previous?.classList?.contains("chartActionBar")) previous.remove();
+    if(chart) chart.style.touchAction = "auto";
+  }
+
+  function polishChartLegends(){
+    const charts = [];
+    try{ if(typeof tsChart !== "undefined" && tsChart) charts.push(tsChart); }catch(e){}
+    try{ if(typeof doyCumChart !== "undefined" && doyCumChart) charts.push(doyCumChart); }catch(e){}
+    try{ if(typeof seaLevelChart !== "undefined" && seaLevelChart) charts.push(seaLevelChart); }catch(e){}
+
+    for(const chart of charts){
+      const labels = chart?.options?.plugins?.legend?.labels;
+      if(!labels) continue;
+      labels.usePointStyle = true;
+      labels.pointStyleWidth = 26;
+      labels.boxWidth = 26;
+      labels.boxHeight = 5;
+      for(const ds of chart.data?.datasets || []){
+        if(ds.showLine !== false) ds.pointStyle = "line";
+      }
+      try{ chart.update("none"); }catch(e){}
+    }
+  }
+
+  function boot(){
+    installHelp();
+    prefillMobileHistoricDates();
+    removeMonthlyZoomHint();
+    polishChartLegends();
+    [120, 450, 1000, 2200].forEach(ms => setTimeout(() => {
+      installHelp();
+      prefillMobileHistoricDates();
+      removeMonthlyZoomHint();
+      polishChartLegends();
+    }, ms));
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot, {once:true});
+  }else{
+    boot();
+  }
+  window.addEventListener("resize", () => {
+    prefillMobileHistoricDates();
+    removeMonthlyZoomHint();
+  }, {passive:true});
+  document.addEventListener("keydown", event => {
+    if(event.key === "Escape") closeHelp();
+  });
+  document.addEventListener("click", event => {
+    if(!event.target.closest?.(".shorelyHelpPopover, .shorelyHelpBtn")) closeHelp();
+  }, true);
+})();
+</script>
+
 </body>
 </html>
