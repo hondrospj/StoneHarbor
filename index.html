@@ -1107,13 +1107,13 @@ thead th{
       font-weight:950;
       line-height:1;
     }
-    .keyCheckBox::before{content:"\\2715";}
+    .keyCheckBox::before{content:"\2715";}
     .scenarioChoice input:checked + .keyCheckBox{
       border-color:rgba(34,197,94,.86);
       background:rgba(34,197,94,.14);
       color:rgba(34,197,94,.98);
     }
-    .scenarioChoice input:checked + .keyCheckBox::before{content:"\\2713";}
+    .scenarioChoice input:checked + .keyCheckBox::before{content:"\2713";}
     .doyModeBtn{
       display:inline-flex;
       align-items:center;
@@ -1121,7 +1121,7 @@ thead th{
       gap:6px;
     }
     .doyModeBtn::before{
-      content:"\\2715";
+      content:"\2715";
       width:16px;
       height:16px;
       border-radius:5px;
@@ -1136,7 +1136,7 @@ thead th{
       line-height:1;
     }
     .doyModeBtn.isActive::before{
-      content:"\\2713";
+      content:"\2713";
       border-color:rgba(34,197,94,.84);
       background:rgba(34,197,94,.14);
       color:rgba(34,197,94,.98);
@@ -8550,9 +8550,64 @@ setInterval(async ()=>{
     if(chart) chart.style.touchAction = "auto";
   }
 
-  function legendStatusText(text, visible){
-    const clean = String(text || "").replace(/^[\\u2611\\u2612]\\s*/, "");
-    return `${visible ? "\\u2611" : "\\u2612"} ${clean}`;
+  function cleanLegendText(text){
+    return String(text || "")
+      .replace(/^(?:\u2611|\u2612)\s*/, "")
+      .replace(/^\\u261[12]\s*/, "");
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r){
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + w - radius, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    ctx.lineTo(x + w, y + h - radius);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    ctx.lineTo(x + radius, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  }
+
+  function legendStatusCanvas(visible, item){
+    const scale = Math.max(1, Math.ceil(window.devicePixelRatio || 1));
+    const canvas = document.createElement("canvas");
+    canvas.width = 48 * scale;
+    canvas.height = 18 * scale;
+    canvas.style.width = "48px";
+    canvas.style.height = "18px";
+    const ctx = canvas.getContext("2d");
+    if(!ctx) return visible ? "rectRounded" : "rect";
+    ctx.scale(scale, scale);
+
+    const statusColor = visible ? "rgba(34,197,94,.98)" : "rgba(248,113,113,.98)";
+    const statusFill = visible ? "rgba(34,197,94,.16)" : "rgba(248,113,113,.14)";
+    roundRectPath(ctx, 1, 2, 14, 14, 4);
+    ctx.fillStyle = statusFill;
+    ctx.fill();
+    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = statusColor;
+    ctx.stroke();
+    ctx.fillStyle = statusColor;
+    ctx.font = "900 11px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(visible ? "\u2713" : "\u2715", 8, 9.5);
+
+    const swatch = item?.strokeStyle || item?.fillStyle || "rgba(234,240,255,.8)";
+    ctx.save();
+    ctx.strokeStyle = swatch;
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    if(Array.isArray(item?.lineDash)) ctx.setLineDash(item.lineDash);
+    ctx.beginPath();
+    ctx.moveTo(23, 9);
+    ctx.lineTo(45, 9);
+    ctx.stroke();
+    ctx.restore();
+    return canvas;
   }
 
   function applyLegendStatusBox(item, chart){
@@ -8564,8 +8619,13 @@ setInterval(async ()=>{
     return {
       ...item,
       hidden,
-      text:legendStatusText(item?.text, visible),
-      fontColor:visible ? "rgba(34,197,94,.98)" : "rgba(248,113,113,.98)"
+      text:cleanLegendText(item?.text),
+      pointStyle:legendStatusCanvas(visible, item),
+      fillStyle:"rgba(0,0,0,0)",
+      strokeStyle:"rgba(0,0,0,0)",
+      fontColor:"rgba(234,240,255,.9)",
+      lineWidth:0,
+      rotation:0
     };
   }
 
@@ -8591,9 +8651,10 @@ setInterval(async ()=>{
       if(!labels) continue;
       labels.usePointStyle = true;
       labels.color = "rgba(234,240,255,.9)";
-      labels.pointStyleWidth = chart === tsChart ? 36 : 26;
-      labels.boxWidth = chart === tsChart ? 36 : 26;
-      labels.boxHeight = chart === tsChart ? 8 : 5;
+      labels.pointStyleWidth = 48;
+      labels.boxWidth = 48;
+      labels.boxHeight = 18;
+      labels.padding = 18;
       labels.generateLabels = checkedLegendGenerator(chart === tsChart ? buildTsLineLegendLabels : null);
       for(const ds of chart.data?.datasets || []){
         if(ds.showLine !== false) ds.pointStyle = "line";
