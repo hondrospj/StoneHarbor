@@ -1642,16 +1642,29 @@ a.brand *{
     .shorely-has-help{
       position:relative;
     }
-    .shorely-has-help > .hrow,
-    .shorely-has-help > .accHeader,
-    .shorely-has-help > .panelTitle{
+    .shorelyHelpHeader{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+    }
+    .shorelyHelpHeader > h2,
+    .shorelyHelpHeader > .accTitle,
+    .shorelyHelpHeader > div:first-of-type{
+      min-width:0;
+      flex:1 1 auto;
+    }
+    .shorelyHelpHeader > .paneToggleGroup,
+    .shorelyHelpHeader > .chev{
+      flex:0 0 auto;
+    }
+    .shorely-help-floating > .hrow,
+    .shorely-help-floating > .accHeader,
+    .shorely-help-floating > .panelTitle{
       padding-left:48px;
     }
     .shorelyHelpBtn{
-      position:absolute;
-      top:12px;
-      left:12px;
-      z-index:8;
+      position:static;
+      flex:0 0 auto;
       width:28px;
       height:28px;
       display:inline-grid;
@@ -1665,6 +1678,12 @@ a.brand *{
       line-height:1;
       cursor:pointer;
       box-shadow:0 10px 24px rgba(0,0,0,.22);
+    }
+    .shorely-help-floating > .shorelyHelpBtn{
+      position:absolute;
+      top:12px;
+      left:12px;
+      z-index:8;
     }
     .shorelyHelpBtn:hover,
     .shorelyHelpBtn:focus-visible{
@@ -1772,16 +1791,21 @@ a.brand *{
       .kicker{
         font-size:11px;
       }
-      .shorely-has-help > .hrow,
-      .shorely-has-help > .accHeader,
-      .shorely-has-help > .panelTitle{
+      .shorely-help-floating > .hrow,
+      .shorely-help-floating > .accHeader,
+      .shorely-help-floating > .panelTitle{
         padding-left:42px;
       }
+      .shorelyHelpHeader{
+        gap:10px;
+      }
       .shorelyHelpBtn{
-        top:10px;
-        left:10px;
         width:27px;
         height:27px;
+      }
+      .shorely-help-floating > .shorelyHelpBtn{
+        top:10px;
+        left:10px;
       }
     }
     @media(max-width:520px){
@@ -5078,13 +5102,36 @@ function annualMonthTickCallback(labels){
   };
 }
 
+function buildTsLineLegendLabels(chart){
+  return (chart?.data?.datasets || [])
+    .map((ds, datasetIndex) => {
+      const label = ds?.label === "Observed highs (cached)" ? "Observed" : (ds?.label || "");
+      if(label !== "Observed" && label !== "Forecast") return null;
+      const isForecast = label === "Forecast";
+      return {
+        text: label,
+        datasetIndex,
+        hidden: chart ? !chart.isDatasetVisible(datasetIndex) : !!ds?.hidden,
+        fillStyle:"rgba(0,0,0,0)",
+        strokeStyle:isForecast ? "rgba(45,212,191,1)" : "rgba(234,240,255,.96)",
+        lineWidth:isForecast ? 3.2 : 3,
+        lineDash:isForecast ? [9, 5] : [],
+        pointStyle:"line",
+        rotation:0
+      };
+    })
+    .filter(Boolean);
+}
+
 function styleTsLegendAsLines(){
   if(!tsChart) return;
   const labels = tsChart.options.plugins.legend.labels;
   labels.usePointStyle = true;
-  labels.pointStyleWidth = 22;
-  labels.boxWidth = 22;
-  labels.boxHeight = 6;
+  labels.pointStyleWidth = 36;
+  labels.boxWidth = 36;
+  labels.boxHeight = 8;
+  labels.padding = 18;
+  labels.generateLabels = buildTsLineLegendLabels;
 }
 
 function annualForecastComponentSpread(rec, prefix){
@@ -5193,7 +5240,7 @@ function tsObservedDataset(data, {cachedHighs=false}={}){
   return {
     label: cachedHighs ? "Observed highs (cached)" : "Observed",
     data:data || [],
-    borderWidth: cachedHighs ? 0 : 2.4,
+    borderWidth: cachedHighs ? 0 : 3,
     pointRadius: cachedHighs ? 4.6 : 0,
     pointHoverRadius: cachedHighs ? 6.4 : 0,
     pointHitRadius: cachedHighs ? 10 : 0,
@@ -5220,14 +5267,14 @@ function tsPredictedDataset(data){
   return {
     label:"Forecast",
     data:data || [],
-    borderWidth:2,
+    borderWidth:3,
     pointRadius:0,
     pointHoverRadius:0,
     pointHitRadius:0,
     tension:0.25,
     spanGaps:true,
     pointStyle:"line",
-    borderDash:[8,6],
+    borderDash:[9,5],
     borderDashOffset:0,
     borderColor:"rgba(45,212,191,.9)",
     segment:{
@@ -5450,9 +5497,7 @@ function updateTsChartFromState(){
   }
   tsChart.data.datasets = tsDatasets;
 
-  tsChart.options.plugins.legend.labels.pointStyleWidth = 22;
-  tsChart.options.plugins.legend.labels.boxWidth = 22;
-  tsChart.options.plugins.legend.labels.boxHeight = 6;
+  styleTsLegendAsLines();
   applyTsDateAxis(labels);
   tsChart.options.scales.x.title.text = "Date";
   tsChart.options.scales.y.title.text = unitText();
@@ -7977,7 +8022,7 @@ setInterval(async ()=>{
   }
 
   function addHelp(host, title, body){
-    if(!host || host.querySelector(":scope > .shorelyHelpBtn")) return;
+    if(!host || host.querySelector(".shorelyHelpBtn")) return;
     host.classList.add("shorely-has-help");
     const btn = document.createElement("button");
     btn.className = "shorelyHelpBtn";
@@ -7990,7 +8035,15 @@ setInterval(async ()=>{
       event.stopPropagation();
       openHelp(title, body, btn);
     });
-    host.insertBefore(btn, host.firstChild);
+
+    const header = host.querySelector(":scope > .hrow, :scope > .accHeader");
+    if(header){
+      header.classList.add("shorelyHelpHeader");
+      header.insertBefore(btn, header.firstChild);
+    }else{
+      host.classList.add("shorely-help-floating");
+      host.insertBefore(btn, host.firstChild);
+    }
   }
 
   function installHelp(){
@@ -8042,9 +8095,10 @@ setInterval(async ()=>{
       const labels = chart?.options?.plugins?.legend?.labels;
       if(!labels) continue;
       labels.usePointStyle = true;
-      labels.pointStyleWidth = 26;
-      labels.boxWidth = 26;
-      labels.boxHeight = 5;
+      labels.pointStyleWidth = chart === tsChart ? 36 : 26;
+      labels.boxWidth = chart === tsChart ? 36 : 26;
+      labels.boxHeight = chart === tsChart ? 8 : 5;
+      if(chart === tsChart) labels.generateLabels = buildTsLineLegendLabels;
       for(const ds of chart.data?.datasets || []){
         if(ds.showLine !== false) ds.pointStyle = "line";
       }
