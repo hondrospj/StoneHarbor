@@ -1989,6 +1989,143 @@ a.brand *{
         grid-template-columns:1fr !important;
       }
     }
+    /* shorely checkbox legends */
+    .shorelyChartLegend{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-wrap:wrap;
+      gap:8px 14px;
+      margin:10px 0 2px;
+      color:rgba(234,240,255,.88);
+      font-size:13px;
+      font-weight:950;
+      line-height:1.1;
+    }
+    .shorelyLegendItem{
+      appearance:none;
+      border:0;
+      background:transparent;
+      color:inherit;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      min-height:34px;
+      max-width:100%;
+      padding:5px 6px;
+      border-radius:10px;
+      cursor:pointer;
+      font:inherit;
+      white-space:nowrap;
+    }
+    .shorelyLegendItem:hover{background:rgba(255,255,255,.055)}
+    .shorelyLegendItem:focus-visible{
+      outline:none;
+      box-shadow:0 0 0 3px rgba(45,212,191,.18);
+    }
+    .shorelyLegendCheck{
+      width:18px;
+      height:18px;
+      flex:0 0 18px;
+      border-radius:5px;
+      border:1.6px solid rgba(34,197,94,.90);
+      background:rgba(34,197,94,.13);
+      color:rgba(34,197,94,.98);
+      display:inline-grid;
+      place-items:center;
+      font-size:14px;
+      font-weight:950;
+      line-height:1;
+      box-shadow:0 0 0 2px rgba(34,197,94,.07);
+    }
+    .shorelyLegendCheck::before{content:"\2713"}
+    .shorelyLegendItem.isOff .shorelyLegendCheck{
+      border-color:rgba(248,113,113,.86);
+      background:rgba(248,113,113,.12);
+      color:rgba(248,113,113,.98);
+      box-shadow:0 0 0 2px rgba(248,113,113,.06);
+    }
+    .shorelyLegendItem.isOff .shorelyLegendCheck::before{content:"x"}
+    .shorelyLegendItem.isOff .shorelyLegendSwatch,
+    .shorelyLegendItem.isOff .shorelyLegendText{opacity:.48}
+    .shorelyLegendSwatch{flex:0 0 auto}
+    .shorelyLegendSwatch.isLine{
+      width:30px;
+      height:0;
+      border-top:3px solid var(--shorely-legend-color, rgba(234,240,255,.86));
+      border-radius:999px;
+    }
+    .shorelyLegendSwatch.isDashed{border-top-style:dashed}
+    .shorelyLegendSwatch.isBox{
+      width:16px;
+      height:13px;
+      border-radius:3px;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+    }
+    .shorelyLegendText{
+      min-width:0;
+      overflow-wrap:anywhere;
+    }
+
+    @media(max-width:640px){
+      .shorelyChartLegend{
+        justify-content:flex-start;
+        gap:7px 9px;
+        font-size:12px;
+        margin:8px 0 2px;
+      }
+      .shorelyLegendItem{
+        min-height:40px;
+        padding:6px 8px;
+        white-space:normal;
+      }
+      .shorelyLegendCheck{
+        width:20px;
+        height:20px;
+        flex-basis:20px;
+        font-size:15px;
+      }
+      .shorelyLegendSwatch.isLine{width:26px}
+      .historicControls{
+        grid-template-columns:1fr 1fr !important;
+        width:100% !important;
+        min-width:0 !important;
+      }
+      .historicControls > *{
+        min-width:0 !important;
+        width:100% !important;
+        max-width:100% !important;
+      }
+      .historicTableWrap{
+        width:100% !important;
+        max-width:100% !important;
+        overflow-x:hidden !important;
+      }
+      #historicTable{
+        width:100% !important;
+        min-width:0 !important;
+        table-layout:fixed !important;
+      }
+      #historicTable th,
+      #historicTable td{
+        white-space:normal !important;
+        overflow-wrap:anywhere !important;
+        word-break:normal !important;
+      }
+      #historicTable th:nth-child(1),
+      #historicTable td:nth-child(1){width:34% !important}
+      #historicTable th:nth-child(2),
+      #historicTable td:nth-child(2){width:14% !important}
+      #historicTable th:nth-child(3),
+      #historicTable td:nth-child(3){width:26% !important}
+      #historicTable th:nth-child(4),
+      #historicTable td:nth-child(4){width:26% !important}
+    }
+    @media(max-width:390px){
+      .historicControls{grid-template-columns:1fr !important}
+    }
+    /* end shorely checkbox legends */
 
   </style>
 </head>
@@ -8576,101 +8713,133 @@ setInterval(async ()=>{
 
   function firstLegendColor(value, fallback){
     if(Array.isArray(value)) return value.find(color => typeof color === "string" && color.trim()) || fallback;
-    return value || fallback;
+    return (typeof value === "string" && value.trim()) ? value : fallback;
   }
 
-  function legendStatusCanvas(visible, item, chart){
-    const scale = Math.max(1, Math.ceil(window.devicePixelRatio || 1));
-    const canvas = document.createElement("canvas");
-    canvas.width = 38 * scale;
-    canvas.height = 16 * scale;
-    canvas.style.width = "38px";
-    canvas.style.height = "16px";
-    const ctx = canvas.getContext("2d");
-    if(!ctx) return visible ? "rectRounded" : "rect";
-    ctx.scale(scale, scale);
+  function chartLegendItems(chart){
+    const labels = chart?.options?.plugins?.legend?.labels || {};
+    const isTs = typeof tsChart !== "undefined" && chart === tsChart && typeof buildTsLineLegendLabels === "function";
+    const generator = Chart?.defaults?.plugins?.legend?.labels?.generateLabels;
+    const raw = isTs
+      ? buildTsLineLegendLabels(chart)
+      : (typeof generator === "function" ? generator(chart) : []);
+    const filtered = typeof labels.filter === "function"
+      ? (raw || []).filter(item => labels.filter(item, chart.data))
+      : (raw || []);
 
-    const statusColor = visible ? "rgba(34,197,94,.95)" : "rgba(248,113,113,.95)";
-    const statusFill = visible ? "rgba(34,197,94,.12)" : "rgba(248,113,113,.12)";
-    roundRectPath(ctx, 1.25, 2, 12, 12, 3);
-    ctx.fillStyle = statusFill;
-    ctx.fill();
-    ctx.lineWidth = 1.4;
-    ctx.strokeStyle = statusColor;
-    ctx.stroke();
-    ctx.strokeStyle = statusColor;
-    ctx.lineWidth = 1.9;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    if(visible){
-      ctx.moveTo(4, 8);
-      ctx.lineTo(6.2, 10.1);
-      ctx.lineTo(10.6, 5);
-    }else{
-      ctx.moveTo(4.4, 5.2);
-      ctx.lineTo(10, 10.8);
-      ctx.moveTo(10, 5.2);
-      ctx.lineTo(4.4, 10.8);
-    }
-    ctx.stroke();
+    return filtered
+      .map(item => {
+        const datasetIndex = Number(item?.datasetIndex);
+        const dataset = Number.isInteger(datasetIndex) ? chart?.data?.datasets?.[datasetIndex] : null;
+        if(dataset?._legendHidden) return null;
+        return {...item, text:cleanLegendText(item?.text), dataset};
+      })
+      .filter(item => item && item.text);
+  }
 
-    const datasetIndex = Number(item?.datasetIndex);
-    const dataset = Number.isInteger(datasetIndex) ? chart?.data?.datasets?.[datasetIndex] : null;
+  function legendSwatchClass(item, chart){
+    const dataset = item?.dataset;
+    const label = String(item?.text || "").toLowerCase();
     const chartType = dataset?.type || chart?.config?.type || "";
-    const stroke = firstLegendColor(item?.strokeStyle, firstLegendColor(dataset?.borderColor, firstLegendColor(item?.fillStyle, "rgba(234,240,255,.86)")));
-    const fill = firstLegendColor(item?.fillStyle, firstLegendColor(dataset?.backgroundColor, stroke));
-    const rawDash = Array.isArray(item?.lineDash) && item.lineDash.length
-      ? item.lineDash
-      : (Array.isArray(dataset?.borderDash) ? dataset.borderDash : []);
-    const lineWidth = Math.max(2, Math.min(4, Number(item?.lineWidth || dataset?.borderWidth) || 3));
-    const looksLikeLine = chartType === "line" || dataset?.showLine === true || item?.pointStyle === "line" && chartType !== "bar";
-    ctx.save();
-    ctx.translate(18, 8);
-    if(looksLikeLine){
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = lineWidth;
-      ctx.lineCap = "round";
-      ctx.setLineDash(rawDash.length ? rawDash.map(value => Math.max(2, Number(value) || 2)) : []);
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(17, 0);
-      ctx.stroke();
-    }else{
-      ctx.fillStyle = fill;
-      roundRectPath(ctx, 0, -5, 17, 10, 2);
-      ctx.fill();
-    }
-    ctx.restore();
-    return canvas;
+    const dashed = (Array.isArray(item?.lineDash) && item.lineDash.length) || (Array.isArray(dataset?.borderDash) && dataset.borderDash.length);
+    const looksLikeRange = label.includes("range") || dataset?.fill === true || dataset?.fill === "-1" || dataset?.fill === "origin";
+    const looksLikeLine = !looksLikeRange && (chartType === "line" || dataset?.showLine === true || item?.pointStyle === "line");
+    return looksLikeLine ? (dashed ? "isLine isDashed" : "isLine") : "isBox";
   }
 
-  function applyLegendStatusBox(item, chart){
+  function legendSwatchColor(item, fallback){
+    const dataset = item?.dataset;
+    return firstLegendColor(item?.strokeStyle,
+      firstLegendColor(dataset?.borderColor,
+        firstLegendColor(item?.fillStyle,
+          firstLegendColor(dataset?.backgroundColor, fallback))));
+  }
+
+  function legendItemVisible(chart, item){
     const index = Number(item?.datasetIndex);
-    const hidden = Number.isInteger(index) && chart?.isDatasetVisible
-      ? !chart.isDatasetVisible(index)
-      : !!item?.hidden;
-    const visible = !hidden;
-    return {
-      ...item,
-      hidden,
-      text:cleanLegendText(item?.text),
-      pointStyle:legendStatusCanvas(visible, item, chart),
-      fillStyle:"rgba(0,0,0,0)",
-      strokeStyle:"rgba(0,0,0,0)",
-      fontColor:"rgba(234,240,255,.9)",
-      lineWidth:0,
-      rotation:0
-    };
+    if(Number.isInteger(index) && chart?.isDatasetVisible){
+      return chart.isDatasetVisible(index);
+    }
+    return !item?.hidden;
   }
 
-  function checkedLegendGenerator(baseGenerator){
-    return chart => {
-      const raw = typeof baseGenerator === "function"
-        ? baseGenerator(chart)
-        : Chart.defaults.plugins.legend.labels.generateLabels(chart);
-      return (raw || []).map(item => applyLegendStatusBox(item, chart));
-    };
+  function applyLegendClick(chart, item){
+    const legendOptions = chart?.options?.plugins?.legend || {};
+    const defaultClick = Chart?.defaults?.plugins?.legend?.onClick;
+    const clicker = typeof legendOptions.onClick === "function" ? legendOptions.onClick : defaultClick;
+    if(typeof clicker === "function"){
+      clicker.call(legendOptions, {type:"click", native:null}, item, {chart});
+    }
+    requestAnimationFrame(() => renderHtmlLegend(chart));
+  }
+
+  function renderHtmlLegend(chart){
+    if(!chart?.canvas) return;
+    const wrap = chart.canvas.parentElement;
+    if(!wrap) return;
+    const id = chart.canvas.id || chart.id || Math.random().toString(36).slice(2);
+    const position = chart?.options?.plugins?.legend?.position || "bottom";
+    let legend = document.getElementById("shorelyLegend-" + id);
+    if(!legend){
+      legend = document.createElement("div");
+      legend.id = "shorelyLegend-" + id;
+      legend.className = "shorelyChartLegend";
+      legend.setAttribute("aria-label", "Chart key");
+      if(position === "top"){
+        wrap.insertAdjacentElement("beforebegin", legend);
+      }else{
+        wrap.insertAdjacentElement("afterend", legend);
+      }
+    }
+    legend.innerHTML = "";
+
+    for(const item of chartLegendItems(chart)){
+      const index = Number(item.datasetIndex);
+      if(!Number.isInteger(index)) continue;
+      const visible = legendItemVisible(chart, item);
+      const color = legendSwatchColor(item, "rgba(234,240,255,.86)");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "shorelyLegendItem" + (visible ? "" : " isOff");
+      button.setAttribute("aria-pressed", visible ? "true" : "false");
+      button.title = (visible ? "Hide " : "Show ") + item.text;
+
+      const check = document.createElement("span");
+      check.className = "shorelyLegendCheck";
+      check.setAttribute("aria-hidden", "true");
+
+      const swatch = document.createElement("span");
+      swatch.className = "shorelyLegendSwatch " + legendSwatchClass(item, chart);
+      swatch.style.setProperty("--shorely-legend-color", color);
+      if(swatch.classList.contains("isBox")) swatch.style.background = color;
+      else swatch.style.borderTopColor = color;
+
+      const text = document.createElement("span");
+      text.className = "shorelyLegendText";
+      text.textContent = item.text;
+
+      button.append(check, swatch, text);
+      button.addEventListener("click", event => {
+        event.preventDefault();
+        applyLegendClick(chart, item);
+      });
+      legend.appendChild(button);
+    }
+  }
+
+  function installHtmlLegend(chart){
+    if(!chart?.options?.plugins?.legend) return;
+    chart.options.plugins.legend.display = false;
+    if(!chart.$shorelyLegendUpdatePatched){
+      const originalUpdate = chart.update.bind(chart);
+      chart.update = function(...args){
+        const result = originalUpdate(...args);
+        requestAnimationFrame(() => renderHtmlLegend(chart));
+        return result;
+      };
+      chart.$shorelyLegendUpdatePatched = true;
+    }
+    renderHtmlLegend(chart);
   }
 
   function polishChartLegends(){
@@ -8682,19 +8851,7 @@ setInterval(async ()=>{
     try{ if(typeof monthAvgChart !== "undefined" && monthAvgChart) charts.push(monthAvgChart); }catch(e){}
 
     for(const chart of charts){
-      const labels = chart?.options?.plugins?.legend?.labels;
-      if(!labels) continue;
-      labels.usePointStyle = true;
-      labels.color = "rgba(234,240,255,.9)";
-      labels.pointStyleWidth = 38;
-      labels.boxWidth = 38;
-      labels.boxHeight = 16;
-      labels.padding = 14;
-      labels.generateLabels = checkedLegendGenerator(chart === tsChart ? buildTsLineLegendLabels : null);
-      for(const ds of chart.data?.datasets || []){
-        if(ds.showLine !== false) ds.pointStyle = "line";
-      }
-      try{ chart.update("none"); }catch(e){}
+      installHtmlLegend(chart);
     }
   }
 
