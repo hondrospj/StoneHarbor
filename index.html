@@ -8574,41 +8574,74 @@ setInterval(async ()=>{
     ctx.closePath();
   }
 
-  function legendStatusCanvas(visible){
+  function firstLegendColor(value, fallback){
+    if(Array.isArray(value)) return value.find(color => typeof color === "string" && color.trim()) || fallback;
+    return value || fallback;
+  }
+
+  function legendStatusCanvas(visible, item, chart){
     const scale = Math.max(1, Math.ceil(window.devicePixelRatio || 1));
     const canvas = document.createElement("canvas");
-    canvas.width = 15 * scale;
-    canvas.height = 15 * scale;
-    canvas.style.width = "15px";
-    canvas.style.height = "15px";
+    canvas.width = 38 * scale;
+    canvas.height = 16 * scale;
+    canvas.style.width = "38px";
+    canvas.style.height = "16px";
     const ctx = canvas.getContext("2d");
     if(!ctx) return visible ? "rectRounded" : "rect";
     ctx.scale(scale, scale);
 
-    const statusColor = visible ? "rgba(34,197,94,.98)" : "rgba(248,113,113,.98)";
-    const statusFill = visible ? "rgba(34,197,94,.16)" : "rgba(248,113,113,.14)";
-    roundRectPath(ctx, 1, 1, 13, 13, 3.5);
+    const statusColor = visible ? "rgba(34,197,94,.95)" : "rgba(248,113,113,.95)";
+    const statusFill = visible ? "rgba(34,197,94,.12)" : "rgba(248,113,113,.12)";
+    roundRectPath(ctx, 1.25, 2, 12, 12, 3);
     ctx.fillStyle = statusFill;
     ctx.fill();
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.4;
     ctx.strokeStyle = statusColor;
     ctx.stroke();
     ctx.strokeStyle = statusColor;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.9;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
     if(visible){
       ctx.moveTo(4, 8);
-      ctx.lineTo(6.4, 10.5);
-      ctx.lineTo(11, 4.7);
+      ctx.lineTo(6.2, 10.1);
+      ctx.lineTo(10.6, 5);
     }else{
-      ctx.moveTo(4.4, 4.4);
-      ctx.lineTo(10.6, 10.6);
-      ctx.moveTo(10.6, 4.4);
-      ctx.lineTo(4.4, 10.6);
+      ctx.moveTo(4.4, 5.2);
+      ctx.lineTo(10, 10.8);
+      ctx.moveTo(10, 5.2);
+      ctx.lineTo(4.4, 10.8);
     }
     ctx.stroke();
+
+    const datasetIndex = Number(item?.datasetIndex);
+    const dataset = Number.isInteger(datasetIndex) ? chart?.data?.datasets?.[datasetIndex] : null;
+    const chartType = dataset?.type || chart?.config?.type || "";
+    const stroke = firstLegendColor(item?.strokeStyle, firstLegendColor(dataset?.borderColor, firstLegendColor(item?.fillStyle, "rgba(234,240,255,.86)")));
+    const fill = firstLegendColor(item?.fillStyle, firstLegendColor(dataset?.backgroundColor, stroke));
+    const rawDash = Array.isArray(item?.lineDash) && item.lineDash.length
+      ? item.lineDash
+      : (Array.isArray(dataset?.borderDash) ? dataset.borderDash : []);
+    const lineWidth = Math.max(2, Math.min(4, Number(item?.lineWidth || dataset?.borderWidth) || 3));
+    const looksLikeLine = chartType === "line" || dataset?.showLine === true || item?.pointStyle === "line" && chartType !== "bar";
+    ctx.save();
+    ctx.translate(18, 8);
+    if(looksLikeLine){
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = "round";
+      ctx.setLineDash(rawDash.length ? rawDash.map(value => Math.max(2, Number(value) || 2)) : []);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(17, 0);
+      ctx.stroke();
+    }else{
+      ctx.fillStyle = fill;
+      roundRectPath(ctx, 0, -5, 17, 10, 2);
+      ctx.fill();
+    }
+    ctx.restore();
     return canvas;
   }
 
@@ -8622,7 +8655,7 @@ setInterval(async ()=>{
       ...item,
       hidden,
       text:cleanLegendText(item?.text),
-      pointStyle:legendStatusCanvas(visible),
+      pointStyle:legendStatusCanvas(visible, item, chart),
       fillStyle:"rgba(0,0,0,0)",
       strokeStyle:"rgba(0,0,0,0)",
       fontColor:"rgba(234,240,255,.9)",
@@ -8653,10 +8686,10 @@ setInterval(async ()=>{
       if(!labels) continue;
       labels.usePointStyle = true;
       labels.color = "rgba(234,240,255,.9)";
-      labels.pointStyleWidth = 15;
-      labels.boxWidth = 15;
-      labels.boxHeight = 15;
-      labels.padding = 12;
+      labels.pointStyleWidth = 38;
+      labels.boxWidth = 38;
+      labels.boxHeight = 16;
+      labels.padding = 14;
       labels.generateLabels = checkedLegendGenerator(chart === tsChart ? buildTsLineLegendLabels : null);
       for(const ds of chart.data?.datasets || []){
         if(ds.showLine !== false) ds.pointStyle = "line";
