@@ -5114,6 +5114,7 @@ function buildTsLineLegendLabels(chart){
         hidden: chart ? !chart.isDatasetVisible(datasetIndex) : !!ds?.hidden,
         fillStyle:"rgba(0,0,0,0)",
         strokeStyle:isForecast ? "rgba(45,212,191,1)" : "rgba(234,240,255,.96)",
+        fontColor:"rgba(234,240,255,.9)",
         lineWidth:isForecast ? 3.2 : 3,
         lineDash:isForecast ? [9, 5] : [],
         pointStyle:"line",
@@ -5127,6 +5128,7 @@ function styleTsLegendAsLines(){
   if(!tsChart) return;
   const labels = tsChart.options.plugins.legend.labels;
   labels.usePointStyle = true;
+  labels.color = "rgba(234,240,255,.9)";
   labels.pointStyleWidth = 36;
   labels.boxWidth = 36;
   labels.boxHeight = 8;
