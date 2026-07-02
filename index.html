@@ -4732,7 +4732,7 @@ function buildDailyTickCallbackSkipFirstDay(labels){
     const prevIso = labels?.[idx - 1] || "";
     const currentDay = fmtESTDay(iso);
     const prevDay = prevIso ? fmtESTDay(prevIso) : "";
-    return idx === 0 || currentDay !== prevDay ? currentDay : "";
+    return idx === 0 ? "" : (currentDay !== prevDay ? currentDay : "");
   };
 }
 
