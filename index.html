@@ -5113,7 +5113,7 @@ function buildTsLineLegendLabels(chart){
         datasetIndex,
         hidden: chart ? !chart.isDatasetVisible(datasetIndex) : !!ds?.hidden,
         fillStyle:"rgba(0,0,0,0)",
-        strokeStyle:isForecast ? "rgba(45,212,191,1)" : "rgba(234,240,255,.96)",
+        strokeStyle:"rgba(45,212,191,1)",
         fontColor:"rgba(234,240,255,.9)",
         lineWidth:isForecast ? 3.2 : 3,
         lineDash:isForecast ? [9, 5] : [],
