@@ -8734,6 +8734,7 @@ setInterval(async ()=>{
       ? (raw || []).filter(item => labels.filter(item, chart.data))
       : (raw || []);
 
+    const seenLabels = new Set();
     return filtered
       .map(item => {
         const datasetIndex = Number(item?.datasetIndex);
@@ -8741,7 +8742,13 @@ setInterval(async ()=>{
         if(dataset?._legendHidden) return null;
         return {...item, text:cleanLegendText(item?.text), dataset};
       })
-      .filter(item => item && item.text);
+      .filter(item => {
+        if(!item || !item.text) return false;
+        const key = item.text.trim().toLowerCase();
+        if(seenLabels.has(key)) return false;
+        seenLabels.add(key);
+        return true;
+      });
   }
 
   function legendSwatchClass(item, chart){
@@ -8788,6 +8795,9 @@ setInterval(async ()=>{
 
   function renderHtmlLegend(chart){
     if(!chart?.canvas) return;
+    if(chart?.options?.plugins?.legend){
+      chart.options.plugins.legend.display = false;
+    }
     const wrap = chart.canvas.parentElement;
     if(!wrap) return;
     const id = chart.canvas.id || chart.id || Math.random().toString(36).slice(2);
@@ -8848,6 +8858,9 @@ setInterval(async ()=>{
     if(!chart.$shorelyLegendUpdatePatched){
       const originalUpdate = chart.update.bind(chart);
       chart.update = function(...args){
+        if(chart?.options?.plugins?.legend){
+          chart.options.plugins.legend.display = false;
+        }
         const result = originalUpdate(...args);
         requestAnimationFrame(() => renderHtmlLegend(chart));
         return result;
