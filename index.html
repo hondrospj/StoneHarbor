@@ -6626,20 +6626,19 @@ function smoothDoyCumulativeMaximum(series, endpoint){
   if(target <= 0) return base;
 
   const rawInc = base.map((v, i)=> i === 0 ? Math.max(0, Number(v) || 0) : Math.max(0, (Number(v) || 0) - (Number(base[i - 1]) || 0)));
-  const radius = 21;
-  const smoothInc = rawInc.map((_, i)=>{
+  const radius = 45;
+  const smoothOnce = values => values.map((_, i)=>{
     let sum = 0;
     let weight = 0;
     for(let j=Math.max(0, i - radius); j<=Math.min(364, i + radius); j++){
       const w = radius + 1 - Math.abs(i - j);
-      sum += rawInc[j] * w;
+      sum += values[j] * w;
       weight += w;
     }
-    return weight ? sum / weight : rawInc[i];
+    return weight ? sum / weight : values[i];
   });
 
-  const blend = 1;
-  const inc = rawInc.map((v, i)=>Math.max(0, v * (1 - blend) + smoothInc[i] * blend));
+  const inc = smoothOnce(smoothOnce(rawInc)).map(v=>Math.max(0, v));
   const incTotal = inc.reduce((sum, v)=>sum + v, 0);
   if(incTotal <= 0) return base;
 
