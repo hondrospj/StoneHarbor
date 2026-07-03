@@ -6593,7 +6593,7 @@ function buildDoyForecastRange(year, forecastInfo, mean, weights, seriesByYear, 
   for(let i=0;i<365;i++){
     const m = Math.max(0, Number(mean?.[i]) || 0);
     const p = doyClamp01(seasonalProgress[i]);
-    const spreadShape = Math.min(1, 0.32 + 0.68 * Math.pow(p, 0.78));
+    const spreadShape = Math.min(1, 0.36 + 0.64 * Math.pow(p, 0.78));
     low[i] = Math.max(0, m - annualMinus * spreadShape);
     high[i] = Math.max(m, m + annualPlus * spreadShape);
   }
