@@ -6620,13 +6620,13 @@ function scaleDoyCumulativeToEndpoint(series, endpoint){
   return enforceDoyMonotoneEndpoint(series.map((v, i)=> i === 364 ? target : Math.max(0, Number(v) || 0) * target / end), target);
 }
 
-function smoothDoyCumulativeModerate(series, endpoint){
+function smoothDoyCumulativeMaximum(series, endpoint){
   const target = Math.max(0, Number(endpoint) || 0);
   const base = enforceDoyMonotoneEndpoint(series, target);
   if(target <= 0) return base;
 
   const rawInc = base.map((v, i)=> i === 0 ? Math.max(0, Number(v) || 0) : Math.max(0, (Number(v) || 0) - (Number(base[i - 1]) || 0)));
-  const radius = 5;
+  const radius = 21;
   const smoothInc = rawInc.map((_, i)=>{
     let sum = 0;
     let weight = 0;
@@ -6638,7 +6638,7 @@ function smoothDoyCumulativeModerate(series, endpoint){
     return weight ? sum / weight : rawInc[i];
   });
 
-  const blend = 0.45;
+  const blend = 1;
   const inc = rawInc.map((v, i)=>Math.max(0, v * (1 - blend) + smoothInc[i] * blend));
   const incTotal = inc.reduce((sum, v)=>sum + v, 0);
   if(incTotal <= 0) return base;
@@ -6738,7 +6738,7 @@ function buildDoyAdaptiveChampionMean(year, forecastInfo, seriesByYear, historic
 
   if(training.length < 3){
     return {
-      mean:smoothDoyCumulativeModerate(candidates.newFloor, target),
+      mean:smoothDoyCumulativeMaximum(candidates.newFloor, target),
       basis:"sea-level adjusted local flood calendar with historical floor",
       championDays:{ newFloor:365 },
       trainingYears:training.length
@@ -6766,7 +6766,7 @@ function buildDoyAdaptiveChampionMean(year, forecastInfo, seriesByYear, historic
   }
 
   return {
-    mean:smoothDoyCumulativeModerate(out, target),
+    mean:smoothDoyCumulativeMaximum(out, target),
     basis:"adaptive gauge-day champion ensemble",
     championDays,
     trainingYears:training.length
