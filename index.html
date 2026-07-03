@@ -2376,12 +2376,6 @@ a.brand *{
             </div>
             <div class="doyVisibleBadge" id="doyVisibleBadge">—</div>
           </div>
-
-          <div class="doyModeSeg" id="doyModeSeg" aria-label="Flooding throughout the year mode">
-            <button class="doyModeBtn isActive" type="button" data-doy-mode="years">Years</button>
-            <button class="doyModeBtn" type="button" data-doy-mode="past">Past forecasts</button>
-          </div>
-
           <div class="doyGradientKey" aria-label="Year color scale">
             <span>Past</span>
             <div class="doyGradientRail"></div>
@@ -6429,7 +6423,7 @@ function doySmoothMonotoneUnitSeries(values, radius=10){
 }
 
 function doyInterpolatedSeasonalOffset(year, idx){
-  const cycle = typeof seaLevelSeasonalCycleByMonthForForecastYear === "function" ? seaLevelSeasonalCycleByMonthForForecastYear(year) : (typeof seaLevelSeasonalCycleByMonth === "function" ? seaLevelSeasonalCycleByMonth() : null);
+  const cycle = typeof seaLevelSeasonalCycleByMonth === "function" ? seaLevelSeasonalCycleByMonth() : null;
   if(!Array.isArray(cycle) || cycle.length < 12 || !cycle.some(v => Number.isFinite(Number(v)))){
     const offset = Number(seasonalOffsetForISO(dateFromDoyIndex365(year, idx).toISOString()));
     return Number.isFinite(offset) ? offset : 0;
@@ -6453,89 +6447,23 @@ function doyInterpolatedSeasonalOffset(year, idx){
   return mix(current, Number(cycle[(month + 1) % 12]) || 0, frac - 0.5);
 }
 
-function seaLevelSeasonalCycleByMonthForForecastYear(year){
-  const state = SEA_LEVEL_STATE;
-  if(!state?.relative?.length) return seaLevelSeasonalCycleByMonth();
-  const targetYear = Number(year);
-  const training = state.relative.filter(r => {
-    const y = Number(String(r?.month || "").slice(0, 4));
-    return Number.isFinite(y) && (!Number.isFinite(targetYear) || y < targetYear);
-  });
-  if(training.length < 24) return seaLevelSeasonalCycleByMonth();
-
-  const out = new Array(12).fill(0);
-  const counts = new Array(12).fill(0);
-  const regression = typeof seaLevelRegression === "function" ? seaLevelRegression(training) : state.regression;
-
-  for(const r of training){
-    const monthKey = String(r.month || "").slice(0, 7);
-    const m = Number(monthKey.slice(5, 7));
-    if(!Number.isFinite(m) || m < 1 || m > 12) continue;
-    let v = Number(r.relFt);
-    if(regression && typeof decimalYearFromMonth === "function"){
-      const x = decimalYearFromMonth(monthKey);
-      v -= regression.intercept + regression.slope * x;
-    }
-    if(Number.isFinite(v)){
-      out[m - 1] += v;
-      counts[m - 1] += 1;
-    }
-  }
-
-  for(let i=0;i<12;i++) out[i] = counts[i] ? out[i] / counts[i] : 0;
-  const mean = out.reduce((s,v)=>s+v,0) / 12;
-  return out.map(v => v - mean);
-}
-
 function doySeasonalDayWeight(year, idx){
-  const offset = doyInterpolatedSeasonalOffset(year, idx);
+  const iso = dateFromDoyIndex365(year, idx).toISOString();
+  const offset = Number(seasonalOffsetForISO(iso));
   if(!Number.isFinite(offset)) return 1;
   return Math.max(0.12, Math.min(4, Math.exp(offset / 0.22)));
 }
 
-function buildDoySeaLevelSeasonalDayWeights(year){
-  return doySmoothCircularSeries(Array.from({length:365}, (_, idx)=>doySeasonalDayWeight(year, idx)), 10);
-}
-
-function buildDoySeaLevelAdjustedFloodDayWeights(year, eventsNavd, options={}){
-  const targetYear = Number(year);
-  const threshold = Number(THRESH?.NAVD88?.minorLow);
-  if(!Number.isFinite(targetYear) || !Number.isFinite(threshold)) return null;
-
-  const daily = new Array(365).fill(0);
-  const trainingYears = new Set();
-  const trend = doyObservedTrendFtPerYear();
-  const yearWindow = Number(options?.yearWindow);
-  const minYear = Number.isFinite(yearWindow) && yearWindow > 0 ? targetYear - yearWindow : -Infinity;
-
-  for(const event of (eventsNavd || [])){
-    const parts = doyEventMonthDay(event);
-    if(!parts || !Number.isFinite(Number(parts.y))) continue;
-    const eventYear = Number(parts.y);
-    if(eventYear >= targetYear || eventYear < minYear) continue;
-
-    const ft = Number(event?.ft);
-    const decimalYear = doyEventDecimalYear(event);
-    if(!Number.isFinite(ft) || !Number.isFinite(decimalYear)) continue;
-
-    const idx = calIndex365(eventYear, Number(parts.m), Number(parts.d));
-    if(idx === null) continue;
-
-    const adjustedFt = ft - trend * (decimalYear - targetYear);
-    if(adjustedFt >= threshold) daily[idx] += 1;
-    trainingYears.add(eventYear);
-  }
-
-  const adjustedFloods = daily.reduce((sum, v)=>sum + v, 0);
-  if(trainingYears.size < 3 || adjustedFloods <= 0) return null;
-
-  const radius = Number.isFinite(Number(options?.radius)) ? Math.max(1, Math.round(Number(options.radius))) : 14;
-  return doySmoothCircularSeries(daily, radius);
+function doyEarlyYearForecastTimingTaper(idx){
+  const rampEnd = 243;
+  if(idx >= rampEnd) return 1;
+  const t = Math.max(0, Math.min(1, idx / rampEnd));
+  const smooth = t * t * (3 - 2 * t);
+  return 0.35 + 0.65 * smooth;
 }
 
 function buildDoyAnnualDayWeights(year){
-  return buildDoySeaLevelAdjustedFloodDayWeights(year, HIGH_TIDES_NAVD)
-    || buildDoySeaLevelSeasonalDayWeights(year);
+  return Array.from({length:365}, (_, idx)=>doySeasonalDayWeight(year, idx) * doyEarlyYearForecastTimingTaper(idx));
 }
 
 function buildDoyWeightedCumulative(targetValue, weights){
@@ -6560,337 +6488,16 @@ function buildDoyWeightedCumulative(targetValue, weights){
   return out;
 }
 
-function buildDoyAverageSeriesFromYearSeries(seriesByYear){
-  const usable = (seriesByYear || []).filter(yr => yr && Array.isArray(yr.cum));
-  if(!usable.length) return null;
-
-  const avg = new Array(365).fill(0);
-  for(const yr of usable){
-    for(let i=0;i<365;i++){
-      avg[i] += Math.max(0, Number(yr.cum?.[i]) || 0);
-    }
-  }
-
-  for(let i=0;i<365;i++) avg[i] /= usable.length;
-  return avg;
-}
-
-function buildDoyForecastMeanCumulative(targetValue, weights, historicalAverage){
-  const mean = buildDoyWeightedCumulative(targetValue, weights);
-  const target = Math.max(0, Number(targetValue) || 0);
-  const histEnd = Math.max(0, Number(historicalAverage?.[364]) || 0);
-  if(target <= 0 || histEnd <= 0 || target <= histEnd) return mean;
-
-  const scale = target / histEnd;
-  for(let i=0;i<365;i++){
-    const floor = Math.max(0, Number(historicalAverage?.[i]) || 0) * scale;
-    mean[i] = Math.max(mean[i], floor);
-  }
-
-  let last = 0;
-  for(let i=0;i<365;i++){
-    last = Math.max(last, Math.min(target, mean[i]));
-    mean[i] = last;
-  }
-  mean[364] = target;
-  return mean;
-}
-
-function doySeriesTotal(series){
-  return Math.max(0, Number(series?.[364]) || 0);
-}
-
-function enforceDoyMonotoneEndpoint(series, endpoint){
-  const target = Math.max(0, Number(endpoint) || 0);
-  const out = Array.isArray(series) ? series.map(v => Math.max(0, Number(v) || 0)) : new Array(365).fill(0);
-  while(out.length < 365) out.push(out.length ? out[out.length - 1] : 0);
-  let last = 0;
-  for(let i=0;i<365;i++){
-    last = Math.max(last, Math.min(target, out[i]));
-    out[i] = last;
-  }
-  out[364] = target;
-  return out.slice(0, 365);
-}
-
-function scaleDoyCumulativeToEndpoint(series, endpoint){
-  const target = Math.max(0, Number(endpoint) || 0);
-  const end = doySeriesTotal(series);
-  if(target <= 0 || end <= 0) return new Array(365).fill(0);
-  return enforceDoyMonotoneEndpoint(series.map((v, i)=> i === 364 ? target : Math.max(0, Number(v) || 0) * target / end), target);
-}
-
-function smoothDoyCumulativeMaximum(series, endpoint){
-  const target = Math.max(0, Number(endpoint) || 0);
-  const base = enforceDoyMonotoneEndpoint(series, target);
-  if(target <= 0) return base;
-
-  const rawInc = base.map((v, i)=> i === 0 ? Math.max(0, Number(v) || 0) : Math.max(0, (Number(v) || 0) - (Number(base[i - 1]) || 0)));
-  const radius = 45;
-  const smoothOnce = values => values.map((_, i)=>{
-    let sum = 0;
-    let weight = 0;
-    for(let j=Math.max(0, i - radius); j<=Math.min(364, i + radius); j++){
-      const w = radius + 1 - Math.abs(i - j);
-      sum += values[j] * w;
-      weight += w;
-    }
-    return weight ? sum / weight : values[i];
-  });
-
-  const inc = smoothOnce(smoothOnce(rawInc)).map(v=>Math.max(0, v));
-  const incTotal = inc.reduce((sum, v)=>sum + v, 0);
-  if(incTotal <= 0) return base;
-
-  const out = new Array(365).fill(0);
-  let run = 0;
-  for(let i=0;i<365;i++){
-    run += target * (inc[i] / incTotal);
-    out[i] = run;
-  }
-  return enforceDoyMonotoneEndpoint(out, target);
-}
-
-function doyPriorCompleteSeries(seriesByYear, targetYear){
-  const year = Number(targetYear);
-  return (seriesByYear || [])
-    .filter(yr => yr && Number(yr.y) < year && Array.isArray(yr.cum) && doySeriesTotal(yr.cum) > 0)
-    .map(yr => ({ y:Number(yr.y), cum:yr.cum.map(v => Math.max(0, Number(v) || 0)), total:doySeriesTotal(yr.cum) }))
-    .sort((a,b)=>a.y-b.y);
-}
-
-function buildDoyPriorAverageScaledForecast(targetValue, seriesByYear, targetYear){
-  const prior = doyPriorCompleteSeries(seriesByYear, targetYear);
-  if(!prior.length) return null;
-  const avg = new Array(365).fill(0);
-  for(const yr of prior){
-    for(let i=0;i<365;i++) avg[i] += yr.cum[i];
-  }
-  for(let i=0;i<365;i++) avg[i] /= prior.length;
-  return scaleDoyCumulativeToEndpoint(avg, targetValue);
-}
-
-function buildDoyAnalogYearsForecast(targetValue, seriesByYear, targetYear){
-  const target = Math.max(0, Number(targetValue) || 0);
-  const prior = doyPriorCompleteSeries(seriesByYear, targetYear);
-  if(target <= 0 || prior.length < 3) return null;
-
-  const diffs = prior.map(yr => Math.abs(yr.total - target));
-  const spread = Math.max(3, medianNumber(diffs) || 3);
-  const firstYear = prior[0].y;
-  const lastYear = prior[prior.length - 1].y;
-  const out = new Array(365).fill(0);
-  let weightSum = 0;
-
-  for(const yr of prior){
-    const recency = 1 + Math.max(0, yr.y - firstYear) / Math.max(1, lastYear - firstYear);
-    const similarity = Math.exp(-Math.abs(yr.total - target) / spread);
-    const weight = recency * similarity;
-    const scaled = scaleDoyCumulativeToEndpoint(yr.cum, target);
-    for(let i=0;i<365;i++) out[i] += scaled[i] * weight;
-    weightSum += weight;
-  }
-
-  if(weightSum <= 0) return null;
-  for(let i=0;i<365;i++) out[i] /= weightSum;
-  return enforceDoyMonotoneEndpoint(out, target);
-}
-
-function buildDoyForecastCandidateMeans(year, forecastInfo, seriesByYear, historicalAverage=null){
-  const target = Math.max(0, Number(forecastInfo?.mean) || 0);
-  const oldWeights = buildDoySeaLevelSeasonalDayWeights(year);
-  const floodWeights = buildDoySeaLevelAdjustedFloodDayWeights(year, HIGH_TIDES_NAVD) || oldWeights;
-  const recentWeights = buildDoySeaLevelAdjustedFloodDayWeights(year, HIGH_TIDES_NAVD, { yearWindow:8 }) || floodWeights;
-  const avgSeries = Array.isArray(historicalAverage) ? historicalAverage : buildDoyAverageSeriesFromYearSeries(doyPriorCompleteSeries(seriesByYear, year));
-  const oldSeasonal = buildDoyWeightedCumulative(target, oldWeights);
-  const seaAdjustedFloodCalendar = buildDoyWeightedCumulative(target, floodWeights);
-  const recentFloodCalendar = buildDoyWeightedCumulative(target, recentWeights);
-  const priorAverageScaled = buildDoyPriorAverageScaledForecast(target, seriesByYear, year) || seaAdjustedFloodCalendar;
-  const analogYears = buildDoyAnalogYearsForecast(target, seriesByYear, year) || priorAverageScaled;
-  const newFloor = buildDoyForecastMeanCumulative(target, floodWeights, avgSeries || priorAverageScaled);
-
-  return {
-    oldSeasonal:enforceDoyMonotoneEndpoint(oldSeasonal, target),
-    seaAdjustedFloodCalendar:enforceDoyMonotoneEndpoint(seaAdjustedFloodCalendar, target),
-    priorAverageScaled:enforceDoyMonotoneEndpoint(priorAverageScaled, target),
-    recentFloodCalendar:enforceDoyMonotoneEndpoint(recentFloodCalendar, target),
-    analogYears:enforceDoyMonotoneEndpoint(analogYears, target),
-    newFloor:enforceDoyMonotoneEndpoint(newFloor, target)
-  };
-}
-
-function buildDoyAdaptiveChampionMean(year, forecastInfo, seriesByYear, historicalAverage=null){
-  const target = Math.max(0, Number(forecastInfo?.mean) || 0);
-  const candidates = buildDoyForecastCandidateMeans(year, forecastInfo, seriesByYear, historicalAverage);
-  const candidateNames = Object.keys(candidates);
-  const prior = doyPriorCompleteSeries(seriesByYear, year);
-  const training = [];
-
-  for(const yr of prior){
-    const earlier = prior.filter(p => p.y < yr.y);
-    if(earlier.length < 5) continue;
-    const info = pastAnnualForecastInfo(yr.y, HIGH_TIDES_NAVD);
-    if(!info || !Number.isFinite(Number(info.mean)) || Number(info.mean) <= 0) continue;
-    const trainingCandidates = buildDoyForecastCandidateMeans(yr.y, info, earlier);
-    training.push({ observed:yr.cum, candidates:trainingCandidates });
-  }
-
-  if(training.length < 3){
-    return {
-      mean:smoothDoyCumulativeMaximum(candidates.newFloor, target),
-      basis:"sea-level adjusted local flood calendar with historical floor",
-      championDays:{ newFloor:365 },
-      trainingYears:training.length
-    };
-  }
-
-  const championDays = {};
-  const out = new Array(365).fill(0);
-  for(let i=0;i<365;i++){
-    let bestName = "newFloor";
-    let bestSse = Infinity;
-    for(const name of candidateNames){
-      let sse = 0;
-      for(const rec of training){
-        const e = (Number(rec.candidates?.[name]?.[i]) || 0) - (Number(rec.observed?.[i]) || 0);
-        sse += e * e;
-      }
-      if(sse < bestSse || (Math.abs(sse - bestSse) < 1e-9 && name === "newFloor")){
-        bestSse = sse;
-        bestName = name;
-      }
-    }
-    championDays[bestName] = (championDays[bestName] || 0) + 1;
-    out[i] = candidates[bestName][i];
-  }
-
-  return {
-    mean:smoothDoyCumulativeMaximum(out, target),
-    basis:"adaptive gauge-day champion ensemble",
-    championDays,
-    trainingYears:training.length
-  };
-}
-
-function buildDoyHistoricalEvolutionRange(year, forecastInfo, meanSeries, seriesByYear){
-  const forecastMean = Math.max(0, Number(forecastInfo?.mean) || 0);
-  const forecastLow = Math.max(0, Number(forecastInfo?.low) || 0);
-  const forecastHigh = Math.max(forecastMean, Number(forecastInfo?.high) || forecastMean);
-  const priorYears = (seriesByYear || [])
-    .filter(yr => yr && Number(yr.y) !== Number(year) && Array.isArray(yr.cum))
-    .map(yr => ({
-      y:Number(yr.y),
-      cum:yr.cum.map(v => Math.max(0, Number(v) || 0)),
-      total:Math.max(0, Number(yr.cum?.[364]) || 0)
-    }));
-
-  const annualTotals = priorYears.map(yr => yr.total).filter(v => v > 0);
-  if(!annualTotals.length || forecastMean <= 0){
-    const weights = buildDoyAnnualDayWeights(year);
-    return {
-      low:buildDoyWeightedCumulative(forecastLow, weights),
-      high:buildDoyWeightedCumulative(forecastHigh, weights),
-      source:"annual range"
-    };
-  }
-
-  const low = new Array(365).fill(0);
-  const high = new Array(365).fill(0);
-  const rawLowSpread = new Array(365).fill(0);
-  const rawHighSpread = new Array(365).fill(0);
-  const annualMinus = Math.max(0, forecastMean - forecastLow);
-  const annualPlus = Math.max(0, forecastHigh - forecastMean);
-
-  for(let i=0;i<365;i++){
-    const mean = Math.max(0, Number(meanSeries?.[i]) || 0);
-    const historicProgress = priorYears
-      .filter(yr => yr.total > 0)
-      .map(yr => doyClamp01((yr.cum[i] || 0) / yr.total));
-    const progress = forecastMean > 0 ? doyClamp01(mean / forecastMean) : doyClamp01(i / 364);
-    const fastHistoricProgress = doyQuantile(historicProgress, 0.90);
-    const slowHistoricProgress = doyQuantile(historicProgress, 0.10);
-    const growthFloor = Math.sqrt(progress);
-    rawHighSpread[i] = doyClamp01(Math.max(growthFloor, fastHistoricProgress));
-    rawLowSpread[i] = doyClamp01(Math.max(growthFloor, progress + Math.max(0, progress - slowHistoricProgress)));
-  }
-
-  const highSpread = doySmoothMonotoneUnitSeries(rawHighSpread, 10);
-  const lowSpread = doySmoothMonotoneUnitSeries(rawLowSpread, 10);
-  for(let i=0;i<365;i++){
-    const mean = Math.max(0, Number(meanSeries?.[i]) || 0);
-    low[i] = Math.max(0, Math.min(mean, mean - annualMinus * lowSpread[i]));
-    high[i] = Math.min(forecastHigh, Math.max(mean, mean + annualPlus * highSpread[i]));
-  }
-  low[364] = forecastLow;
-  high[364] = forecastHigh;
-
-  return { low, high, source:"smoothed historical spread timing" };
-}
-
-
-function smoothDoyForecastRangeAnchorSeries(series, anchors){
-  const values = Array.isArray(series)
-    ? series.map(v => Math.max(0, Number(v) || 0))
-    : [];
-  if(values.length < 7) return values;
-
-  const last = values.length - 1;
-  const cleanAnchors = Array.from(new Set((anchors || [0, Math.floor(last / 2), last])
-    .map(v => Math.max(0, Math.min(last, Math.round(Number(v) || 0))))))
-    .sort((a,b)=>a-b);
-  if(cleanAnchors[0] !== 0) cleanAnchors.unshift(0);
-  if(cleanAnchors[cleanAnchors.length - 1] !== last) cleanAnchors.push(last);
-
-  const out = values.slice();
-  for(let a=0; a<cleanAnchors.length - 1; a++){
-    const start = cleanAnchors[a];
-    const end = cleanAnchors[a + 1];
-    if(end - start < 4) continue;
-    const radius = Math.min(9, Math.max(3, Math.round((end - start) / 18)));
-
-    for(let i=start + 1; i<end; i++){
-      let weighted = 0;
-      let weightTotal = 0;
-      for(let j=Math.max(start, i - radius); j<=Math.min(end, i + radius); j++){
-        const weight = radius + 1 - Math.abs(i - j);
-        weighted += values[j] * weight;
-        weightTotal += weight;
-      }
-      out[i] = weightTotal ? weighted / weightTotal : values[i];
-    }
-
-    out[start] = values[start];
-    out[end] = values[end];
-    for(let i=start + 1; i<end; i++) out[i] = Math.max(out[i], out[i - 1]);
-    for(let i=end - 1; i>start; i--) out[i] = Math.min(out[i], out[i + 1]);
-  }
-  return out;
-}
-
-function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear, historicalAverage=null){
+function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear){
   if(!forecastInfo) return null;
-  const adaptive = buildDoyAdaptiveChampionMean(year, forecastInfo, seriesByYear, historicalAverage);
-  const mean = adaptive.mean;
-  const range = buildDoyHistoricalEvolutionRange(year, forecastInfo, mean, seriesByYear);
-
-  const anchorMid = Math.floor((mean.length - 1) / 2);
-  const low = smoothDoyForecastRangeAnchorSeries(range.low, [0, anchorMid, mean.length - 1])
-    .map((v, i) => Math.max(0, Math.min(Number(mean[i]) || 0, v)));
-  const high = smoothDoyForecastRangeAnchorSeries(range.high, [0, anchorMid, mean.length - 1])
-    .map((v, i) => Math.max(Number(mean[i]) || 0, v));
-  [0, anchorMid, mean.length - 1].forEach(i => {
-    low[i] = range.low[i];
-    high[i] = range.high[i];
-  });
+  const weights = buildDoyAnnualDayWeights(year);
+  const hasSeasonalCycle = !!SEA_LEVEL_STATE?.relative?.length;
 
   return {
-    mean,
-    low,
-    high,
-    basis:adaptive.basis,
-    championDays:adaptive.championDays,
-    trainingYears:adaptive.trainingYears,
-    rangeBasis:range.source
+    mean:buildDoyWeightedCumulative(forecastInfo.mean, weights),
+    low:buildDoyWeightedCumulative(forecastInfo.low, weights),
+    high:buildDoyWeightedCumulative(forecastInfo.high, weights),
+    basis:hasSeasonalCycle ? "local seasonal cycle" : "even daily rate"
   };
 }
 
@@ -7072,27 +6679,16 @@ function formatDoyForecastTooltip(chart, idx, dataset=null){
 }
 
 function getDOYSelectableYears(years, curYear){
-  const clean = (years || []).filter(Number.isFinite).sort((a,b)=>a-b);
-  if(DOY_VIEW_MODE === "past") return clean.filter(y => y < curYear);
-  return clean;
+  return (years || []).filter(Number.isFinite).sort((a,b)=>a-b);
 }
 
 function ensureDOYSelectedRange(years, curYear){
-  const key = [DOY_VIEW_MODE, years.join("|"), curYear].join("::");
+  const key = ["years", years.join("|"), curYear].join("::");
   const selectable = getDOYSelectableYears(years, curYear);
   if(key !== DOY_YEAR_RANGE_KEY){
     DOY_YEAR_RANGE_KEY = key;
-    if(DOY_VIEW_MODE === "past"){
-      const fallback = selectable.includes(DOY_PAST_SELECTED_YEAR)
-        ? DOY_PAST_SELECTED_YEAR
-        : (selectable[selectable.length - 1] ?? null);
-      DOY_PAST_SELECTED_YEAR = fallback;
-      DOY_RANGE_START = fallback;
-      DOY_RANGE_END = fallback;
-    }else{
-      DOY_RANGE_START = selectable[0] ?? null;
-      DOY_RANGE_END = selectable[selectable.length - 1] ?? null;
-    }
+    DOY_RANGE_START = selectable[0] ?? null;
+    DOY_RANGE_END = selectable[selectable.length - 1] ?? null;
   }
   normalizeDOYSelectedRange(years, curYear);
 }
@@ -7108,17 +6704,6 @@ function normalizeDOYSelectedRange(years, curYear){
   const min = selectable[0];
   const max = selectable[selectable.length - 1];
 
-  if(DOY_VIEW_MODE === "past"){
-    let year = Number.isFinite(Number(DOY_PAST_SELECTED_YEAR))
-      ? Math.round(Number(DOY_PAST_SELECTED_YEAR))
-      : (Number.isFinite(Number(DOY_RANGE_START)) ? Math.round(Number(DOY_RANGE_START)) : max);
-    year = Math.max(min, Math.min(max, year));
-    DOY_PAST_SELECTED_YEAR = year;
-    DOY_RANGE_START = year;
-    DOY_RANGE_END = year;
-    return [year];
-  }
-
   let start = Number.isFinite(Number(DOY_RANGE_START)) ? Math.round(Number(DOY_RANGE_START)) : min;
   let end = Number.isFinite(Number(DOY_RANGE_END)) ? Math.round(Number(DOY_RANGE_END)) : max;
   start = Math.max(min, Math.min(max, start));
@@ -7126,6 +6711,7 @@ function normalizeDOYSelectedRange(years, curYear){
   if(start > end) [start, end] = [end, start];
   DOY_RANGE_START = start;
   DOY_RANGE_END = end;
+  DOY_PAST_SELECTED_YEAR = null;
   return selectable.filter(y => y >= start && y <= end);
 }
 
@@ -7135,28 +6721,27 @@ function getDOYEffectiveSelectedYears(years, curYear){
 
 function updateDOYRangeInputs(selectable){
   const disabled = !selectable?.length;
-  const isPast = DOY_VIEW_MODE === "past";
   const min = disabled ? 0 : selectable[0];
   const max = disabled ? 0 : selectable[selectable.length - 1];
   const start = disabled ? "" : DOY_RANGE_START;
   const end = disabled ? "" : DOY_RANGE_END;
   const keyCard = doyModeSeg?.closest?.(".doyKeyCard");
 
-  if(keyCard) keyCard.classList.toggle("isPastMode", isPast);
-  if(doyStartLabel) doyStartLabel.textContent = isPast ? "Year" : "Start";
+  if(keyCard) keyCard.classList.remove("isPastMode");
+  if(doyStartLabel) doyStartLabel.textContent = "Start";
   if(doyEndLabel) doyEndLabel.textContent = "End";
-  if(doyStartYear) doyStartYear.setAttribute("aria-label", isPast ? "Past forecast year" : "Start year");
-  if(doyEndField) doyEndField.classList.toggle("isHidden", isPast);
+  if(doyStartYear) doyStartYear.setAttribute("aria-label", "Start year");
+  if(doyEndField) doyEndField.classList.remove("isHidden");
 
   for(const el of [doyStartYear, doyEndYear]){
     if(!el) continue;
-    el.disabled = disabled || (isPast && el === doyEndYear);
+    el.disabled = disabled;
     el.min = String(min);
     el.max = String(max);
   }
 
   if(doyStartYear) doyStartYear.value = String(start);
-  if(doyEndYear) doyEndYear.value = String(isPast ? start : end);
+  if(doyEndYear) doyEndYear.value = String(end);
 }
 
 function renderDOYVisibleSummary(years, curYear){
@@ -7165,26 +6750,14 @@ function renderDOYVisibleSummary(years, curYear){
   const selected = normalizeDOYSelectedRange(years, curYear);
   updateDOYRangeInputs(selectable);
 
-  if(doyModeSeg){
-    doyModeSeg.querySelectorAll("[data-doy-mode]").forEach(btn=>{
-      btn.classList.toggle("isActive", btn.dataset.doyMode === DOY_VIEW_MODE);
-    });
-  }
-
   if(!selected.length){
     doyVisibleBadge.textContent = "None";
-    if(doyRangeNote) doyRangeNote.textContent = DOY_VIEW_MODE === "past" ? "No previous full years." : "No years available.";
+    if(doyRangeNote) doyRangeNote.textContent = "No years available.";
     return;
   }
 
   const start = selected[0];
   const end = selected[selected.length - 1];
-  if(DOY_VIEW_MODE === "past"){
-    doyVisibleBadge.textContent = String(start);
-    if(doyRangeNote) doyRangeNote.textContent = `Forecast vs. observed for ${start}`;
-    return;
-  }
-
   doyVisibleBadge.textContent = start === end ? String(start) : `${start}–${end}`;
   if(doyRangeNote){
     doyRangeNote.textContent = `${selected.length} year${selected.length === 1 ? "" : "s"} shown`;
@@ -7204,16 +6777,6 @@ function setDOYRange(start, end, source){
   const min = selectable[0];
   const max = selectable[selectable.length - 1];
 
-  if(DOY_VIEW_MODE === "past"){
-    let nextYear = Math.max(min, Math.min(max, Math.round(Number(start))));
-    if(!Number.isFinite(nextYear)) nextYear = max;
-    DOY_PAST_SELECTED_YEAR = nextYear;
-    DOY_RANGE_START = nextYear;
-    DOY_RANGE_END = nextYear;
-    renderDOYCumPanel();
-    return;
-  }
-
   let nextStart = Math.max(min, Math.min(max, Math.round(Number(start))));
   let nextEnd = Math.max(min, Math.min(max, Math.round(Number(end))));
   if(!Number.isFinite(nextStart)) nextStart = min;
@@ -7225,34 +6788,15 @@ function setDOYRange(start, end, source){
   }
   DOY_RANGE_START = nextStart;
   DOY_RANGE_END = nextEnd;
+  DOY_PAST_SELECTED_YEAR = null;
   renderDOYCumPanel();
 }
 
 function hookDOYControls(){
-  if(doyModeSeg){
-    doyModeSeg.addEventListener("click", event=>{
-      const btn = event.target?.closest?.("[data-doy-mode]");
-      if(!btn) return;
-      const mode = btn.dataset.doyMode === "past" ? "past" : "years";
-      if(DOY_VIEW_MODE === mode) return;
-      DOY_VIEW_MODE = mode;
-      DOY_YEAR_RANGE_KEY = "";
-      if(mode === "past"){
-        DOY_ANNUAL_FORECAST_ENABLED = true;
-        renderForecastToggle(doyForecastToggle, DOY_ANNUAL_FORECAST_ENABLED);
-      }
-      renderDOYCumPanel();
-    });
-  }
-
   const handleRangeInput = (source, requireComplete=false) => {
     const sourceEl = source === "endInput" ? doyEndYear : doyStartYear;
     const sourceValue = String(sourceEl?.value || "").trim();
     if(requireComplete && sourceValue.length < 4) return;
-    if(DOY_VIEW_MODE === "past"){
-      setDOYRange(doyStartYear?.value, doyStartYear?.value, "year");
-      return;
-    }
     const start = doyStartYear?.value;
     const end = doyEndYear?.value;
     setDOYRange(start, end, source.startsWith("start") ? "start" : "end");
@@ -7418,7 +6962,7 @@ function renderDOYCumPanel(){
   const todayIdx = calIndex365(CUR_Y, nowParts.m, nowParts.d);
   const ytd = buildYTDSeriesFromEvents(HIGH_TIDES_NAVD) || emptyCurrentYTDSeries();
   const controlYears = years.includes(CUR_Y) ? years : [...years, CUR_Y].sort((a,b)=>a-b);
-  const isPastMode = DOY_VIEW_MODE === "past";
+  const isPastMode = false;
   DOY_CONTROL_YEARS = controlYears;
   ensureDOYSelectedRange(controlYears, CUR_Y);
   const selectedYears = getDOYEffectiveSelectedYears(controlYears, CUR_Y);
@@ -7571,7 +7115,7 @@ function renderDOYCumPanel(){
           data:seasonalForecast?.mean || new Array(365).fill(null),
           _kind:"pastForecast",
           _forecastBasis:seasonalForecast?.basis || "local seasonal cycle",
-          _forecastRangeBasis:seasonalForecast?.rangeBasis || "historical year evolution",
+          _forecastRangeBasis:seasonalForecast?.rangeBasis || "endpoint range scaled by seasonal cycle",
           _forecastMean:forecastInfo.mean,
           _forecastLow:forecastInfo.low,
           _forecastHigh:forecastInfo.high,
@@ -7596,7 +7140,7 @@ function renderDOYCumPanel(){
   }else{
     const forecastInfo = DOY_ANNUAL_FORECAST_ENABLED ? (currentAnnualForecastInfo(CUR_Y) || seasonalHistoricForecastInfo(CUR_Y, avg, min, max)) : null;
     if(forecastInfo && Number.isFinite(todayIdx)){
-      const seasonalForecast = buildDoySeasonalForecastPath(CUR_Y, forecastInfo, seriesByYear, avg);
+      const seasonalForecast = buildDoySeasonalForecastPath(CUR_Y, forecastInfo, seriesByYear);
 
       forecastDatasets.push(
         {
@@ -7638,7 +7182,7 @@ function renderDOYCumPanel(){
           data:seasonalForecast?.mean || new Array(365).fill(null),
           _kind:"seasonalForecast",
           _forecastBasis:seasonalForecast?.basis || "local seasonal cycle",
-          _forecastRangeBasis:seasonalForecast?.rangeBasis || "historical year evolution",
+          _forecastRangeBasis:seasonalForecast?.rangeBasis || "endpoint range scaled by seasonal cycle",
           _forecastMean:forecastInfo.mean,
           _forecastLow:forecastInfo.low,
           _forecastHigh:forecastInfo.high,
@@ -7663,7 +7207,7 @@ function renderDOYCumPanel(){
     }
   }
 
-  const baseDatasets = isPastMode ? [] : [dsRangeFloor, dsRange, dsAvg];
+  const baseDatasets = [dsRangeFloor, dsRange, dsAvg];
   const data = {
     labels,
     datasets: [...baseDatasets, ...forecastDatasets, ...yearDatasets]
@@ -8895,7 +8439,7 @@ setInterval(async ()=>{
   const helpItems = [
     ["Live conditions", "Live conditions", "This shows the latest water level, today's high and low, and whether the next few days could reach flood levels."],
     ["Observations", "Observations and forecast", "The solid line is measured water. The forecast line shows what water levels may do over the next few days."],
-    ["Flooding throughout the year", "Flooding throughout the year", "Each line counts floods as the year goes on. Past forecasts show what the forecast would have looked like using only earlier data."],
+    ["Flooding throughout the year", "Flooding throughout the year", "Each line counts floods as the year goes on."],
     ["Flooding over the years", "Flooding over the years", "This compares yearly flood counts so you can see whether flooding is becoming more common."],
     ["Sea Level Trends", "Sea level trend", "This shows the long-term water-level pattern at the nearest reliable tide station."],
     ["Average number of floods per month", "Average floods by month", "This shows which months usually have more coastal flooding in the historic record."],
