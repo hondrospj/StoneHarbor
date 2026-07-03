@@ -6488,16 +6488,171 @@ function buildDoyWeightedCumulative(targetValue, weights){
   return out;
 }
 
-function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear){
+function doySeriesTotal(series){
+  return Math.max(0, Number(series?.[364]) || 0);
+}
+
+function enforceDoyCumulativeEndpoint(series, endpoint){
+  const target = Math.max(0, Number(endpoint) || 0);
+  const out = Array.isArray(series) ? series.map(v => Math.max(0, Number(v) || 0)) : new Array(365).fill(0);
+  while(out.length < 365) out.push(out.length ? out[out.length - 1] : 0);
+
+  let last = 0;
+  for(let i=0;i<365;i++){
+    last = Math.max(last, Math.min(target, out[i]));
+    out[i] = last;
+  }
+  out[364] = target;
+  return out.slice(0, 365);
+}
+
+function smoothDoyCumulativeSeries(series, endpoint, radius=18, passes=2){
+  const target = Math.max(0, Number(endpoint) || 0);
+  const base = enforceDoyCumulativeEndpoint(series, target);
+  if(target <= 0) return base;
+
+  let inc = base.map((v, i)=> i === 0 ? Math.max(0, Number(v) || 0) : Math.max(0, (Number(v) || 0) - (Number(base[i - 1]) || 0)));
+  const smoothOnce = values => values.map((_, i)=>{
+    let sum = 0;
+    let weight = 0;
+    for(let j=Math.max(0, i - radius); j<=Math.min(364, i + radius); j++){
+      const w = radius + 1 - Math.abs(i - j);
+      sum += values[j] * w;
+      weight += w;
+    }
+    return weight ? sum / weight : values[i];
+  });
+
+  for(let pass=0; pass<passes; pass++) inc = smoothOnce(inc);
+  inc = inc.map(v => Math.max(0, Number(v) || 0));
+  const incTotal = inc.reduce((sum, v)=>sum + v, 0);
+  if(incTotal <= 0) return base;
+
+  const out = new Array(365).fill(0);
+  let run = 0;
+  for(let i=0;i<365;i++){
+    run += target * (inc[i] / incTotal);
+    out[i] = run;
+  }
+  return enforceDoyCumulativeEndpoint(out, target);
+}
+
+function buildDoyAverageSeriesFromYearSeries(seriesByYear, targetYear){
+  const target = Number(targetYear);
+  const usable = (seriesByYear || [])
+    .filter(yr => yr && Array.isArray(yr.cum) && (!Number.isFinite(target) || Number(yr.y) < target) && doySeriesTotal(yr.cum) > 0);
+  if(!usable.length) return null;
+
+  const avg = new Array(365).fill(0);
+  for(const yr of usable){
+    for(let i=0;i<365;i++) avg[i] += Math.max(0, Number(yr.cum?.[i]) || 0);
+  }
+  for(let i=0;i<365;i++) avg[i] /= usable.length;
+  return avg;
+}
+
+function doyLateYearBlend(idx){
+  const t = doyClamp01((idx - 210) / 154);
+  return t * t * (3 - 2 * t);
+}
+
+function buildDoyAnchoredForecastMean(targetValue, weights, historicalAverage){
+  const target = Math.max(0, Number(targetValue) || 0);
+  const seasonal = buildDoyWeightedCumulative(target, weights);
+  const histEnd = doySeriesTotal(historicalAverage);
+  if(target <= 0 || histEnd <= 0) return smoothDoyCumulativeSeries(seasonal, target);
+
+  const endpointRatio = target / histEnd;
+  const earlyRatio = endpointRatio >= 1 ? 1.015 : endpointRatio;
+  const anchored = seasonal.map((v, i)=>{
+    const hist = Math.max(0, Number(historicalAverage?.[i]) || 0);
+    const scale = earlyRatio + (endpointRatio - earlyRatio) * doyLateYearBlend(i);
+    const floor = hist * scale;
+    return Math.max(Number(v) || 0, floor);
+  });
+
+  let mean = smoothDoyCumulativeSeries(anchored, target, 18, 2);
+  if(endpointRatio >= 1){
+    mean = mean.map((v, i)=>{
+      const hist = Math.max(0, Number(historicalAverage?.[i]) || 0);
+      const floor = hist * (1.005 + 0.01 * (1 - doyLateYearBlend(i)));
+      return Math.max(Number(v) || 0, floor);
+    });
+  }
+  return enforceDoyCumulativeEndpoint(mean, target);
+}
+
+function buildDoyHistoricalTimingEnvelope(seriesByYear, targetYear, endpoint){
+  const target = Math.max(0, Number(endpoint) || 0);
+  const year = Number(targetYear);
+  const usable = (seriesByYear || [])
+    .filter(yr => yr && Array.isArray(yr.cum) && (!Number.isFinite(year) || Number(yr.y) < year) && doySeriesTotal(yr.cum) > 0)
+    .map(yr => {
+      const total = doySeriesTotal(yr.cum);
+      return yr.cum.map(v => Math.max(0, Number(v) || 0) * target / total);
+    });
+  if(target <= 0 || usable.length < 3) return null;
+
+  const low = new Array(365).fill(0);
+  const high = new Array(365).fill(0);
+  for(let i=0;i<365;i++){
+    const vals = usable.map(series => Number(series[i]) || 0);
+    low[i] = doyQuantile(vals, 0.10);
+    high[i] = doyQuantile(vals, 0.90);
+  }
+  return {
+    low:smoothDoyCumulativeSeries(low, target, 14, 1),
+    high:smoothDoyCumulativeSeries(high, target, 14, 1)
+  };
+}
+
+function buildDoyForecastRange(year, forecastInfo, mean, weights, seriesByYear, historicalAverage){
+  const target = Math.max(0, Number(forecastInfo?.mean) || 0);
+  const lowEnd = Math.max(0, Number(forecastInfo?.low) || 0);
+  const highEnd = Math.max(target, Number(forecastInfo?.high) || target);
+  const lowBase = buildDoyAnchoredForecastMean(lowEnd, weights, historicalAverage);
+  const highBase = buildDoyAnchoredForecastMean(highEnd, weights, historicalAverage);
+  const envelope = buildDoyHistoricalTimingEnvelope(seriesByYear, year, target);
+
+  let low = lowBase.slice();
+  let high = highBase.slice();
+  if(envelope){
+    for(let i=0;i<365;i++){
+      const m = Math.max(0, Number(mean?.[i]) || 0);
+      const slow = Math.max(0, Number(envelope.low?.[i]) || 0);
+      const fast = Math.max(m, Number(envelope.high?.[i]) || m);
+      const timingLow = Math.max(0, m - Math.max(0, m - slow) * 1.18);
+      const timingHigh = m + Math.max(0, fast - m) * 1.18;
+      low[i] = Math.min(low[i], timingLow);
+      high[i] = Math.max(high[i], timingHigh);
+    }
+  }
+
+  low = smoothDoyCumulativeSeries(low, lowEnd, 20, 2)
+    .map((v, i)=>Math.max(0, Math.min(Number(mean?.[i]) || 0, v)));
+  high = smoothDoyCumulativeSeries(high, highEnd, 20, 2)
+    .map((v, i)=>Math.max(Number(mean?.[i]) || 0, v));
+  low[364] = lowEnd;
+  high[364] = highEnd;
+  return { low, high };
+}
+
+function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear, historicalAverage=null){
   if(!forecastInfo) return null;
   const weights = buildDoyAnnualDayWeights(year);
   const hasSeasonalCycle = !!SEA_LEVEL_STATE?.relative?.length;
+  const avgSeries = Array.isArray(historicalAverage)
+    ? historicalAverage
+    : buildDoyAverageSeriesFromYearSeries(seriesByYear, year);
+  const mean = buildDoyAnchoredForecastMean(forecastInfo.mean, weights, avgSeries);
+  const range = buildDoyForecastRange(year, forecastInfo, mean, weights, seriesByYear, avgSeries);
 
   return {
-    mean:buildDoyWeightedCumulative(forecastInfo.mean, weights),
-    low:buildDoyWeightedCumulative(forecastInfo.low, weights),
-    high:buildDoyWeightedCumulative(forecastInfo.high, weights),
-    basis:hasSeasonalCycle ? "local seasonal cycle" : "even daily rate"
+    mean,
+    low:range.low,
+    high:range.high,
+    basis:hasSeasonalCycle ? "historical-average anchored local seasonal cycle" : "historical-average anchored even daily rate",
+    rangeBasis:"annual endpoint range plus historical timing spread"
   };
 }
 
@@ -7082,7 +7237,7 @@ function renderDOYCumPanel(){
           _legendHidden:true,
           _kind:"seasonalForecastRangeLow",
           borderWidth:0,
-          tension:0.24,
+          tension:0.34,
           borderColor:"rgba(251,191,36,0)",
           backgroundColor:"rgba(251,191,36,0)",
           pointRadius:0,
@@ -7097,7 +7252,7 @@ function renderDOYCumPanel(){
           data:seasonalForecast?.high || new Array(365).fill(null),
           _kind:"seasonalForecastRangeHigh",
           borderWidth:0,
-          tension:0.24,
+          tension:0.34,
           borderColor:"rgba(251,191,36,0)",
           backgroundColor:forecastFill,
           pointBackgroundColor:forecastFill,
@@ -7123,7 +7278,7 @@ function renderDOYCumPanel(){
           _trainingLabel:forecastInfo.trainingLabel,
           _year:year,
           borderWidth:2.8,
-          tension:0.24,
+          tension:0.34,
           borderDash:[7,5],
           borderColor:forecastYellow,
           backgroundColor:forecastYellow,
@@ -7140,7 +7295,7 @@ function renderDOYCumPanel(){
   }else{
     const forecastInfo = DOY_ANNUAL_FORECAST_ENABLED ? (currentAnnualForecastInfo(CUR_Y) || seasonalHistoricForecastInfo(CUR_Y, avg, min, max)) : null;
     if(forecastInfo && Number.isFinite(todayIdx)){
-      const seasonalForecast = buildDoySeasonalForecastPath(CUR_Y, forecastInfo, seriesByYear);
+      const seasonalForecast = buildDoySeasonalForecastPath(CUR_Y, forecastInfo, seriesByYear, avg);
 
       forecastDatasets.push(
         {
@@ -7149,7 +7304,7 @@ function renderDOYCumPanel(){
           _legendHidden:true,
           _kind:"seasonalForecastRangeLow",
           borderWidth:0,
-          tension:0.24,
+          tension:0.34,
           borderColor:"rgba(251,191,36,0)",
           backgroundColor:"rgba(251,191,36,0)",
           pointRadius:0,
@@ -7164,7 +7319,7 @@ function renderDOYCumPanel(){
           data:seasonalForecast?.high || new Array(365).fill(null),
           _kind:"seasonalForecastRangeHigh",
           borderWidth:0,
-          tension:0.24,
+          tension:0.34,
           borderColor:"rgba(251,191,36,0)",
           backgroundColor:forecastFill,
           pointBackgroundColor:forecastFill,
@@ -7191,7 +7346,7 @@ function renderDOYCumPanel(){
           _forecastYear:forecastInfo.year,
           _forecastSourceYear:forecastInfo.sourceYear,
           borderWidth:2.8,
-          tension:0.24,
+          tension:0.34,
           borderDash:[7,5],
           borderColor:forecastYellow,
           backgroundColor:forecastYellow,
