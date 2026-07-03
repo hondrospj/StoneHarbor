@@ -2077,7 +2077,7 @@ a.brand *{
 
     @media(max-width:640px){
       .shorelyChartLegend{
-        justify-content:flex-start;
+        justify-content:center;
         gap:7px 9px;
         font-size:12px;
         margin:8px 0 2px;
@@ -7390,6 +7390,7 @@ function renderDOYCumPanel(){
     },
     plugins:{
       legend:{
+        display:false,
         position:"bottom",
         labels:{
           color:"rgba(234,240,255,.88)",
@@ -7516,9 +7517,15 @@ function renderDOYCumPanel(){
   if(doyCumChart){
     doyCumChart.data = data;
     doyCumChart.options = options;
+    if(window.shorelyInstallChartLegend){
+      window.shorelyInstallChartLegend(doyCumChart);
+    }
     doyCumChart.update("none");
   }else{
     doyCumChart = new Chart(canvas.getContext("2d"), { type:"line", data, options });
+    if(window.shorelyInstallChartLegend){
+      window.shorelyInstallChartLegend(doyCumChart);
+    }
   }
   attachChartZoom(doyCumChart);
 }
