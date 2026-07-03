@@ -6089,6 +6089,7 @@ function renderSeaLevelChart(){
     interaction:{mode:"nearest", intersect:false},
     plugins:{
       legend:{
+        display:false,
         position:"bottom",
         labels:{
           color:"rgba(234,240,255,.88)",
@@ -6139,6 +6140,9 @@ function renderSeaLevelChart(){
   if(!canvas) return;
   if(seaLevelChart) seaLevelChart.destroy();
   seaLevelChart = new Chart(canvas.getContext("2d"), { type:"line", data, options });
+  if(window.shorelyInstallChartLegend){
+    window.shorelyInstallChartLegend(seaLevelChart);
+  }
   attachChartZoom(seaLevelChart);
   renderSeaLevelStats(state);
 }
@@ -8889,6 +8893,8 @@ setInterval(async ()=>{
       installHtmlLegend(chart);
     }
   }
+
+  window.shorelyInstallChartLegend = installHtmlLegend;
 
   function boot(){
     installHelp();
