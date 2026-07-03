@@ -6429,7 +6429,7 @@ function doySmoothMonotoneUnitSeries(values, radius=10){
 }
 
 function doyInterpolatedSeasonalOffset(year, idx){
-  const cycle = typeof seaLevelSeasonalCycleByMonth === "function" ? seaLevelSeasonalCycleByMonth() : null;
+  const cycle = typeof seaLevelSeasonalCycleByMonthForForecastYear === "function" ? seaLevelSeasonalCycleByMonthForForecastYear(year) : (typeof seaLevelSeasonalCycleByMonth === "function" ? seaLevelSeasonalCycleByMonth() : null);
   if(!Array.isArray(cycle) || cycle.length < 12 || !cycle.some(v => Number.isFinite(Number(v)))){
     const offset = Number(seasonalOffsetForISO(dateFromDoyIndex365(year, idx).toISOString()));
     return Number.isFinite(offset) ? offset : 0;
@@ -6453,6 +6453,40 @@ function doyInterpolatedSeasonalOffset(year, idx){
   return mix(current, Number(cycle[(month + 1) % 12]) || 0, frac - 0.5);
 }
 
+function seaLevelSeasonalCycleByMonthForForecastYear(year){
+  const state = SEA_LEVEL_STATE;
+  if(!state?.relative?.length) return seaLevelSeasonalCycleByMonth();
+  const targetYear = Number(year);
+  const training = state.relative.filter(r => {
+    const y = Number(String(r?.month || "").slice(0, 4));
+    return Number.isFinite(y) && (!Number.isFinite(targetYear) || y < targetYear);
+  });
+  if(training.length < 24) return seaLevelSeasonalCycleByMonth();
+
+  const out = new Array(12).fill(0);
+  const counts = new Array(12).fill(0);
+  const regression = typeof seaLevelRegression === "function" ? seaLevelRegression(training) : state.regression;
+
+  for(const r of training){
+    const monthKey = String(r.month || "").slice(0, 7);
+    const m = Number(monthKey.slice(5, 7));
+    if(!Number.isFinite(m) || m < 1 || m > 12) continue;
+    let v = Number(r.relFt);
+    if(regression && typeof decimalYearFromMonth === "function"){
+      const x = decimalYearFromMonth(monthKey);
+      v -= regression.intercept + regression.slope * x;
+    }
+    if(Number.isFinite(v)){
+      out[m - 1] += v;
+      counts[m - 1] += 1;
+    }
+  }
+
+  for(let i=0;i<12;i++) out[i] = counts[i] ? out[i] / counts[i] : 0;
+  const mean = out.reduce((s,v)=>s+v,0) / 12;
+  return out.map(v => v - mean);
+}
+
 function doySeasonalDayWeight(year, idx){
   const offset = doyInterpolatedSeasonalOffset(year, idx);
   if(!Number.isFinite(offset)) return 1;
@@ -6463,7 +6497,7 @@ function buildDoySeaLevelSeasonalDayWeights(year){
   return doySmoothCircularSeries(Array.from({length:365}, (_, idx)=>doySeasonalDayWeight(year, idx)), 10);
 }
 
-function buildDoySeaLevelAdjustedFloodDayWeights(year, eventsNavd){
+function buildDoySeaLevelAdjustedFloodDayWeights(year, eventsNavd, options={}){
   const targetYear = Number(year);
   const threshold = Number(THRESH?.NAVD88?.minorLow);
   if(!Number.isFinite(targetYear) || !Number.isFinite(threshold)) return null;
@@ -6471,12 +6505,14 @@ function buildDoySeaLevelAdjustedFloodDayWeights(year, eventsNavd){
   const daily = new Array(365).fill(0);
   const trainingYears = new Set();
   const trend = doyObservedTrendFtPerYear();
+  const yearWindow = Number(options?.yearWindow);
+  const minYear = Number.isFinite(yearWindow) && yearWindow > 0 ? targetYear - yearWindow : -Infinity;
 
   for(const event of (eventsNavd || [])){
     const parts = doyEventMonthDay(event);
     if(!parts || !Number.isFinite(Number(parts.y))) continue;
     const eventYear = Number(parts.y);
-    if(eventYear >= targetYear) continue;
+    if(eventYear >= targetYear || eventYear < minYear) continue;
 
     const ft = Number(event?.ft);
     const decimalYear = doyEventDecimalYear(event);
@@ -6493,7 +6529,8 @@ function buildDoySeaLevelAdjustedFloodDayWeights(year, eventsNavd){
   const adjustedFloods = daily.reduce((sum, v)=>sum + v, 0);
   if(trainingYears.size < 3 || adjustedFloods <= 0) return null;
 
-  return doySmoothCircularSeries(daily, 14);
+  const radius = Number.isFinite(Number(options?.radius)) ? Math.max(1, Math.round(Number(options.radius))) : 14;
+  return doySmoothCircularSeries(daily, radius);
 }
 
 function buildDoyAnnualDayWeights(year){
@@ -6557,6 +6594,151 @@ function buildDoyForecastMeanCumulative(targetValue, weights, historicalAverage)
   }
   mean[364] = target;
   return mean;
+}
+
+function doySeriesTotal(series){
+  return Math.max(0, Number(series?.[364]) || 0);
+}
+
+function enforceDoyMonotoneEndpoint(series, endpoint){
+  const target = Math.max(0, Number(endpoint) || 0);
+  const out = Array.isArray(series) ? series.map(v => Math.max(0, Number(v) || 0)) : new Array(365).fill(0);
+  while(out.length < 365) out.push(out.length ? out[out.length - 1] : 0);
+  let last = 0;
+  for(let i=0;i<365;i++){
+    last = Math.max(last, Math.min(target, out[i]));
+    out[i] = last;
+  }
+  out[364] = target;
+  return out.slice(0, 365);
+}
+
+function scaleDoyCumulativeToEndpoint(series, endpoint){
+  const target = Math.max(0, Number(endpoint) || 0);
+  const end = doySeriesTotal(series);
+  if(target <= 0 || end <= 0) return new Array(365).fill(0);
+  return enforceDoyMonotoneEndpoint(series.map((v, i)=> i === 364 ? target : Math.max(0, Number(v) || 0) * target / end), target);
+}
+
+function doyPriorCompleteSeries(seriesByYear, targetYear){
+  const year = Number(targetYear);
+  return (seriesByYear || [])
+    .filter(yr => yr && Number(yr.y) < year && Array.isArray(yr.cum) && doySeriesTotal(yr.cum) > 0)
+    .map(yr => ({ y:Number(yr.y), cum:yr.cum.map(v => Math.max(0, Number(v) || 0)), total:doySeriesTotal(yr.cum) }))
+    .sort((a,b)=>a.y-b.y);
+}
+
+function buildDoyPriorAverageScaledForecast(targetValue, seriesByYear, targetYear){
+  const prior = doyPriorCompleteSeries(seriesByYear, targetYear);
+  if(!prior.length) return null;
+  const avg = new Array(365).fill(0);
+  for(const yr of prior){
+    for(let i=0;i<365;i++) avg[i] += yr.cum[i];
+  }
+  for(let i=0;i<365;i++) avg[i] /= prior.length;
+  return scaleDoyCumulativeToEndpoint(avg, targetValue);
+}
+
+function buildDoyAnalogYearsForecast(targetValue, seriesByYear, targetYear){
+  const target = Math.max(0, Number(targetValue) || 0);
+  const prior = doyPriorCompleteSeries(seriesByYear, targetYear);
+  if(target <= 0 || prior.length < 3) return null;
+
+  const diffs = prior.map(yr => Math.abs(yr.total - target));
+  const spread = Math.max(3, medianNumber(diffs) || 3);
+  const firstYear = prior[0].y;
+  const lastYear = prior[prior.length - 1].y;
+  const out = new Array(365).fill(0);
+  let weightSum = 0;
+
+  for(const yr of prior){
+    const recency = 1 + Math.max(0, yr.y - firstYear) / Math.max(1, lastYear - firstYear);
+    const similarity = Math.exp(-Math.abs(yr.total - target) / spread);
+    const weight = recency * similarity;
+    const scaled = scaleDoyCumulativeToEndpoint(yr.cum, target);
+    for(let i=0;i<365;i++) out[i] += scaled[i] * weight;
+    weightSum += weight;
+  }
+
+  if(weightSum <= 0) return null;
+  for(let i=0;i<365;i++) out[i] /= weightSum;
+  return enforceDoyMonotoneEndpoint(out, target);
+}
+
+function buildDoyForecastCandidateMeans(year, forecastInfo, seriesByYear, historicalAverage=null){
+  const target = Math.max(0, Number(forecastInfo?.mean) || 0);
+  const oldWeights = buildDoySeaLevelSeasonalDayWeights(year);
+  const floodWeights = buildDoySeaLevelAdjustedFloodDayWeights(year, HIGH_TIDES_NAVD) || oldWeights;
+  const recentWeights = buildDoySeaLevelAdjustedFloodDayWeights(year, HIGH_TIDES_NAVD, { yearWindow:8 }) || floodWeights;
+  const avgSeries = Array.isArray(historicalAverage) ? historicalAverage : buildDoyAverageSeriesFromYearSeries(doyPriorCompleteSeries(seriesByYear, year));
+  const oldSeasonal = buildDoyWeightedCumulative(target, oldWeights);
+  const seaAdjustedFloodCalendar = buildDoyWeightedCumulative(target, floodWeights);
+  const recentFloodCalendar = buildDoyWeightedCumulative(target, recentWeights);
+  const priorAverageScaled = buildDoyPriorAverageScaledForecast(target, seriesByYear, year) || seaAdjustedFloodCalendar;
+  const analogYears = buildDoyAnalogYearsForecast(target, seriesByYear, year) || priorAverageScaled;
+  const newFloor = buildDoyForecastMeanCumulative(target, floodWeights, avgSeries || priorAverageScaled);
+
+  return {
+    oldSeasonal:enforceDoyMonotoneEndpoint(oldSeasonal, target),
+    seaAdjustedFloodCalendar:enforceDoyMonotoneEndpoint(seaAdjustedFloodCalendar, target),
+    priorAverageScaled:enforceDoyMonotoneEndpoint(priorAverageScaled, target),
+    recentFloodCalendar:enforceDoyMonotoneEndpoint(recentFloodCalendar, target),
+    analogYears:enforceDoyMonotoneEndpoint(analogYears, target),
+    newFloor:enforceDoyMonotoneEndpoint(newFloor, target)
+  };
+}
+
+function buildDoyAdaptiveChampionMean(year, forecastInfo, seriesByYear, historicalAverage=null){
+  const target = Math.max(0, Number(forecastInfo?.mean) || 0);
+  const candidates = buildDoyForecastCandidateMeans(year, forecastInfo, seriesByYear, historicalAverage);
+  const candidateNames = Object.keys(candidates);
+  const prior = doyPriorCompleteSeries(seriesByYear, year);
+  const training = [];
+
+  for(const yr of prior){
+    const earlier = prior.filter(p => p.y < yr.y);
+    if(earlier.length < 5) continue;
+    const info = pastAnnualForecastInfo(yr.y, HIGH_TIDES_NAVD);
+    if(!info || !Number.isFinite(Number(info.mean)) || Number(info.mean) <= 0) continue;
+    const trainingCandidates = buildDoyForecastCandidateMeans(yr.y, info, earlier);
+    training.push({ observed:yr.cum, candidates:trainingCandidates });
+  }
+
+  if(training.length < 3){
+    return {
+      mean:candidates.newFloor,
+      basis:"sea-level adjusted local flood calendar with historical floor",
+      championDays:{ newFloor:365 },
+      trainingYears:training.length
+    };
+  }
+
+  const championDays = {};
+  const out = new Array(365).fill(0);
+  for(let i=0;i<365;i++){
+    let bestName = "newFloor";
+    let bestSse = Infinity;
+    for(const name of candidateNames){
+      let sse = 0;
+      for(const rec of training){
+        const e = (Number(rec.candidates?.[name]?.[i]) || 0) - (Number(rec.observed?.[i]) || 0);
+        sse += e * e;
+      }
+      if(sse < bestSse || (Math.abs(sse - bestSse) < 1e-9 && name === "newFloor")){
+        bestSse = sse;
+        bestName = name;
+      }
+    }
+    championDays[bestName] = (championDays[bestName] || 0) + 1;
+    out[i] = candidates[bestName][i];
+  }
+
+  return {
+    mean:enforceDoyMonotoneEndpoint(out, target),
+    basis:"adaptive gauge-day champion ensemble",
+    championDays,
+    trainingYears:training.length
+  };
 }
 
 function buildDoyHistoricalEvolutionRange(year, forecastInfo, meanSeries, seriesByYear){
@@ -6656,11 +6838,8 @@ function smoothDoyForecastRangeAnchorSeries(series, anchors){
 
 function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear, historicalAverage=null){
   if(!forecastInfo) return null;
-  const weights = buildDoyAnnualDayWeights(year);
-  const hasLearnedFloodCalendar = !!buildDoySeaLevelAdjustedFloodDayWeights(year, HIGH_TIDES_NAVD);
-  const hasSeasonalCycle = !!SEA_LEVEL_STATE?.relative?.length;
-  const avgSeries = Array.isArray(historicalAverage) ? historicalAverage : buildDoyAverageSeriesFromYearSeries(seriesByYear);
-  const mean = buildDoyForecastMeanCumulative(forecastInfo.mean, weights, avgSeries);
+  const adaptive = buildDoyAdaptiveChampionMean(year, forecastInfo, seriesByYear, historicalAverage);
+  const mean = adaptive.mean;
   const range = buildDoyHistoricalEvolutionRange(year, forecastInfo, mean, seriesByYear);
 
   const anchorMid = Math.floor((mean.length - 1) / 2);
@@ -6677,7 +6856,9 @@ function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear, historic
     mean,
     low,
     high,
-    basis:hasLearnedFloodCalendar ? "sea-level adjusted local flood calendar" : (hasSeasonalCycle ? "local seasonal cycle" : "even daily rate"),
+    basis:adaptive.basis,
+    championDays:adaptive.championDays,
+    trainingYears:adaptive.trainingYears,
     rangeBasis:range.source
   };
 }
