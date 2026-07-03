@@ -6587,7 +6587,7 @@ function buildDoyForecastRange(year, forecastInfo, mean, weights, seriesByYear, 
   for(let i=0;i<365;i++){
     const m = Math.max(0, Number(mean?.[i]) || 0);
     const p = doyClamp01(seasonalProgress[i]);
-    const spreadShape = Math.min(1, 0.18 + 0.82 * Math.pow(p, 0.72));
+    const spreadShape = Math.min(1, 0.32 + 0.68 * Math.pow(p, 0.78));
     low[i] = Math.max(0, m - annualMinus * spreadShape);
     high[i] = Math.max(m, m + annualPlus * spreadShape);
   }
@@ -6616,7 +6616,7 @@ function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear, historic
     low:range.low,
     high:range.high,
     basis:hasSeasonalCycle ? "historical-average anchored local seasonal cycle" : "historical-average anchored even daily rate",
-    rangeBasis:"annual endpoint range carried by the local seasonal cycle"
+    rangeBasis:"annual endpoint range carried by the local seasonal cycle with a stronger early-year uncertainty floor"
   };
 }
 
