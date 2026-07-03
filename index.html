@@ -8734,7 +8734,32 @@ setInterval(async ()=>{
     return (typeof value === "string" && value.trim()) ? value : fallback;
   }
 
+  function doyLegendItems(chart){
+    const wanted = ["Forecast", "Current Year", "Forecast Range", "Average", "Historic Range", "Observed"];
+    return wanted
+      .map(label => {
+        const datasetIndex = (chart?.data?.datasets || []).findIndex(ds => ds && !ds._legendHidden && ds.label === label);
+        if(datasetIndex < 0) return null;
+        const dataset = chart.data.datasets[datasetIndex];
+        return {
+          text:label,
+          datasetIndex,
+          hidden:chart ? !chart.isDatasetVisible(datasetIndex) : !!dataset.hidden,
+          fillStyle:firstLegendColor(dataset.backgroundColor, firstLegendColor(dataset.borderColor, "rgba(234,240,255,.86)")),
+          strokeStyle:firstLegendColor(dataset.borderColor, firstLegendColor(dataset.backgroundColor, "rgba(234,240,255,.86)")),
+          lineDash:Array.isArray(dataset.borderDash) ? dataset.borderDash : [],
+          pointStyle:dataset.pointStyle || "line",
+          dataset
+        };
+      })
+      .filter(Boolean);
+  }
+
   function chartLegendItems(chart){
+    if(chart?.canvas?.id === "doyCumChart"){
+      return doyLegendItems(chart);
+    }
+
     const labels = chart?.options?.plugins?.legend?.labels || {};
     const isTs = typeof tsChart !== "undefined" && chart === tsChart && typeof buildTsLineLegendLabels === "function";
     const generator = Chart?.defaults?.plugins?.legend?.labels?.generateLabels;
