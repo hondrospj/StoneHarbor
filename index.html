@@ -6620,6 +6620,38 @@ function scaleDoyCumulativeToEndpoint(series, endpoint){
   return enforceDoyMonotoneEndpoint(series.map((v, i)=> i === 364 ? target : Math.max(0, Number(v) || 0) * target / end), target);
 }
 
+function smoothDoyCumulativeModerate(series, endpoint){
+  const target = Math.max(0, Number(endpoint) || 0);
+  const base = enforceDoyMonotoneEndpoint(series, target);
+  if(target <= 0) return base;
+
+  const rawInc = base.map((v, i)=> i === 0 ? Math.max(0, Number(v) || 0) : Math.max(0, (Number(v) || 0) - (Number(base[i - 1]) || 0)));
+  const radius = 5;
+  const smoothInc = rawInc.map((_, i)=>{
+    let sum = 0;
+    let weight = 0;
+    for(let j=Math.max(0, i - radius); j<=Math.min(364, i + radius); j++){
+      const w = radius + 1 - Math.abs(i - j);
+      sum += rawInc[j] * w;
+      weight += w;
+    }
+    return weight ? sum / weight : rawInc[i];
+  });
+
+  const blend = 0.45;
+  const inc = rawInc.map((v, i)=>Math.max(0, v * (1 - blend) + smoothInc[i] * blend));
+  const incTotal = inc.reduce((sum, v)=>sum + v, 0);
+  if(incTotal <= 0) return base;
+
+  const out = new Array(365).fill(0);
+  let run = 0;
+  for(let i=0;i<365;i++){
+    run += target * (inc[i] / incTotal);
+    out[i] = run;
+  }
+  return enforceDoyMonotoneEndpoint(out, target);
+}
+
 function doyPriorCompleteSeries(seriesByYear, targetYear){
   const year = Number(targetYear);
   return (seriesByYear || [])
@@ -6706,7 +6738,7 @@ function buildDoyAdaptiveChampionMean(year, forecastInfo, seriesByYear, historic
 
   if(training.length < 3){
     return {
-      mean:candidates.newFloor,
+      mean:smoothDoyCumulativeModerate(candidates.newFloor, target),
       basis:"sea-level adjusted local flood calendar with historical floor",
       championDays:{ newFloor:365 },
       trainingYears:training.length
@@ -6734,7 +6766,7 @@ function buildDoyAdaptiveChampionMean(year, forecastInfo, seriesByYear, historic
   }
 
   return {
-    mean:enforceDoyMonotoneEndpoint(out, target),
+    mean:smoothDoyCumulativeModerate(out, target),
     basis:"adaptive gauge-day champion ensemble",
     championDays,
     trainingYears:training.length
