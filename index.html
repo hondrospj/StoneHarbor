@@ -2069,22 +2069,11 @@ a.brand *{
       min-width:0;
       overflow-wrap:anywhere;
     }
-    #threshKey .shorelyThresholdKey{
-      cursor:pointer;
-      min-height:40px;
-      max-width:100%;
-      white-space:normal;
+    .doyModeBtn::before,
+    .doyModeBtn.isActive::before{
+      content:none !important;
+      display:none !important;
     }
-    #threshKey .shorelyThresholdKey .shorelyLegendCheck{margin-right:2px}
-    #threshKey .shorelyThresholdKey.isOff .shorelyLegendCheck{
-      border-color:rgba(248,113,113,.86);
-      background:rgba(248,113,113,.12);
-      color:rgba(248,113,113,.98);
-      box-shadow:0 0 0 2px rgba(248,113,113,.06);
-    }
-    #threshKey .shorelyThresholdKey.isOff .shorelyLegendCheck::before{content:"x"}
-    #threshKey .shorelyThresholdKey.isOff .chip,
-    #threshKey .shorelyThresholdKey.isOff .thNum{opacity:.48}
 
     @media(max-width:640px){
       .shorelyChartLegend{
@@ -2105,11 +2094,6 @@ a.brand *{
         font-size:15px;
       }
       .shorelyLegendSwatch.isLine{width:26px}
-      #threshKey{justify-content:flex-start}
-      #threshKey .shorelyThresholdKey{
-        min-height:42px;
-        padding:8px 10px !important;
-      }
       .historicControls{
         grid-template-columns:1fr 1fr !important;
         width:100% !important;
@@ -4018,20 +4002,14 @@ const floodBandsPlugin = {
 
 
 
-if(window.SHORELY_STAGE_BANDS_VISIBLE?.minor !== false){
 ctx.fillStyle = "rgba(251,191,36,.14)";
 ctx.fillRect(left, yModer, right - left, yMinor - yModer);
-}
 
-if(window.SHORELY_STAGE_BANDS_VISIBLE?.moderate !== false){
 ctx.fillStyle = "rgba(251,113,133,.14)";
 ctx.fillRect(left, yMajor, right - left, yModer - yMajor);
-}
 
-if(window.SHORELY_STAGE_BANDS_VISIBLE?.major !== false){
 ctx.fillStyle = "rgba(167,139,250,.14)";
 ctx.fillRect(left, chartArea.top, right - left, yMajor - chartArea.top);
-}
 
     
 
@@ -7417,7 +7395,7 @@ function renderDOYCumPanel(){
           filter:(legendItem, chartData)=>{
             const ds = chartData?.datasets?.[legendItem.datasetIndex];
             if(ds?._legendHidden) return false;
-            return ["Historic Range","Average","Current Year","Observed","Forecast","Forecast Range"].includes(ds?.label || "");
+            return ["Historic Range","Average","Current Year","Forecast","Forecast Range"].includes(ds?.label || "");
           }
         },
         onClick:(e, legendItem, legend)=>{
@@ -8886,50 +8864,6 @@ setInterval(async ()=>{
     renderHtmlLegend(chart);
   }
 
-  function installThresholdKeyCheckboxes(){
-    const key = document.getElementById("threshKey");
-    if(!key) return;
-    window.SHORELY_STAGE_BANDS_VISIBLE = window.SHORELY_STAGE_BANDS_VISIBLE || {minor:true, moderate:true, major:true};
-    const entries = [
-      {name:"minor", label:"Minor"},
-      {name:"moderate", label:"Moderate"},
-      {name:"major", label:"Major"}
-    ];
-    Array.from(key.querySelectorAll(".tag")).forEach((tag, index) => {
-      const entry = entries[index];
-      if(!entry) return;
-      tag.classList.add("shorelyThresholdKey");
-      tag.setAttribute("role", "button");
-      tag.setAttribute("tabindex", "0");
-      tag.setAttribute("aria-label", "Toggle " + entry.label + " flood band");
-      if(!tag.querySelector(":scope > .shorelyLegendCheck")){
-        const check = document.createElement("span");
-        check.className = "shorelyLegendCheck";
-        check.setAttribute("aria-hidden", "true");
-        tag.insertBefore(check, tag.firstChild);
-      }
-      const applyState = () => {
-        const visible = window.SHORELY_STAGE_BANDS_VISIBLE?.[entry.name] !== false;
-        tag.classList.toggle("isOff", !visible);
-        tag.setAttribute("aria-pressed", visible ? "true" : "false");
-      };
-      if(!tag.$shorelyThresholdClick){
-        const toggle = event => {
-          event.preventDefault();
-          window.SHORELY_STAGE_BANDS_VISIBLE[entry.name] = !(window.SHORELY_STAGE_BANDS_VISIBLE?.[entry.name] !== false);
-          applyState();
-          try{ if(typeof tsChart !== "undefined" && tsChart) tsChart.update("none"); }catch(e){}
-        };
-        tag.addEventListener("click", toggle);
-        tag.addEventListener("keydown", event => {
-          if(event.key === "Enter" || event.key === " ") toggle(event);
-        });
-        tag.$shorelyThresholdClick = true;
-      }
-      applyState();
-    });
-  }
-
   function polishChartLegends(){
     const charts = [];
     try{ if(typeof tsChart !== "undefined" && tsChart) charts.push(tsChart); }catch(e){}
@@ -8948,13 +8882,11 @@ setInterval(async ()=>{
     prefillMobileHistoricDates();
     removeMonthlyZoomHint();
     polishChartLegends();
-    installThresholdKeyCheckboxes();
     [120, 450, 1000, 2200].forEach(ms => setTimeout(() => {
       installHelp();
       prefillMobileHistoricDates();
       removeMonthlyZoomHint();
       polishChartLegends();
-      installThresholdKeyCheckboxes();
     }, ms));
   }
 
