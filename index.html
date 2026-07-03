@@ -2376,6 +2376,12 @@ a.brand *{
             </div>
             <div class="doyVisibleBadge" id="doyVisibleBadge">—</div>
           </div>
+
+          <div class="doyModeSeg" id="doyModeSeg" aria-label="Flooding throughout the year mode">
+            <button class="doyModeBtn isActive" type="button" data-doy-mode="years">Years</button>
+            <button class="doyModeBtn" type="button" data-doy-mode="past">Past forecasts</button>
+          </div>
+
           <div class="doyGradientKey" aria-label="Year color scale">
             <span>Past</span>
             <div class="doyGradientRail"></div>
@@ -6798,16 +6804,27 @@ function formatDoyForecastTooltip(chart, idx, dataset=null){
 }
 
 function getDOYSelectableYears(years, curYear){
-  return (years || []).filter(Number.isFinite).sort((a,b)=>a-b);
+  const clean = (years || []).filter(Number.isFinite).sort((a,b)=>a-b);
+  if(DOY_VIEW_MODE === "past") return clean.filter(y => y < curYear);
+  return clean;
 }
 
 function ensureDOYSelectedRange(years, curYear){
-  const key = ["years", years.join("|"), curYear].join("::");
+  const key = [DOY_VIEW_MODE, years.join("|"), curYear].join("::");
   const selectable = getDOYSelectableYears(years, curYear);
   if(key !== DOY_YEAR_RANGE_KEY){
     DOY_YEAR_RANGE_KEY = key;
-    DOY_RANGE_START = selectable[0] ?? null;
-    DOY_RANGE_END = selectable[selectable.length - 1] ?? null;
+    if(DOY_VIEW_MODE === "past"){
+      const fallback = selectable.includes(DOY_PAST_SELECTED_YEAR)
+        ? DOY_PAST_SELECTED_YEAR
+        : (selectable[selectable.length - 1] ?? null);
+      DOY_PAST_SELECTED_YEAR = fallback;
+      DOY_RANGE_START = fallback;
+      DOY_RANGE_END = fallback;
+    }else{
+      DOY_RANGE_START = selectable[0] ?? null;
+      DOY_RANGE_END = selectable[selectable.length - 1] ?? null;
+    }
   }
   normalizeDOYSelectedRange(years, curYear);
 }
@@ -6822,6 +6839,17 @@ function normalizeDOYSelectedRange(years, curYear){
   }
   const min = selectable[0];
   const max = selectable[selectable.length - 1];
+
+  if(DOY_VIEW_MODE === "past"){
+    let year = Number.isFinite(Number(DOY_PAST_SELECTED_YEAR))
+      ? Math.round(Number(DOY_PAST_SELECTED_YEAR))
+      : (Number.isFinite(Number(DOY_RANGE_START)) ? Math.round(Number(DOY_RANGE_START)) : max);
+    year = Math.max(min, Math.min(max, year));
+    DOY_PAST_SELECTED_YEAR = year;
+    DOY_RANGE_START = year;
+    DOY_RANGE_END = year;
+    return [year];
+  }
 
   let start = Number.isFinite(Number(DOY_RANGE_START)) ? Math.round(Number(DOY_RANGE_START)) : min;
   let end = Number.isFinite(Number(DOY_RANGE_END)) ? Math.round(Number(DOY_RANGE_END)) : max;
@@ -6840,27 +6868,28 @@ function getDOYEffectiveSelectedYears(years, curYear){
 
 function updateDOYRangeInputs(selectable){
   const disabled = !selectable?.length;
+  const isPast = DOY_VIEW_MODE === "past";
   const min = disabled ? 0 : selectable[0];
   const max = disabled ? 0 : selectable[selectable.length - 1];
   const start = disabled ? "" : DOY_RANGE_START;
   const end = disabled ? "" : DOY_RANGE_END;
   const keyCard = doyModeSeg?.closest?.(".doyKeyCard");
 
-  if(keyCard) keyCard.classList.remove("isPastMode");
-  if(doyStartLabel) doyStartLabel.textContent = "Start";
+  if(keyCard) keyCard.classList.toggle("isPastMode", isPast);
+  if(doyStartLabel) doyStartLabel.textContent = isPast ? "Year" : "Start";
   if(doyEndLabel) doyEndLabel.textContent = "End";
-  if(doyStartYear) doyStartYear.setAttribute("aria-label", "Start year");
-  if(doyEndField) doyEndField.classList.remove("isHidden");
+  if(doyStartYear) doyStartYear.setAttribute("aria-label", isPast ? "Past forecast year" : "Start year");
+  if(doyEndField) doyEndField.classList.toggle("isHidden", isPast);
 
   for(const el of [doyStartYear, doyEndYear]){
     if(!el) continue;
-    el.disabled = disabled;
+    el.disabled = disabled || (isPast && el === doyEndYear);
     el.min = String(min);
     el.max = String(max);
   }
 
   if(doyStartYear) doyStartYear.value = String(start);
-  if(doyEndYear) doyEndYear.value = String(end);
+  if(doyEndYear) doyEndYear.value = String(isPast ? start : end);
 }
 
 function renderDOYVisibleSummary(years, curYear){
@@ -6869,14 +6898,26 @@ function renderDOYVisibleSummary(years, curYear){
   const selected = normalizeDOYSelectedRange(years, curYear);
   updateDOYRangeInputs(selectable);
 
+  if(doyModeSeg){
+    doyModeSeg.querySelectorAll("[data-doy-mode]").forEach(btn=>{
+      btn.classList.toggle("isActive", btn.dataset.doyMode === DOY_VIEW_MODE);
+    });
+  }
+
   if(!selected.length){
     doyVisibleBadge.textContent = "None";
-    if(doyRangeNote) doyRangeNote.textContent = "No years available.";
+    if(doyRangeNote) doyRangeNote.textContent = DOY_VIEW_MODE === "past" ? "No previous full years." : "No years available.";
     return;
   }
 
   const start = selected[0];
   const end = selected[selected.length - 1];
+  if(DOY_VIEW_MODE === "past"){
+    doyVisibleBadge.textContent = String(start);
+    if(doyRangeNote) doyRangeNote.textContent = `Forecast vs. observed for ${start}`;
+    return;
+  }
+
   doyVisibleBadge.textContent = start === end ? String(start) : `${start}–${end}`;
   if(doyRangeNote){
     doyRangeNote.textContent = `${selected.length} year${selected.length === 1 ? "" : "s"} shown`;
@@ -6896,6 +6937,16 @@ function setDOYRange(start, end, source){
   const min = selectable[0];
   const max = selectable[selectable.length - 1];
 
+  if(DOY_VIEW_MODE === "past"){
+    let nextYear = Math.max(min, Math.min(max, Math.round(Number(start))));
+    if(!Number.isFinite(nextYear)) nextYear = max;
+    DOY_PAST_SELECTED_YEAR = nextYear;
+    DOY_RANGE_START = nextYear;
+    DOY_RANGE_END = nextYear;
+    renderDOYCumPanel();
+    return;
+  }
+
   let nextStart = Math.max(min, Math.min(max, Math.round(Number(start))));
   let nextEnd = Math.max(min, Math.min(max, Math.round(Number(end))));
   if(!Number.isFinite(nextStart)) nextStart = min;
@@ -6912,10 +6963,30 @@ function setDOYRange(start, end, source){
 }
 
 function hookDOYControls(){
+  if(doyModeSeg){
+    doyModeSeg.addEventListener("click", event=>{
+      const btn = event.target?.closest?.("[data-doy-mode]");
+      if(!btn) return;
+      const mode = btn.dataset.doyMode === "past" ? "past" : "years";
+      if(DOY_VIEW_MODE === mode) return;
+      DOY_VIEW_MODE = mode;
+      DOY_YEAR_RANGE_KEY = "";
+      if(mode === "past"){
+        DOY_ANNUAL_FORECAST_ENABLED = true;
+        renderForecastToggle(doyForecastToggle, DOY_ANNUAL_FORECAST_ENABLED);
+      }
+      renderDOYCumPanel();
+    });
+  }
+
   const handleRangeInput = (source, requireComplete=false) => {
     const sourceEl = source === "endInput" ? doyEndYear : doyStartYear;
     const sourceValue = String(sourceEl?.value || "").trim();
     if(requireComplete && sourceValue.length < 4) return;
+    if(DOY_VIEW_MODE === "past"){
+      setDOYRange(doyStartYear?.value, doyStartYear?.value, "year");
+      return;
+    }
     const start = doyStartYear?.value;
     const end = doyEndYear?.value;
     setDOYRange(start, end, source.startsWith("start") ? "start" : "end");
@@ -7081,7 +7152,7 @@ function renderDOYCumPanel(){
   const todayIdx = calIndex365(CUR_Y, nowParts.m, nowParts.d);
   const ytd = buildYTDSeriesFromEvents(HIGH_TIDES_NAVD) || emptyCurrentYTDSeries();
   const controlYears = years.includes(CUR_Y) ? years : [...years, CUR_Y].sort((a,b)=>a-b);
-  const isPastMode = false;
+  const isPastMode = DOY_VIEW_MODE === "past";
   DOY_CONTROL_YEARS = controlYears;
   ensureDOYSelectedRange(controlYears, CUR_Y);
   const selectedYears = getDOYEffectiveSelectedYears(controlYears, CUR_Y);
@@ -7326,7 +7397,7 @@ function renderDOYCumPanel(){
     }
   }
 
-  const baseDatasets = [dsRangeFloor, dsRange, dsAvg];
+  const baseDatasets = isPastMode ? [] : [dsRangeFloor, dsRange, dsAvg];
   const data = {
     labels,
     datasets: [...baseDatasets, ...forecastDatasets, ...yearDatasets]
