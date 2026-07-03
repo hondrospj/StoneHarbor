@@ -6454,16 +6454,8 @@ function doySeasonalDayWeight(year, idx){
   return Math.max(0.12, Math.min(4, Math.exp(offset / 0.22)));
 }
 
-function doyEarlyYearForecastTimingTaper(idx){
-  const rampEnd = 243;
-  if(idx >= rampEnd) return 1;
-  const t = Math.max(0, Math.min(1, idx / rampEnd));
-  const smooth = t * t * (3 - 2 * t);
-  return 0.35 + 0.65 * smooth;
-}
-
 function buildDoyAnnualDayWeights(year){
-  return Array.from({length:365}, (_, idx)=>doySeasonalDayWeight(year, idx) * doyEarlyYearForecastTimingTaper(idx));
+  return Array.from({length:365}, (_, idx)=>doySeasonalDayWeight(year, idx));
 }
 
 function buildDoyWeightedCumulative(targetValue, weights){
@@ -6582,55 +6574,27 @@ function buildDoyAnchoredForecastMean(targetValue, weights, historicalAverage){
   return enforceDoyCumulativeEndpoint(mean, target);
 }
 
-function buildDoyHistoricalTimingEnvelope(seriesByYear, targetYear, endpoint){
-  const target = Math.max(0, Number(endpoint) || 0);
-  const year = Number(targetYear);
-  const usable = (seriesByYear || [])
-    .filter(yr => yr && Array.isArray(yr.cum) && (!Number.isFinite(year) || Number(yr.y) < year) && doySeriesTotal(yr.cum) > 0)
-    .map(yr => {
-      const total = doySeriesTotal(yr.cum);
-      return yr.cum.map(v => Math.max(0, Number(v) || 0) * target / total);
-    });
-  if(target <= 0 || usable.length < 3) return null;
-
-  const low = new Array(365).fill(0);
-  const high = new Array(365).fill(0);
-  for(let i=0;i<365;i++){
-    const vals = usable.map(series => Number(series[i]) || 0);
-    low[i] = doyQuantile(vals, 0.10);
-    high[i] = doyQuantile(vals, 0.90);
-  }
-  return {
-    low:smoothDoyCumulativeSeries(low, target, 14, 1),
-    high:smoothDoyCumulativeSeries(high, target, 14, 1)
-  };
-}
-
 function buildDoyForecastRange(year, forecastInfo, mean, weights, seriesByYear, historicalAverage){
   const target = Math.max(0, Number(forecastInfo?.mean) || 0);
   const lowEnd = Math.max(0, Number(forecastInfo?.low) || 0);
   const highEnd = Math.max(target, Number(forecastInfo?.high) || target);
-  const lowBase = buildDoyAnchoredForecastMean(lowEnd, weights, historicalAverage);
-  const highBase = buildDoyAnchoredForecastMean(highEnd, weights, historicalAverage);
-  const envelope = buildDoyHistoricalTimingEnvelope(seriesByYear, year, target);
+  const seasonalProgress = buildDoyWeightedCumulative(1, weights).map(v => doyClamp01(v));
+  const annualMinus = Math.max(0, target - lowEnd);
+  const annualPlus = Math.max(0, highEnd - target);
 
-  let low = lowBase.slice();
-  let high = highBase.slice();
-  if(envelope){
-    for(let i=0;i<365;i++){
-      const m = Math.max(0, Number(mean?.[i]) || 0);
-      const slow = Math.max(0, Number(envelope.low?.[i]) || 0);
-      const fast = Math.max(m, Number(envelope.high?.[i]) || m);
-      const timingLow = Math.max(0, m - Math.max(0, m - slow) * 1.18);
-      const timingHigh = m + Math.max(0, fast - m) * 1.18;
-      low[i] = Math.min(low[i], timingLow);
-      high[i] = Math.max(high[i], timingHigh);
-    }
+  let low = new Array(365).fill(0);
+  let high = new Array(365).fill(0);
+  for(let i=0;i<365;i++){
+    const m = Math.max(0, Number(mean?.[i]) || 0);
+    const p = doyClamp01(seasonalProgress[i]);
+    const spreadShape = Math.min(1, 0.18 + 0.82 * Math.pow(p, 0.72));
+    low[i] = Math.max(0, m - annualMinus * spreadShape);
+    high[i] = Math.max(m, m + annualPlus * spreadShape);
   }
 
-  low = smoothDoyCumulativeSeries(low, lowEnd, 20, 2)
+  low = smoothDoyCumulativeSeries(low, lowEnd, 14, 2)
     .map((v, i)=>Math.max(0, Math.min(Number(mean?.[i]) || 0, v)));
-  high = smoothDoyCumulativeSeries(high, highEnd, 20, 2)
+  high = smoothDoyCumulativeSeries(high, highEnd, 14, 2)
     .map((v, i)=>Math.max(Number(mean?.[i]) || 0, v));
   low[364] = lowEnd;
   high[364] = highEnd;
@@ -6652,7 +6616,7 @@ function buildDoySeasonalForecastPath(year, forecastInfo, seriesByYear, historic
     low:range.low,
     high:range.high,
     basis:hasSeasonalCycle ? "historical-average anchored local seasonal cycle" : "historical-average anchored even daily rate",
-    rangeBasis:"annual endpoint range plus historical timing spread"
+    rangeBasis:"annual endpoint range carried by the local seasonal cycle"
   };
 }
 
