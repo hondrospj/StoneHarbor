@@ -3174,6 +3174,13 @@ function minPoint(arr){ return arr.reduce((a,b)=>b.ft<a.ft?b:a, arr[0]); }
   return { minor:T.minorLow, moderate:T.moderateLow, major:T.majorLow };
 }
 
+function nearbyThresholdsForRange(thresholds, dataMin, dataMax){
+  if(!Number.isFinite(dataMin) || !Number.isFinite(dataMax)) return thresholds;
+  const low = dataMin - 0.5;
+  const high = dataMax + 0.75;
+  return thresholds.filter(v => Number.isFinite(v) && v >= low && v <= high);
+}
+
       
 
 
@@ -5785,11 +5792,18 @@ function updateTsChartFromState(){
   tsChart.options.scales.y.title.text = unitText();
 
   const {minor, moderate, major} = thresholdsDisplay();
-  const ys = [
+  const plottedYs = [
     ...obsFiltered,
     ...(TS_ANNUAL_FORECAST_ENABLED ? predValsDisplay : [])
   ].filter(v => Number.isFinite(v));
-  ys.push(minor, moderate, major);
+  const thresholds = [minor, moderate, major].filter(v => Number.isFinite(v));
+  const dataMin = plottedYs.length ? Math.min(...plottedYs) : Math.min(...thresholds);
+  const dataMax = plottedYs.length ? Math.max(...plottedYs) : Math.max(...thresholds);
+  let ys = [
+    ...plottedYs,
+    ...nearbyThresholdsForRange(thresholds, dataMin, dataMax)
+  ];
+  if(!ys.length) ys = thresholds;
 
   let yMin = Math.min(...ys);
   let yMax = Math.max(...ys);
