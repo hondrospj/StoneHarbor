@@ -2690,7 +2690,6 @@ function ensureGaugeMap(){
     const popup = `
       <div style="font-weight:900;margin-bottom:6px;">${g.name}</div>
       <div style="opacity:.85;margin-bottom:8px;">${g.agency} · ${g.id || ""}</div>
-      ${g.url ? `<a href="${g.url}" target="_blank" rel="noopener" style="text-decoration:underline;">Open station</a>` : ""}
     `;
 
     m.bindPopup(popup);
