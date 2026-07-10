@@ -3175,10 +3175,16 @@ function minPoint(arr){ return arr.reduce((a,b)=>b.ft<a.ft?b:a, arr[0]); }
 }
 
 function nearbyThresholdsForRange(thresholds, dataMin, dataMax){
-  if(!Number.isFinite(dataMin) || !Number.isFinite(dataMax)) return thresholds;
+  const finite = thresholds.filter(v => Number.isFinite(v)).sort((a, b) => a - b);
+  if(!Number.isFinite(dataMin) || !Number.isFinite(dataMax)) return finite;
   const low = dataMin - 0.5;
   const high = dataMax + 0.75;
-  return thresholds.filter(v => Number.isFinite(v) && v >= low && v <= high);
+  const nearby = finite.filter(v => v >= low && v <= high);
+  if(nearby.length){
+    const nextUpper = finite.find(v => v > high);
+    if(Number.isFinite(nextUpper)) nearby.push(nextUpper);
+  }
+  return [...new Set(nearby)].sort((a, b) => a - b);
 }
 
       
