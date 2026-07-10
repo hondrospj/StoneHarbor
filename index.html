@@ -3549,40 +3549,20 @@ async function fetchNOAAHourlyPredictions({ station, beginYMD, endYMD, datum="ML
     .sort((a,b)=> new Date(a.t) - new Date(b.t));
 }
 
-async function fetchPETSSForecast_MLLW({ hours = 48 } = {}){
-  try{
-    const { url, json } = await fetchFirstOkJson(PETSS_JSON_CANDIDATES);
+async function fetchPETSSForecast_MLLW(){
+  const { url, json } = await fetchFirstOkJson(PETSS_JSON_CANDIDATES);
 
-    const issuedTime =
-      json?.model_time_utc ||
-      json?.issued_utc ||
-      json?.fetched_utc ||
-      json?.issuedTime ||
-      null;
+  const issuedTime =
+    json?.model_time_utc ||
+    json?.issued_utc ||
+    json?.fetched_utc ||
+    json?.issuedTime ||
+    null;
 
-    const ptsAll = normalizePetssJsonToPoints(json);
-    if(!ptsAll.length) throw new Error("PETSS JSON loaded but contained no usable forecast points");
+  const ptsAll = normalizePetssJsonToPoints(json);
+  if(!ptsAll.length) throw new Error("PETSS JSON loaded but contained no usable forecast points");
 
-    return { issuedTime, points: ptsAll, urlUsed: url };
-  }catch(localErr){
-    console.warn("PETSS/local forecast unavailable; using NOAA hourly tide prediction fallback:", localErr);
-
-    const start = new Date();
-    const end = new Date(start.getTime() + Math.max(1, hours) * 3600 * 1000);
-    const points = await fetchNOAAHourlyPredictions({
-      station: COOPS_STATION,
-      beginYMD: ymdCompactFromISO(start.toISOString()),
-      endYMD: ymdCompactFromISO(end.toISOString()),
-      datum: "MLLW"
-    });
-
-    return {
-      issuedTime:null,
-      points,
-      urlUsed:"NOAA CO-OPS hourly predictions fallback",
-      sourceNote:"PETSS/local JSON unavailable; displayed astronomical NOAA tide prediction fallback."
-    };
-  }
+  return { issuedTime, points: ptsAll, urlUsed: url };
 }
 
 
