@@ -4011,6 +4011,57 @@ ctx.fillRect(left, chartArea.top, right - left, yMajor - chartArea.top);
 
 Chart.register(floodBandsPlugin);
 
+
+const tsFloodLineOverlayPlugin = {
+  id: "tsFloodLineOverlay",
+  afterDatasetsDraw(chart) {
+    if (chart?.canvas?.id !== "tsChart") return;
+    const { ctx, chartArea, scales } = chart;
+    const y = scales?.y;
+    if (!ctx || !chartArea || !y) return;
+    const T = THRESH[DISPLAY_DATUM];
+    if (!T) return;
+    const bands = [
+      { color:"rgba(251,191,36,.95)", top:y.getPixelForValue(T.moderateLow), bottom:y.getPixelForValue(T.minorLow) },
+      { color:"rgba(251,113,133,.95)", top:y.getPixelForValue(T.majorLow), bottom:y.getPixelForValue(T.moderateLow) },
+      { color:"rgba(167,139,250,.95)", top:chartArea.top, bottom:y.getPixelForValue(T.majorLow) }
+    ];
+
+    for(let datasetIndex=0; datasetIndex<chart.data.datasets.length; datasetIndex++){
+      const ds = chart.data.datasets[datasetIndex];
+      const label = ds?.label === "Observed highs (cached)" ? "Observed" : ds?.label;
+      if(label !== "Observed" && label !== "Forecast") continue;
+      if(ds?.showLine === false) continue;
+      const meta = chart.getDatasetMeta(datasetIndex);
+      if(!meta || meta.hidden || !meta.dataset?.draw) continue;
+      const lineOptions = meta.dataset.options || {};
+      const originalBorder = lineOptions.borderColor;
+      const originalBackground = lineOptions.backgroundColor;
+
+      for(const band of bands){
+        if(!Number.isFinite(band.top) || !Number.isFinite(band.bottom)) continue;
+        const top = Math.max(chartArea.top, Math.min(band.top, band.bottom));
+        const bottom = Math.min(chartArea.bottom, Math.max(band.top, band.bottom));
+        if(bottom <= top) continue;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(chartArea.left, top, chartArea.right - chartArea.left, bottom - top);
+        ctx.clip();
+        lineOptions.borderColor = band.color;
+        lineOptions.backgroundColor = "rgba(0,0,0,0)";
+        meta.dataset.draw(ctx, chartArea);
+        ctx.restore();
+      }
+
+      lineOptions.borderColor = originalBorder;
+      lineOptions.backgroundColor = originalBackground;
+    }
+  }
+};
+
+Chart.register(tsFloodLineOverlayPlugin);
+
 const drawDatasetLastPlugin = {
   id: "drawDatasetLast",
   afterDatasetsDraw(chart, args, pluginOpts) {
@@ -5113,14 +5164,9 @@ function ensureTsChart(){
           pointRadius:0,
           pointHoverRadius:0,
           pointHitRadius:0,
-          tension:0,
+          tension:0.25,
           spanGaps:false, 
-          borderColor:"rgba(45,212,191,.9)",
-          segment:{
-            borderColor:(ctx)=>{
-              return colorForTsSegmentDisplay(ctx, "rgba(45,212,191,.9)");
-            }
-          }
+          borderColor:"rgba(45,212,191,.9)"
         },
         {
           label:"Forecast",
@@ -5129,19 +5175,14 @@ function ensureTsChart(){
           pointRadius:0,
           pointHoverRadius:0,
           pointHitRadius:0,
-          tension:0,
+          tension:0.25,
           spanGaps:true,
 
           
           borderDash:[8,6],
           borderDashOffset:0,
 
-          borderColor:"rgba(45,212,191,.9)",
-          segment:{
-            borderColor:(ctx)=>{
-              return colorForTsSegmentDisplay(ctx, "rgba(45,212,191,.9)");
-            }
-          }
+          borderColor:"rgba(45,212,191,.9)"
         }
       ]
     },
@@ -5610,20 +5651,15 @@ function tsObservedDataset(data, {cachedHighs=false}={}){
     pointRadius: cachedHighs ? 4.6 : 0,
     pointHoverRadius: cachedHighs ? 6.4 : 0,
     pointHitRadius: cachedHighs ? 10 : 0,
-    tension:0,
+    tension:0.25,
     spanGaps:false,
     showLine: !cachedHighs,
     pointStyle: cachedHighs ? "circle" : "line",
-    borderColor:"rgba(234,240,255,.86)",
-    backgroundColor:"rgba(234,240,255,.92)",
-    pointBackgroundColor:"rgba(234,240,255,.92)",
+    borderColor: cachedHighs ? "rgba(234,240,255,.86)" : "rgba(45,212,191,.9)",
+    backgroundColor: cachedHighs ? "rgba(234,240,255,.92)" : "rgba(45,212,191,.9)",
+    pointBackgroundColor: cachedHighs ? "rgba(234,240,255,.92)" : "rgba(45,212,191,.9)",
     pointBorderColor:"rgba(9,17,33,.92)",
-    pointBorderWidth: cachedHighs ? 1.5 : 0,
-    segment:{
-      borderColor:(ctx)=>{
-        return colorForTsSegmentDisplay(ctx, "rgba(234,240,255,.86)");
-      }
-    }
+    pointBorderWidth: cachedHighs ? 1.5 : 0
   };
 }
 
@@ -5635,17 +5671,12 @@ function tsPredictedDataset(data){
     pointRadius:0,
     pointHoverRadius:0,
     pointHitRadius:0,
-    tension:0,
+    tension:0.25,
     spanGaps:true,
     pointStyle:"line",
     borderDash:[9,5],
     borderDashOffset:0,
-    borderColor:"rgba(45,212,191,.9)",
-    segment:{
-      borderColor:(ctx)=>{
-        return colorForTsSegmentDisplay(ctx, "rgba(45,212,191,.9)");
-      }
-    }
+    borderColor:"rgba(45,212,191,.9)"
   };
 }
 
@@ -5850,25 +5881,17 @@ function updateTsChartFromState(){
     return Number.isFinite(mllw) ? toDisplayFtFromMllw(mllw) : null;
   });
 
-  const tsExpanded = expandSeriesForThresholdCrossings(labels, [
-    { values:obsFiltered, interpolate:!STATE.obs24CachedHighs },
-    { values:predValsDisplay, interpolate:true }
-  ]);
-  const chartLabels = tsExpanded.labels;
-  const obsValsForChart = tsExpanded.seriesList[0] || obsFiltered;
-  const predValsForChart = tsExpanded.seriesList[1] || predValsDisplay;
-
   ensureTsChart();
   styleTsLegendAsLines();
-  tsChart.data.labels = chartLabels;
-  const tsDatasets = [tsObservedDataset(obsValsForChart, {cachedHighs: !!STATE.obs24CachedHighs})];
+  tsChart.data.labels = labels;
+  const tsDatasets = [tsObservedDataset(obsFiltered, {cachedHighs: !!STATE.obs24CachedHighs})];
   if(TS_ANNUAL_FORECAST_ENABLED){
-    tsDatasets.push(tsPredictedDataset(predValsForChart));
+    tsDatasets.push(tsPredictedDataset(predValsDisplay));
   }
   tsChart.data.datasets = tsDatasets;
 
   styleTsLegendAsLines();
-  applyTsDateAxis(chartLabels);
+  applyTsDateAxis(labels);
   tsChart.options.scales.x.title.text = "Date";
   tsChart.options.scales.y.title.text = unitText();
 
