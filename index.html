@@ -5217,7 +5217,7 @@ function ensureTsChart(){
               const ds = ctx.dataset || {};
               const i = ctx.dataIndex;
 
-              if(ds._kind === "seasonalHighs" || ds._kind === "nearFloodHighs"){
+              if(ds._kind === "seasonalHighs"){
                 const adj = Number(ds._adjFt?.[i]);
                 const raw = Number(ds._rawFt?.[i]);
                 const off = Number(ds._seasonalOffsetFt?.[i]);
@@ -5641,7 +5641,6 @@ function formatForecastPlusMinus(ds){
   return `${year} Forecast: ${mean} floods`;
 }
 
-const TS_NEAR_FLOOD_WINDOW_FT = 0.5;
 
 function tsObservedDataset(data, {cachedHighs=false}={}){
   return {
@@ -5734,11 +5733,7 @@ function updateTsAnnualForecastChartFromState(){
 
   const rows = buildSeasonallyAdjustedHighRows();
   const labels = rows.map(p=>p.t);
-  const minorMllw = datumToDatum(thresholdsDisplay().minor, DISPLAY_DATUM, "MLLW");
-  const nearFlags = rows.map(p => p.adjMllw >= minorMllw - TS_NEAR_FLOOD_WINDOW_FT);
-
   const adjustedHighs = rows.map(p=>p.adjFt);
-  const nearFloodData = rows.map((p,i)=> nearFlags[i] ? p.adjFt : null);
   const rawFt = rows.map(p=>p.rawFt);
   const adjFt = rows.map(p=>p.adjFt);
   const seasonalOffsetFt = rows.map(p=>p.seasonalOffsetFt);
@@ -5764,27 +5759,6 @@ function updateTsAnnualForecastChartFromState(){
       pointStyle:"circle",
       tension:0.18,
       spanGaps:true
-    },
-    {
-      label:"Near-Flood",
-      data:nearFloodData,
-      _kind:"nearFloodHighs",
-      _rawFt:rawFt,
-      _adjFt:adjFt,
-      _seasonalOffsetFt:seasonalOffsetFt,
-      showLine:false,
-      borderWidth:0,
-      borderColor:"rgba(239,68,68,1)",
-      backgroundColor:"rgba(239,68,68,1)",
-      pointBackgroundColor:"rgba(239,68,68,1)",
-      pointBorderColor:"rgba(255,255,255,.96)",
-      pointBorderWidth:1.8,
-      pointRadius:5.2,
-      pointHoverRadius:7.2,
-      pointHitRadius:9,
-      pointStyle:"circle",
-      spanGaps:false,
-      order:-10
     }
   ];
 
