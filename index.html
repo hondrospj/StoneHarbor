@@ -4497,6 +4497,18 @@ function colorForFtDisplay(ftDisplay){
   return "rgba(45,212,191,.90)";
 }
 
+
+function colorForTsSegmentDisplay(ctx, fallback="rgba(45,212,191,.90)"){
+  const y1 = Number(ctx?.p1?.parsed?.y);
+  const y0 = Number(ctx?.p0?.parsed?.y);
+  if(!Number.isFinite(y1)) return fallback;
+  if(!Number.isFinite(y0)) return colorForFtDisplay(y1);
+  const c0 = colorForFtDisplay(y0);
+  const c1 = colorForFtDisplay(y1);
+  if(c0 === c1) return c1;
+  return colorForFtDisplay(Math.min(y0, y1));
+}
+
 function yearGradientColor(t, alpha=.6){
   const clamped = Math.max(0, Math.min(1, t));
   const blue = [37, 99, 235];
@@ -5101,14 +5113,12 @@ function ensureTsChart(){
           pointRadius:0,
           pointHoverRadius:0,
           pointHitRadius:0,
-          tension:0.25,
+          tension:0,
           spanGaps:false, 
           borderColor:"rgba(45,212,191,.9)",
           segment:{
             borderColor:(ctx)=>{
-              const y = ctx?.p1?.parsed?.y;
-              if(y===null || y===undefined || Number.isNaN(y)) return "rgba(45,212,191,.9)";
-              return colorForFtDisplay(+y);
+              return colorForTsSegmentDisplay(ctx, "rgba(45,212,191,.9)");
             }
           }
         },
@@ -5119,7 +5129,7 @@ function ensureTsChart(){
           pointRadius:0,
           pointHoverRadius:0,
           pointHitRadius:0,
-          tension:0.25,
+          tension:0,
           spanGaps:true,
 
           
@@ -5129,9 +5139,7 @@ function ensureTsChart(){
           borderColor:"rgba(45,212,191,.9)",
           segment:{
             borderColor:(ctx)=>{
-              const y = ctx?.p1?.parsed?.y;
-              if(y===null || y===undefined || Number.isNaN(y)) return "rgba(45,212,191,.9)";
-              return colorForFtDisplay(+y);
+              return colorForTsSegmentDisplay(ctx, "rgba(45,212,191,.9)");
             }
           }
         }
@@ -5242,6 +5250,71 @@ function build15MinLabels(startISO, endISO){
   return labels;
 }
 
+
+
+function seriesValueAtMs(sourceTimes, values, ms, interpolate=true){
+  for(let i=0;i<sourceTimes.length;i++){
+    if(sourceTimes[i] === ms) return values[i] ?? null;
+  }
+  if(!interpolate) return null;
+  for(let i=1;i<sourceTimes.length;i++){
+    const t0 = sourceTimes[i - 1];
+    const t1 = sourceTimes[i];
+    if(!Number.isFinite(t0) || !Number.isFinite(t1) || t1 <= t0) continue;
+    if(ms <= t0 || ms >= t1) continue;
+    const v0 = Number(values[i - 1]);
+    const v1 = Number(values[i]);
+    if(!Number.isFinite(v0) || !Number.isFinite(v1)) return null;
+    const ratio = (ms - t0) / (t1 - t0);
+    return v0 + ratio * (v1 - v0);
+  }
+  return null;
+}
+
+function expandSeriesForThresholdCrossings(labels, seriesSpecs){
+  const thresholds = Object.values(thresholdsDisplay()).map(Number).filter(Number.isFinite);
+  const specs = (seriesSpecs || []).map(spec => Array.isArray(spec) ? { values:spec, interpolate:true } : spec);
+  if(!thresholds.length || !Array.isArray(labels) || !labels.length || !specs.length){
+    return { labels, seriesList:specs.map(spec => spec?.values || []) };
+  }
+  const sourceTimes = labels.map(iso => new Date(iso).getTime());
+  const timeMap = new Map();
+  sourceTimes.forEach((ms, i) => {
+    if(Number.isFinite(ms)) timeMap.set(ms, labels[i]);
+  });
+
+  for(const spec of specs){
+    const values = spec?.values || [];
+    for(let i=1;i<sourceTimes.length;i++){
+      const t0 = sourceTimes[i - 1];
+      const t1 = sourceTimes[i];
+      const v0 = Number(values[i - 1]);
+      const v1 = Number(values[i]);
+      if(!Number.isFinite(t0) || !Number.isFinite(t1) || t1 <= t0) continue;
+      if(!Number.isFinite(v0) || !Number.isFinite(v1) || v0 === v1) continue;
+      for(const threshold of thresholds){
+        const d0 = v0 - threshold;
+        const d1 = v1 - threshold;
+        if(!((d0 < 0 && d1 > 0) || (d0 > 0 && d1 < 0))) continue;
+        const ratio = (threshold - v0) / (v1 - v0);
+        const crossMs = Math.round(t0 + ratio * (t1 - t0));
+        if(crossMs > t0 && crossMs < t1 && !timeMap.has(crossMs)){
+          timeMap.set(crossMs, new Date(crossMs).toISOString());
+        }
+      }
+    }
+  }
+
+  const expandedTimes = Array.from(timeMap.keys()).sort((a, b) => a - b);
+  const expandedLabels = expandedTimes.map(ms => timeMap.get(ms));
+  const seriesList = specs.map(spec => expandedTimes.map(ms => seriesValueAtMs(
+    sourceTimes,
+    spec?.values || [],
+    ms,
+    spec?.interpolate !== false
+  )));
+  return { labels:expandedLabels, seriesList };
+}
 
 function renderForecastToggle(button, enabled){
   if(!button) return;
@@ -5518,7 +5591,7 @@ function tsObservedDataset(data, {cachedHighs=false}={}){
     pointRadius: cachedHighs ? 4.6 : 0,
     pointHoverRadius: cachedHighs ? 6.4 : 0,
     pointHitRadius: cachedHighs ? 10 : 0,
-    tension:0.25,
+    tension:0,
     spanGaps:false,
     showLine: !cachedHighs,
     pointStyle: cachedHighs ? "circle" : "line",
@@ -5529,9 +5602,7 @@ function tsObservedDataset(data, {cachedHighs=false}={}){
     pointBorderWidth: cachedHighs ? 1.5 : 0,
     segment:{
       borderColor:(ctx)=>{
-        const y = ctx?.p1?.parsed?.y;
-        if(y===null || y===undefined || Number.isNaN(y)) return "rgba(234,240,255,.86)";
-        return colorForFtDisplay(+y);
+        return colorForTsSegmentDisplay(ctx, "rgba(234,240,255,.86)");
       }
     }
   };
@@ -5545,7 +5616,7 @@ function tsPredictedDataset(data){
     pointRadius:0,
     pointHoverRadius:0,
     pointHitRadius:0,
-    tension:0.25,
+    tension:0,
     spanGaps:true,
     pointStyle:"line",
     borderDash:[9,5],
@@ -5553,9 +5624,7 @@ function tsPredictedDataset(data){
     borderColor:"rgba(45,212,191,.9)",
     segment:{
       borderColor:(ctx)=>{
-        const y = ctx?.p1?.parsed?.y;
-        if(y===null || y===undefined || Number.isNaN(y)) return "rgba(45,212,191,.9)";
-        return colorForFtDisplay(+y);
+        return colorForTsSegmentDisplay(ctx, "rgba(45,212,191,.9)");
       }
     }
   };
@@ -5762,17 +5831,25 @@ function updateTsChartFromState(){
     return Number.isFinite(mllw) ? toDisplayFtFromMllw(mllw) : null;
   });
 
+  const tsExpanded = expandSeriesForThresholdCrossings(labels, [
+    { values:obsFiltered, interpolate:!STATE.obs24CachedHighs },
+    { values:predValsDisplay, interpolate:true }
+  ]);
+  const chartLabels = tsExpanded.labels;
+  const obsValsForChart = tsExpanded.seriesList[0] || obsFiltered;
+  const predValsForChart = tsExpanded.seriesList[1] || predValsDisplay;
+
   ensureTsChart();
   styleTsLegendAsLines();
-  tsChart.data.labels = labels;
-  const tsDatasets = [tsObservedDataset(obsFiltered, {cachedHighs: !!STATE.obs24CachedHighs})];
+  tsChart.data.labels = chartLabels;
+  const tsDatasets = [tsObservedDataset(obsValsForChart, {cachedHighs: !!STATE.obs24CachedHighs})];
   if(TS_ANNUAL_FORECAST_ENABLED){
-    tsDatasets.push(tsPredictedDataset(predValsDisplay));
+    tsDatasets.push(tsPredictedDataset(predValsForChart));
   }
   tsChart.data.datasets = tsDatasets;
 
   styleTsLegendAsLines();
-  applyTsDateAxis(labels);
+  applyTsDateAxis(chartLabels);
   tsChart.options.scales.x.title.text = "Date";
   tsChart.options.scales.y.title.text = unitText();
 
