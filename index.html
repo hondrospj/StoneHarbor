@@ -5481,6 +5481,25 @@ function styleTsLegendAsLines(){
   labels.generateLabels = buildTsLineLegendLabels;
 }
 
+let TS_LAYOUT_STABILIZE_TIMER = null;
+function stabilizeTsChartLayout(){
+  if(!tsChart) return;
+  const chart = tsChart;
+  const redraw = ()=>{
+    if(chart !== tsChart) return;
+    chart.resize();
+    chart.update("none");
+    syncChartZoomToData(chart);
+  };
+  if(typeof requestAnimationFrame === "function"){
+    requestAnimationFrame(()=>requestAnimationFrame(redraw));
+  }else{
+    redraw();
+  }
+  clearTimeout(TS_LAYOUT_STABILIZE_TIMER);
+  TS_LAYOUT_STABILIZE_TIMER = setTimeout(redraw, 140);
+}
+
 function annualForecastComponentSpread(rec, prefix){
   const minus = Number(rec?.[`${prefix}Minus`]);
   const plus = Number(rec?.[`${prefix}Plus`]);
@@ -5882,8 +5901,9 @@ function updateTsChartFromState(){
 
   delete tsChart.options.scales.x.min;
   delete tsChart.options.scales.x.max;
-  tsChart.update();
+  tsChart.update("none");
   syncChartZoomToData(tsChart);
+  stabilizeTsChartLayout();
 }
 
 
