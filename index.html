@@ -8031,6 +8031,7 @@ const monthAvgTotalLabelPlugin = {
       let x = null;
       let visibleTotal = 0;
       let visibleCount = 0;
+      let stackTopY = Infinity;
 
       chart.data.datasets.forEach((dataset, datasetIndex)=>{
         if(!chart.isDatasetVisible(datasetIndex)) return;
@@ -8039,14 +8040,19 @@ const monthAvgTotalLabelPlugin = {
         visibleTotal += value;
         visibleCount += 1;
         const point = chart.getDatasetMeta(datasetIndex)?.data?.[i];
-        if(point && x === null) x = point.x;
+        if(point){
+          if(x === null) x = point.x;
+          const pointY = Number(point.y);
+          if(Number.isFinite(pointY)) stackTopY = Math.min(stackTopY, pointY);
+        }
       });
 
       const trueTotal = Number(chart.$monthAvgTotals?.[i]);
       const labelValue = MONTH_VIEW === "total" && Number.isFinite(trueTotal) ? trueTotal : visibleTotal;
       if(!visibleCount || !Number.isFinite(labelValue) || labelValue <= 0 || x === null) continue;
 
-      const y = Math.max(chart.chartArea.top + 22, yScale.getPixelForValue(labelValue) - 18);
+      const barTopY = Number.isFinite(stackTopY) ? stackTopY : yScale.getPixelForValue(labelValue);
+      const y = Math.max(chart.chartArea.top + 28, barTopY - 32);
       const text = formatMonthAverage(labelValue);
       ctx.lineWidth = 4;
       ctx.strokeStyle = "rgba(11,18,32,.96)";
@@ -8121,7 +8127,7 @@ function ensureMonthAvgChart(){
         y:{
           stacked:true,
           title:{display:true, text:"Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
-          grace:"30%",
+          grace:"60%",
           ticks:{
             color:"rgba(169,182,211,.9)",
 
