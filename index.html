@@ -5,7 +5,7 @@
 <head>
 <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tidal Flooding Dashboard</title>
+  <title>Coastal Flooding Dashboard</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
@@ -241,69 +241,6 @@ option{
 .segBtn.isActive[data-val="total"]{ box-shadow: inset 0 -2px 0 rgba(234,240,255,.65); }
 
 
-
-#monthAvgTable{
-  width:100%;              
-  border-collapse:collapse;
-  table-layout:fixed;
-}
-
-
-#monthAvgTable th,
-#monthAvgTable td{
-  text-align:center;
-  padding:14px 8px;
-}
-
-
-#monthAvgTable th:first-child,
-#monthAvgTable td:first-child{
-  width:50%;
-}
-
-#monthAvgTable th:last-child,
-#monthAvgTable td:last-child{
-  width:50%;
-}
-
-#monthAvgTable.show-total th:nth-child(3),
-#monthAvgTable.show-total td:nth-child(3),
-#monthAvgTable.show-total th:nth-child(4),
-#monthAvgTable.show-total td:nth-child(4),
-#monthAvgTable.show-total th:nth-child(5),
-#monthAvgTable.show-total td:nth-child(5){
-  display: none;
-}
-
-
-#monthAvgTable.show-minor th:nth-child(2),
-#monthAvgTable.show-minor td:nth-child(2),
-#monthAvgTable.show-minor th:nth-child(4),
-#monthAvgTable.show-minor td:nth-child(4),
-#monthAvgTable.show-minor th:nth-child(5),
-#monthAvgTable.show-minor td:nth-child(5){
-  display: none;
-}
-
-
-#monthAvgTable.show-moderate th:nth-child(2),
-#monthAvgTable.show-moderate td:nth-child(2),
-#monthAvgTable.show-moderate th:nth-child(3),
-#monthAvgTable.show-moderate td:nth-child(3),
-#monthAvgTable.show-moderate th:nth-child(5),
-#monthAvgTable.show-moderate td:nth-child(5){
-  display: none;
-}
-
-
-#monthAvgTable.show-major th:nth-child(2),
-#monthAvgTable.show-major td:nth-child(2),
-#monthAvgTable.show-major th:nth-child(3),
-#monthAvgTable.show-major td:nth-child(3),
-#monthAvgTable.show-major th:nth-child(4),
-#monthAvgTable.show-major td:nth-child(4){
-  display: none;
-}
 
 
     
@@ -2074,6 +2011,161 @@ a.brand *{
       content:none !important;
       display:none !important;
     }
+    .doyYearTableWrap{
+      margin-top:10px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:12px;
+      background:rgba(0,0,0,.16);
+      overflow:hidden;
+    }
+    .doyYearTableHeader{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:8px;
+      padding:8px 10px;
+      color:var(--muted);
+      font-size:10.5px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.16px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .doyYearTable{
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(92px, 1fr));
+      gap:6px;
+      max-height:184px;
+      overflow:auto;
+      padding:8px;
+    }
+    .doyYearCell{
+      appearance:none;
+      min-width:0;
+      min-height:42px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:10px;
+      background:rgba(255,255,255,.045);
+      color:var(--text);
+      display:grid;
+      grid-template-columns:auto 1fr;
+      grid-template-areas:
+        "check year"
+        "check value";
+      column-gap:7px;
+      align-items:center;
+      justify-items:start;
+      padding:7px 8px;
+      cursor:pointer;
+      text-align:left;
+    }
+    .doyYearCell:hover{filter:brightness(1.08)}
+    .doyYearCell:focus-visible{
+      outline:none;
+      box-shadow:0 0 0 3px rgba(45,212,191,.18);
+    }
+    .doyYearCell.isOff{
+      border-color:rgba(248,113,113,.24);
+      background:rgba(248,113,113,.065);
+      color:rgba(234,240,255,.58);
+    }
+    .doyYearCheck{
+      grid-area:check;
+      width:18px;
+      height:18px;
+      border-radius:5px;
+      border:1.5px solid rgba(34,197,94,.86);
+      background:rgba(34,197,94,.14);
+      color:rgba(34,197,94,.98);
+      display:inline-grid;
+      place-items:center;
+      font-size:12px;
+      font-weight:950;
+      line-height:1;
+    }
+    .doyYearCheck::before{content:"\2713"}
+    .doyYearCell.isOff .doyYearCheck{
+      border-color:rgba(248,113,113,.78);
+      background:rgba(248,113,113,.12);
+      color:rgba(248,113,113,.98);
+    }
+    .doyYearCell.isOff .doyYearCheck::before{content:"x"}
+    .doyYearLabel{
+      grid-area:year;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      min-width:0;
+      font-size:12px;
+      font-weight:950;
+      line-height:1.05;
+    }
+    .doyYearSwatchMini{
+      width:18px;
+      height:3px;
+      border-radius:999px;
+      background:var(--doy-year-color, rgba(234,240,255,.86));
+      flex:0 0 auto;
+    }
+    .doyYearValue{
+      grid-area:value;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:900;
+      line-height:1.1;
+      white-space:nowrap;
+    }
+    .doyYearCell.isOff .doyYearSwatchMini,
+    .doyYearCell.isOff .doyYearValue{opacity:.55}
+    @media(max-width:640px){
+      .doyYearTable{
+        grid-template-columns:repeat(auto-fill, minmax(78px, 1fr));
+        max-height:210px;
+      }
+      .doyYearCell{
+        min-height:44px;
+        padding:7px 7px;
+      }
+    }
+
+    /* Slight pane text lift, kept compact for mobile and dense chart panels. */
+    .card,
+    details.acc{
+      font-size:14px;
+    }
+    .hrow h2,
+    .accTitle{
+      font-size:13.5px;
+      line-height:1.25;
+    }
+    .panelTitle{
+      font-size:12.5px;
+      line-height:1.25;
+    }
+    .hint,
+    .foot,
+    .curMeta,
+    .rangeMeta,
+    .rangeWhen,
+    .eventSub{
+      font-size:13px;
+    }
+    .tag,
+    .miniStat,
+    .eventWhen,
+    .eventBadge,
+    th,
+    td{
+      font-size:13.5px;
+    }
+    .segBtn{
+      font-size:12.5px;
+    }
+    .predictionToggleLabel{
+      font-size:12px;
+    }
+    .predictionToggleState{
+      font-size:11.5px;
+    }
 
     @media(max-width:640px){
       .shorelyChartLegend{
@@ -2388,15 +2480,19 @@ a.brand *{
             <span>Recent</span>
           </div>
 
-          <div class="doyRangeTools" id="doyRangeTools">
-            <div class="doyRangeInputs">
-              <label class="doyRangeField" id="doyStartField"><span id="doyStartLabel">Start</span>
-                <input id="doyStartYear" type="number" inputmode="numeric" min="2000" max="2026" step="1" aria-label="Start year">
-              </label>
-              <label class="doyRangeField" id="doyEndField"><span id="doyEndLabel">End</span>
-                <input id="doyEndYear" type="number" inputmode="numeric" min="2000" max="2026" step="1" aria-label="End year">
-              </label>
+          <div class="doyPresetGrid" id="doyPresetGrid" aria-label="Year visibility presets">
+            <button class="miniKeyBtn" type="button" data-doy-preset="all">All</button>
+            <button class="miniKeyBtn" type="button" data-doy-preset="recent">Recent</button>
+            <button class="miniKeyBtn isDanger" type="button" data-doy-preset="none">None</button>
+            <button class="miniKeyBtn" type="button" data-doy-preset="current">Current</button>
+          </div>
+
+          <div class="doyYearTableWrap">
+            <div class="doyYearTableHeader" aria-hidden="true">
+              <span>Year</span>
+              <span>Floods</span>
             </div>
+            <div class="doyYearTable" id="doyYearTable" aria-label="Year visibility values"></div>
           </div>
         </div>
       </aside>
@@ -2489,22 +2585,6 @@ a.brand *{
       <div class="hint" id="monthAvgMeta">Computing…</div>
       <div style="height:10px"></div>
       <div class="chartWrap"><canvas id="monthAvgChart"></canvas></div>
-      <div style="height:10px"></div>
-
-<div class="table">
-  <table id="monthAvgTable" class="show-total" aria-label="Average floods by month of year">
-    <thead>
-      <tr>
-        <th>Month</th>
-        <th>Average Total Number of Floods</th>
-        <th>Average Minor</th>
-        <th>Average Moderate</th>
-        <th>Average Major</th>
-      </tr>
-    </thead>
-    <tbody id="monthAvgBody"></tbody>
-  </table>
-</div>
     </div>
   </details>
 
@@ -2826,7 +2906,7 @@ if(datumHelpBtn && datumHelpPop){
 }
 
 
-const monthAvgMeta=$("monthAvgMeta"), monthAvgBody=$("monthAvgBody");
+const monthAvgMeta=$("monthAvgMeta");
 const annualPredictionToggle = $("annualPredictionToggle");
 const annualScenarioKey = $("annualScenarioKey");
 const seaLevelMeta = $("seaLevelMeta");
@@ -2843,6 +2923,8 @@ const doyStartLabel = $("doyStartLabel");
 const doyEndLabel = $("doyEndLabel");
 const doyStartYear = $("doyStartYear");
 const doyEndYear = $("doyEndYear");
+const doyPresetGrid = $("doyPresetGrid");
+const doyYearTable = $("doyYearTable");
 
     
 
@@ -2868,14 +2950,6 @@ function setSegActive(segEl, val){
 }
 
 function applyMonthView(){
-  
-  const tbl = document.getElementById("monthAvgTable");
-  if(tbl){
-    tbl.classList.remove("show-minor","show-moderate","show-major","show-total");
-    tbl.classList.add(`show-${MONTH_VIEW}`);
-  }
-
-  
  if(monthAvgChart){
   
   const showAll = (MONTH_VIEW === "total");
@@ -3137,9 +3211,10 @@ function unitText(){
 }
 
 function renderGaugeStaticText(){
-  document.title = `${GAUGE_DISPLAY_NAME}, NJ — Tidal Flooding Dashboard`;
+  const dashboardTitle = `${GAUGE_DISPLAY_NAME} Coastal Flooding Dashboard`;
+  document.title = dashboardTitle;
   if(brandKickerEl) brandKickerEl.textContent = `${DEFAULT_GAUGE_ID} · ${GAUGE_DISPLAY_NAME}, NJ`;
-  if(brandNameEl) brandNameEl.textContent = `${GAUGE_DISPLAY_NAME} Tidal Dashboard`;
+  if(brandNameEl) brandNameEl.textContent = dashboardTitle;
 }
 
 function updateUnitsAndBadges(){
@@ -6083,7 +6158,7 @@ function buildSeaLevelDatasets(labels, state){
   const observedByMonth = new Map(state.relative.map(r => [r.month, r.relFt]));
   const lastObservedMonth = state.relative[state.relative.length - 1]?.month || "";
   const datasets = [{
-    label:"Monthly Mean Sea Level",
+    label:"Monthly mean sea level",
     data:labels.map(m => observedByMonth.has(m) ? observedByMonth.get(m) : null),
     borderColor:"rgba(45,212,191,.95)",
     backgroundColor:"rgba(45,212,191,.95)",
@@ -6098,7 +6173,7 @@ function buildSeaLevelDatasets(labels, state){
 
   if(state.regression){
     datasets.push({
-      label:"Trend",
+      label:"Historical trend",
       data:labels.map(m => {
         if(lastObservedMonth && m > lastObservedMonth) return null;
         const x = decimalYearFromMonth(m);
@@ -6120,7 +6195,7 @@ function buildSeaLevelDatasets(labels, state){
   if(!SEA_LEVEL_PROJECTIONS_ENABLED || !state.regression) return datasets;
 
   datasets.push({
-    label:"Baseline",
+    label:"Current Trend",
     data:labels.map(m => {
       const x = decimalYearFromMonth(m);
       return state.regression.intercept + state.regression.slope * x;
@@ -6395,6 +6470,7 @@ let DOY_YEAR_RANGE_KEY = "";
 let DOY_RANGE_START = null;
 let DOY_RANGE_END = null;
 let DOY_PAST_SELECTED_YEAR = null;
+let DOY_SELECTED_YEARS = new Set();
 let DOY_CONTROL_YEARS = [];
 let DOY_VIEW_MODE = "years";
 let DOY_PAST_FORECAST_VISIBLE = true;
@@ -6917,6 +6993,7 @@ function ensureDOYSelectedRange(years, curYear){
     }else{
       DOY_RANGE_START = selectable[0] ?? null;
       DOY_RANGE_END = selectable[selectable.length - 1] ?? null;
+      DOY_SELECTED_YEARS = new Set(selectable);
     }
   }
   normalizeDOYSelectedRange(years, curYear);
@@ -6949,10 +7026,20 @@ function normalizeDOYSelectedRange(years, curYear){
   start = Math.max(min, Math.min(max, start));
   end = Math.max(min, Math.min(max, end));
   if(start > end) [start, end] = [end, start];
-  DOY_RANGE_START = start;
-  DOY_RANGE_END = end;
+
+  if(!(DOY_SELECTED_YEARS instanceof Set)){
+    DOY_SELECTED_YEARS = new Set(selectable.filter(y => y >= start && y <= end));
+  }
+
+  for(const y of Array.from(DOY_SELECTED_YEARS)){
+    if(!selectable.includes(Number(y))) DOY_SELECTED_YEARS.delete(y);
+  }
+
+  const selected = selectable.filter(y => DOY_SELECTED_YEARS.has(y));
+  DOY_RANGE_START = selected[0] ?? null;
+  DOY_RANGE_END = selected[selected.length - 1] ?? null;
   DOY_PAST_SELECTED_YEAR = null;
-  return selectable.filter(y => y >= start && y <= end);
+  return selected;
 }
 
 function getDOYEffectiveSelectedYears(years, curYear){
@@ -6964,8 +7051,8 @@ function updateDOYRangeInputs(selectable){
   const isPast = DOY_VIEW_MODE === "past";
   const min = disabled ? 0 : selectable[0];
   const max = disabled ? 0 : selectable[selectable.length - 1];
-  const start = disabled ? "" : DOY_RANGE_START;
-  const end = disabled ? "" : DOY_RANGE_END;
+  const start = disabled ? "" : (DOY_RANGE_START ?? "");
+  const end = disabled ? "" : (DOY_RANGE_END ?? "");
   const keyCard = doyModeSeg?.closest?.(".doyKeyCard");
 
   if(keyCard) keyCard.classList.toggle("isPastMode", isPast);
@@ -6985,6 +7072,64 @@ function updateDOYRangeInputs(selectable){
   if(doyEndYear) doyEndYear.value = String(isPast ? start : end);
 }
 
+function doyLastFiniteValue(series){
+  if(!Array.isArray(series)) return 0;
+  for(let i=series.length - 1; i>=0; i--){
+    const value = Number(series[i]);
+    if(Number.isFinite(value)) return value;
+  }
+  return 0;
+}
+
+function doyYearTotalForControl(year, curYear){
+  const y = Number(year);
+  if(!Number.isFinite(y)) return 0;
+  if(y === curYear){
+    return doyLastFiniteValue(buildYTDSeriesFromEvents(HIGH_TIDES_NAVD) || emptyCurrentYTDSeries());
+  }
+  const row = DOY_CACHE?.seriesByYear?.find(item => Number(item?.y) === y);
+  return doySeriesTotal(row?.cum);
+}
+
+function renderDOYYearTable(years, curYear, selected){
+  if(!doyYearTable) return;
+  const selectable = getDOYSelectableYears(years, curYear);
+  const selectedSet = new Set((selected || []).map(Number));
+  const isPast = DOY_VIEW_MODE === "past";
+  const colorYears = selectable.length ? selectable : years;
+  const minYear = colorYears[0] ?? curYear;
+  const maxYear = colorYears[colorYears.length - 1] ?? curYear;
+
+  if(doyPresetGrid){
+    doyPresetGrid.querySelectorAll("[data-doy-preset]").forEach(btn=>{
+      const isNone = btn.dataset.doyPreset === "none";
+      const isCurrent = btn.dataset.doyPreset === "current";
+      btn.style.display = (isPast && (isNone || isCurrent)) ? "none" : "";
+    });
+  }
+
+  if(!selectable.length){
+    doyYearTable.innerHTML = "";
+    return;
+  }
+
+  doyYearTable.innerHTML = selectable.map(year=>{
+    const y = Number(year);
+    const isCurrent = y === curYear && !isPast;
+    const visible = selectedSet.has(y);
+    const total = formatFloodStat(doyYearTotalForControl(y, curYear)) || "0";
+    const totalLabel = `${total} ${total === "1" ? "flood" : "floods"}`;
+    const color = isPast ? "rgba(239,68,68,1)" : (isCurrent ? "rgba(239,68,68,1)" : doyYearColor(y, minYear, maxYear, .84));
+    return `
+      <button class="doyYearCell${visible ? "" : " isOff"}" type="button" data-doy-year="${y}" aria-pressed="${visible ? "true" : "false"}" title="${visible ? "Hide" : "Show"} ${y}; ${totalLabel}">
+        <span class="doyYearCheck" aria-hidden="true"></span>
+        <span class="doyYearLabel"><span class="doyYearSwatchMini" style="--doy-year-color:${color}"></span>${y}</span>
+        <span class="doyYearValue">${totalLabel}</span>
+      </button>
+    `;
+  }).join("");
+}
+
 function renderDOYVisibleSummary(years, curYear){
   if(!doyVisibleBadge) return;
   const selectable = getDOYSelectableYears(years, curYear);
@@ -6999,7 +7144,12 @@ function renderDOYVisibleSummary(years, curYear){
 
   if(!selected.length){
     doyVisibleBadge.textContent = "None";
-    if(doyRangeNote) doyRangeNote.textContent = DOY_VIEW_MODE === "past" ? "No previous full years." : "No years available.";
+    if(doyRangeNote){
+      doyRangeNote.textContent = selectable.length
+        ? "0 years shown"
+        : (DOY_VIEW_MODE === "past" ? "No previous full years." : "No years available.");
+    }
+    renderDOYYearTable(years, curYear, selected);
     return;
   }
 
@@ -7008,13 +7158,15 @@ function renderDOYVisibleSummary(years, curYear){
   if(DOY_VIEW_MODE === "past"){
     doyVisibleBadge.textContent = String(start);
     if(doyRangeNote) doyRangeNote.textContent = `Forecast vs. observed for ${start}`;
+    renderDOYYearTable(years, curYear, selected);
     return;
   }
 
-  doyVisibleBadge.textContent = start === end ? String(start) : `${start}–${end}`;
+  doyVisibleBadge.textContent = `${selected.length}/${selectable.length} shown`;
   if(doyRangeNote){
-    doyRangeNote.textContent = `${selected.length} year${selected.length === 1 ? "" : "s"} shown`;
+    doyRangeNote.textContent = start === end ? String(start) : `${start}–${end}`;
   }
+  renderDOYYearTable(years, curYear, selected);
 }
 
 function renderDOYYearControls(years, curYear){
@@ -7052,7 +7204,67 @@ function setDOYRange(start, end, source){
   DOY_RANGE_START = nextStart;
   DOY_RANGE_END = nextEnd;
   DOY_PAST_SELECTED_YEAR = null;
+  DOY_SELECTED_YEARS = new Set(selectable.filter(y => y >= nextStart && y <= nextEnd));
   renderDOYCumPanel();
+}
+
+function setDOYSelectedYears(nextYears){
+  const years = DOY_CONTROL_YEARS.length ? DOY_CONTROL_YEARS : (DOY_CACHE?.years || []);
+  const { y: curYear } = getESTParts(new Date());
+  const selectable = getDOYSelectableYears(years, curYear);
+  const allowed = new Set(selectable);
+  DOY_SELECTED_YEARS = new Set((nextYears || []).map(Number).filter(y => allowed.has(y)));
+  const selected = selectable.filter(y => DOY_SELECTED_YEARS.has(y));
+  DOY_RANGE_START = selected[0] ?? null;
+  DOY_RANGE_END = selected[selected.length - 1] ?? null;
+  DOY_PAST_SELECTED_YEAR = null;
+  renderDOYCumPanel();
+}
+
+function applyDOYYearPreset(preset){
+  const years = DOY_CONTROL_YEARS.length ? DOY_CONTROL_YEARS : (DOY_CACHE?.years || []);
+  const { y: curYear } = getESTParts(new Date());
+  const selectable = getDOYSelectableYears(years, curYear);
+  if(!selectable.length) return;
+
+  if(DOY_VIEW_MODE === "past"){
+    const target = selectable[selectable.length - 1];
+    setDOYRange(target, target, "year");
+    return;
+  }
+
+  if(preset === "none"){
+    setDOYSelectedYears([]);
+    return;
+  }
+
+  if(preset === "current"){
+    const target = selectable.includes(curYear) ? curYear : selectable[selectable.length - 1];
+    setDOYSelectedYears([target]);
+    return;
+  }
+
+  if(preset === "recent"){
+    setDOYSelectedYears(selectable.slice(-8));
+    return;
+  }
+
+  setDOYSelectedYears(selectable);
+}
+
+function toggleDOYYear(year){
+  const y = Number(year);
+  if(!Number.isFinite(y)) return;
+
+  if(DOY_VIEW_MODE === "past"){
+    setDOYRange(y, y, "year");
+    return;
+  }
+
+  const next = new Set(DOY_SELECTED_YEARS instanceof Set ? DOY_SELECTED_YEARS : []);
+  if(next.has(y)) next.delete(y);
+  else next.add(y);
+  setDOYSelectedYears(Array.from(next));
 }
 
 function hookDOYControls(){
@@ -7069,6 +7281,22 @@ function hookDOYControls(){
         renderForecastToggle(doyForecastToggle, DOY_ANNUAL_FORECAST_ENABLED);
       }
       renderDOYCumPanel();
+    });
+  }
+
+  if(doyPresetGrid){
+    doyPresetGrid.addEventListener("click", event=>{
+      const btn = event.target?.closest?.("[data-doy-preset]");
+      if(!btn) return;
+      applyDOYYearPreset(btn.dataset.doyPreset || "all");
+    });
+  }
+
+  if(doyYearTable){
+    doyYearTable.addEventListener("click", event=>{
+      const btn = event.target?.closest?.("[data-doy-year]");
+      if(!btn) return;
+      toggleDOYYear(btn.dataset.doyYear);
     });
   }
 
@@ -7780,20 +8008,56 @@ function computeMonthlyAveragesFromEvents(eventsNavd){
   return result;
 }
 
-function renderMonthAveragesTable(monthStats){
-  monthAvgBody.innerHTML="";
-  for(const r of monthStats){
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td><b>${monthNameFromIndex(r.month)}</b></td>
-      <td>${r.avgTotal.toFixed(2)}</td>
-      <td>${r.avgMinor.toFixed(2)}</td>
-      <td>${r.avgModerate.toFixed(2)}</td>
-      <td>${r.avgMajor.toFixed(2)}</td>
-    `;
-    monthAvgBody.appendChild(tr);
-  }
+function formatMonthAverage(v){
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toFixed(1) : "";
 }
+
+const monthAvgTotalLabelPlugin = {
+  id:"monthAvgTotalLabels",
+  afterDatasetsDraw(chart){
+    if(chart?.canvas?.id !== "monthAvgChart") return;
+    const labels = chart.data?.labels || [];
+    const yScale = chart.scales?.y;
+    if(!labels.length || !yScale) return;
+
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = "950 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+
+    for(let i=0; i<labels.length; i++){
+      let x = null;
+      let visibleTotal = 0;
+      let visibleCount = 0;
+
+      chart.data.datasets.forEach((dataset, datasetIndex)=>{
+        if(!chart.isDatasetVisible(datasetIndex)) return;
+        const value = Number(dataset?.data?.[i]);
+        if(!Number.isFinite(value)) return;
+        visibleTotal += value;
+        visibleCount += 1;
+        const point = chart.getDatasetMeta(datasetIndex)?.data?.[i];
+        if(point && x === null) x = point.x;
+      });
+
+      const trueTotal = Number(chart.$monthAvgTotals?.[i]);
+      const labelValue = MONTH_VIEW === "total" && Number.isFinite(trueTotal) ? trueTotal : visibleTotal;
+      if(!visibleCount || !Number.isFinite(labelValue) || labelValue <= 0 || x === null) continue;
+
+      const y = Math.max(chart.chartArea.top + 22, yScale.getPixelForValue(labelValue) - 18);
+      const text = formatMonthAverage(labelValue);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "rgba(11,18,32,.96)";
+      ctx.strokeText(text, x, y);
+      ctx.fillStyle = "rgba(234,240,255,.96)";
+      ctx.fillText(text, x, y);
+    }
+
+    ctx.restore();
+  }
+};
 
 function ensureMonthAvgChart(){
   if(monthAvgChart) return;
@@ -7828,17 +8092,18 @@ function ensureMonthAvgChart(){
             label:(ctx)=>{
               const v = ctx.parsed?.y;
               if(!Number.isFinite(v)) return null;
-              return `${ctx.dataset.label}: ${v.toFixed(2)}`;
+              return `${ctx.dataset.label}: ${formatMonthAverage(v)}`;
             },
             footer:(items)=>{
-              const total = (items || [])
-                .filter(it => it.dataset.type !== "line")
-                .reduce((sum,it)=>{
-                  const v = it.parsed?.y;
-                  return sum + (Number.isFinite(v) ? v : 0);
-                },0);
+              const index = items?.[0]?.dataIndex;
+              const trueTotal = Number(monthAvgChart?.$monthAvgTotals?.[index]);
+              if(Number.isFinite(trueTotal)) return `Total: ${formatMonthAverage(trueTotal)}`;
 
-              return `Total: ${Math.round(total)}`;
+              const visibleTotal = (items || []).reduce((sum,it)=>{
+                const v = it.parsed?.y;
+                return sum + (Number.isFinite(v) ? v : 0);
+              },0);
+              return `Total: ${formatMonthAverage(visibleTotal)}`;
             }
           }
         }
@@ -7856,16 +8121,18 @@ function ensureMonthAvgChart(){
         y:{
           stacked:true,
           title:{display:true, text:"Floods", color:"rgba(169,182,211,.9)", font:{weight:"900"}},
+          grace:"30%",
           ticks:{
             color:"rgba(169,182,211,.9)",
 
             
-            callback:(value)=> Number(value).toFixed(2)
+            callback:(value)=> Number(value).toFixed(1)
           },
           grid:{color:"rgba(255,255,255,.06)"}
         }
       }
-    }
+    },
+    plugins:[monthAvgTotalLabelPlugin]
   });
 
   // Average monthly floods is not zoomable.
@@ -7878,6 +8145,7 @@ function renderMonthAveragesChart(monthStats){
   monthAvgChart.data.datasets[0].data = monthStats.map(r=>r.avgMinor);
   monthAvgChart.data.datasets[1].data = monthStats.map(r=>r.avgModerate);
   monthAvgChart.data.datasets[2].data = monthStats.map(r=>r.avgMajor);
+  monthAvgChart.$monthAvgTotals = monthStats.map(r=>r.avgTotal);
   monthAvgChart.update();
   // Average monthly floods keeps its full-month view.
     applyMonthView();
@@ -7889,14 +8157,12 @@ function updateMonthAveragesFromHistory(){
     const zeros = Array.from({length:12},(_,i)=>({
       month:i+1, avgTotal:0, avgMinor:0, avgModerate:0, avgMajor:0, years:0
     }));
-    renderMonthAveragesTable(zeros);
     renderMonthAveragesChart(zeros);
     return;
   }
 
   const stats = computeMonthlyAveragesFromEvents(HIGH_TIDES_NAVD);
   monthAvgMeta.textContent = "";
-  renderMonthAveragesTable(stats);
   renderMonthAveragesChart(stats);
 }
 
@@ -8875,9 +9141,33 @@ setInterval(async ()=>{
       .filter(Boolean);
   }
 
+  function seaLevelLegendItems(chart){
+    const generator = Chart?.defaults?.plugins?.legend?.labels?.generateLabels;
+    const raw = typeof generator === "function" ? generator(chart) : [];
+    const byLabel = new Map();
+    for(const item of raw || []){
+      const datasetIndex = Number(item?.datasetIndex);
+      const dataset = Number.isInteger(datasetIndex) ? chart?.data?.datasets?.[datasetIndex] : null;
+      if(dataset?._legendHidden) continue;
+      const text = cleanLegendText(item?.text);
+      if(text && !byLabel.has(text)){
+        byLabel.set(text, {...item, text, dataset});
+      }
+    }
+    const wanted = ["Monthly mean sea level", "Current Trend", "Historical trend", "Low", "Intermediate", "High"];
+    const ordered = wanted.map(label => byLabel.get(label)).filter(Boolean);
+    for(const item of byLabel.values()){
+      if(!wanted.includes(item.text)) ordered.push(item);
+    }
+    return ordered;
+  }
+
   function chartLegendItems(chart){
     if(chart?.canvas?.id === "doyCumChart"){
       return doyLegendItems(chart);
+    }
+    if(chart?.canvas?.id === "seaLevelChart"){
+      return seaLevelLegendItems(chart);
     }
 
     const labels = chart?.options?.plugins?.legend?.labels || {};
