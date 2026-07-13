@@ -2227,6 +2227,19 @@ a.brand *{
     /* end shorely checkbox legends */
 
   </style>
+  <style id="dashboard-2-tutorial-style">
+    .top .name{font-size:clamp(21px,2.35vw,28px);white-space:normal;overflow:visible;text-overflow:clip;line-height:1.03}
+    .dashboardTutorialLaunchRow{display:flex;justify-content:flex-end;margin:7px 0 12px}
+    .dashboardTutorialBtn{min-height:38px;padding:0 18px;border-radius:999px;border:1px solid rgba(103,232,249,.52);background:linear-gradient(135deg,rgba(37,99,235,.78),rgba(8,145,178,.68));color:#fff;font-weight:900;cursor:pointer;box-shadow:0 10px 24px rgba(2,8,23,.24)}
+    .dashboardTutorial{position:fixed;inset:0;z-index:30000;pointer-events:none}.dashboardTutorial[hidden]{display:none!important}
+    .dashboardTutorialSpotlight{position:fixed;left:0;top:0;width:1px;height:1px;border:3px solid #67e8f9;border-radius:20px;box-shadow:0 0 0 9999px rgba(2,6,23,.78),0 0 0 7px rgba(103,232,249,.16);transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease;pointer-events:none}
+    .dashboardTutorialCard{position:fixed;right:22px;bottom:22px;z-index:30002;width:min(410px,calc(100vw - 28px));max-height:min(520px,calc(100vh - 28px));overflow:auto;padding:20px;border:1px solid rgba(103,232,249,.42);border-radius:22px;background:rgba(8,15,31,.98);color:#edf7ff;box-shadow:0 28px 85px rgba(0,0,0,.6);pointer-events:auto}
+    .dashboardTutorialHead,.dashboardTutorialActions{display:flex;align-items:center;justify-content:space-between;gap:10px}.dashboardTutorialProgress{font-size:11px;font-weight:900;color:#67e8f9;text-transform:uppercase;letter-spacing:.09em}
+    .dashboardTutorialClose{width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;font-size:22px;cursor:pointer}.dashboardTutorialCard h2{margin:12px 0 8px;font-size:23px;line-height:1.1}
+    .dashboardTutorialBody{color:#cbdaf2;font-size:14px;line-height:1.55}.dashboardTutorialBody p{margin:0 0 10px}.dashboardTutorialBody strong{color:#fff}.dashboardTutorialActions{margin-top:18px}
+    .dashboardTutorialActions button{min-width:94px;min-height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#dbeafe;font-weight:850;cursor:pointer}.dashboardTutorialActions button.active{background:#2563eb;border-color:#60a5fa;color:#fff}.dashboardTutorialActions button:disabled{opacity:.35}
+    @media(max-width:720px){.dashboardTutorialBtn{width:100%}.dashboardTutorialCard{left:14px;right:14px;bottom:14px;width:auto;max-height:43vh;padding:17px}.dashboardTutorialCard h2{font-size:20px}}
+  </style>
 </head>
 
 <body>
@@ -2285,6 +2298,10 @@ a.brand *{
         <span id="stageText">Loading…</span>
       </div>
     </div>
+  </div>
+
+  <div class="dashboardTutorialLaunchRow">
+    <button id="dashboardTutorialBtn" class="dashboardTutorialBtn" type="button">Take the dashboard tour</button>
   </div>
 
   
@@ -2653,7 +2670,23 @@ a.brand *{
 
   <div style="height:14px"></div>
 
-</div>   
+</div>
+
+<div id="dashboardTutorial" class="dashboardTutorial" hidden aria-hidden="true">
+  <div id="dashboardTutorialSpotlight" class="dashboardTutorialSpotlight" aria-hidden="true"></div>
+  <section class="dashboardTutorialCard" role="dialog" aria-modal="true" aria-labelledby="dashboardTutorialTitle">
+    <div class="dashboardTutorialHead">
+      <span id="dashboardTutorialProgress" class="dashboardTutorialProgress">1 of 9</span>
+      <button id="dashboardTutorialClose" class="dashboardTutorialClose" type="button" aria-label="Close tutorial">×</button>
+    </div>
+    <h2 id="dashboardTutorialTitle"></h2>
+    <div id="dashboardTutorialBody" class="dashboardTutorialBody"></div>
+    <div class="dashboardTutorialActions">
+      <button id="dashboardTutorialBack" type="button">Back</button>
+      <button id="dashboardTutorialNext" class="active" type="button">Next</button>
+    </div>
+  </section>
+</div>
 
 
   <script>
@@ -9372,6 +9405,127 @@ setInterval(async ()=>{
   document.addEventListener("click", event => {
     if(!event.target.closest?.(".shorelyHelpPopover, .shorelyHelpBtn")) closeHelp();
   }, true);
+})();
+</script>
+
+<script id="shorely-dashboard-tutorial">
+(function(){
+  "use strict";
+  const steps = [
+    {
+      title:"Welcome to the Stone Harbor Flood Dashboard",
+      selector:".top",
+      body:"<p>This dashboard starts with what is happening now, then moves from the next several days to the seasonal and long-term flood record.</p><p>Use the <strong>datum selector</strong> at any time. Every water-level number, threshold, tooltip, and chart label updates to the same vertical reference.</p>"
+    },
+    {
+      title:"Read today's conditions first",
+      needle:"Live conditions",
+      body:"<p>The left panel shows the latest measured water elevation and today's measured range. The right panel summarizes forecast flood periods during the next 72 hours.</p><p>The Minor, Moderate, and Major bands underneath are the thresholds used throughout the dashboard. They are categories of impact—not water depth above a road or floor.</p>"
+    },
+    {
+      title:"Follow observations and predictions",
+      needle:"Observations (USGS)",
+      body:"<p>This time-series is the quickest way to see tide timing and trend. The solid observation trace is measured at the Stone Harbor gauge; turn <strong>Forecast</strong> on to extend the view with NOAA/PETSS guidance.</p><p>Hover or tap the chart for exact times and levels. Compare crests with the colored flood-threshold lines instead of reading the curve in isolation.</p>"
+    },
+    {
+      title:"See when flooding happens within a year",
+      needle:"Flooding throughout the year",
+      body:"<p>These cumulative lines show how flood counts build from January through December. Use the year key to isolate recent or historic years, and use <strong>Past forecasts</strong> to compare prior guidance with what was observed.</p><p>A steep portion of a line marks a flood-active season; a flat portion means few or no qualifying events accumulated.</p>"
+    },
+    {
+      title:"Compare years and future frequency",
+      needle:"Flooding over the years",
+      body:"<p>Switch among Total, Minor, Moderate, and Major to see how annual flood frequency has changed. Turning Forecast on adds future estimates and their scenario range.</p><p>Read the scenario key before comparing future bars: projected counts are planning estimates built from the historical tide distribution and relative sea-level change, not a promise that an exact number of floods will occur.</p>"
+    },
+    {
+      title:"Put sea-level change in context",
+      needle:"Sea Level Trends",
+      body:"<p>The sea-level chart separates the long-term relative trend from individual storms and tides. Turn projections on to see the future path used by the dashboard.</p><p>Because the chart is relative sea level, it reflects both ocean change and local land movement at the reference station.</p>"
+    },
+    {
+      title:"Find the flood-active months",
+      needle:"Average number of floods per month",
+      body:"<p>This chart averages the historic record by calendar month. Use the category buttons to learn whether a season is dominated by minor nuisance flooding or includes the less frequent moderate and major events.</p><p>Monthly averages describe the archive; they do not replace the live 72-hour outlook.</p>"
+    },
+    {
+      title:"Search the historic flood record",
+      needle:"Historic flooding filter",
+      body:"<p>Enter an elevation range, date range, sort order, and result limit, then press Apply. This is the best place to answer questions such as “When did Stone Harbor last reach this level?” or “What were the ten highest crests?”</p><p>Reset restores the full ranked record. The selected datum applies to both the filter and the displayed peaks.</p>"
+    },
+    {
+      title:"Confirm the gauge location",
+      needle:"NJ tide gauge map",
+      body:"<p>The final map grounds the dashboard in its measurement location. Gauge observations describe water at that station; conditions can differ block by block because of elevation, drainage, waves, and local connectivity.</p><p>For property-scale screening, use the Floodmapper's clickable depth and Parcel House Alert tools.</p>"
+    }
+  ];
+  let index = 0;
+  let active = false;
+
+  function resolveTarget(step){
+    if(step.selector) return document.querySelector(step.selector);
+    const heading = Array.from(document.querySelectorAll("h2,.panelTitle")).find(el =>
+      (el.textContent || "").toLowerCase().includes(String(step.needle || "").toLowerCase())
+    );
+    return heading?.closest(".card,.acc,.panel") || heading;
+  }
+
+  function positionSpotlight(){
+    if(!active) return;
+    const target = resolveTarget(steps[index]);
+    const spot = document.getElementById("dashboardTutorialSpotlight");
+    if(!target || !spot) return;
+    const rect = target.getBoundingClientRect();
+    const pad = 8;
+    spot.style.left = Math.max(4, rect.left - pad) + "px";
+    spot.style.top = Math.max(4, rect.top - pad) + "px";
+    spot.style.width = Math.max(24, Math.min(window.innerWidth - 8, rect.width + pad * 2)) + "px";
+    spot.style.height = Math.max(24, Math.min(window.innerHeight - 8, rect.height + pad * 2)) + "px";
+  }
+
+  function render(){
+    const step = steps[index];
+    const target = resolveTarget(step);
+    const details = target?.matches?.("details") ? target : target?.closest?.("details");
+    if(details) details.open = true;
+    document.getElementById("dashboardTutorialProgress").textContent = (index + 1) + " of " + steps.length;
+    document.getElementById("dashboardTutorialTitle").textContent = step.title;
+    document.getElementById("dashboardTutorialBody").innerHTML = step.body;
+    document.getElementById("dashboardTutorialBack").disabled = index === 0;
+    document.getElementById("dashboardTutorialNext").textContent = index === steps.length - 1 ? "Finish" : "Next";
+    target?.scrollIntoView({behavior:"smooth",block:"center",inline:"nearest"});
+    window.setTimeout(positionSpotlight, 320);
+  }
+
+  function setOpen(open){
+    const shell = document.getElementById("dashboardTutorial");
+    active = Boolean(open);
+    shell.hidden = !active;
+    shell.setAttribute("aria-hidden", active ? "false" : "true");
+    document.body.classList.toggle("dashboard-tutorial-active", active);
+    if(active){
+      index = 0;
+      render();
+      document.getElementById("dashboardTutorialNext")?.focus();
+    }
+  }
+
+  document.getElementById("dashboardTutorialBtn")?.addEventListener("click",()=>setOpen(true));
+  document.getElementById("dashboardTutorialClose")?.addEventListener("click",()=>setOpen(false));
+  document.getElementById("dashboardTutorialBack")?.addEventListener("click",()=>{
+    if(index > 0){ index -= 1; render(); }
+  });
+  document.getElementById("dashboardTutorialNext")?.addEventListener("click",()=>{
+    if(index >= steps.length - 1) setOpen(false);
+    else { index += 1; render(); }
+  });
+  window.addEventListener("resize",positionSpotlight,{passive:true});
+  window.addEventListener("scroll",positionSpotlight,{passive:true});
+  document.addEventListener("keydown",event=>{
+    if(!active) return;
+    if(event.key === "Escape") setOpen(false);
+    if(event.key === "ArrowRight") document.getElementById("dashboardTutorialNext")?.click();
+    if(event.key === "ArrowLeft") document.getElementById("dashboardTutorialBack")?.click();
+  });
 })();
 </script>
 
