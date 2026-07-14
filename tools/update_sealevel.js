@@ -7,6 +7,9 @@ const USGS_SITE = "01411360";
 const USGS_PARAM = "72279";
 const NOAA_STATIONS = ["8535581","8536110"];
 const OUT = path.join("data", "sealevel.json");
+const MIN_USGS_DAILY_VALUES_PER_MONTH = 20;
+// Mantoloking September 2000 has a one-month station offset absent from neighboring gauges.
+const EXCLUDED_USGS_MONTHS = new Set(USGS_SITE === "01408168" ? ["2000-09"] : []);
 
 function ymd(date) {
   return date.toISOString().slice(0, 10);
@@ -154,7 +157,7 @@ function monthlyMeans(daily) {
     rec.count += 1;
   }
   return Array.from(byMonth.values())
-    .filter((r) => r.count)
+    .filter((r) => r.count >= MIN_USGS_DAILY_VALUES_PER_MONTH && !EXCLUDED_USGS_MONTHS.has(r.month))
     .map((r) => ({ month: r.month, ft: Number((r.sum / r.count).toFixed(4)), days: r.count }))
     .sort((a, b) => a.month.localeCompare(b.month));
 }
@@ -237,6 +240,11 @@ async function main() {
     parameter: USGS_PARAM,
     datum,
     source,
+    qualityControl: {
+      minimumDailyValuesPerMonth: daily.length ? MIN_USGS_DAILY_VALUES_PER_MONTH : null,
+      excludedMonths: daily.length ? [...EXCLUDED_USGS_MONTHS] : [],
+      method: "Exclude incomplete USGS months and configured station discontinuities from trend analysis"
+    },
     updated_utc: new Date().toISOString(),
     regression: regression(monthly),
     daily,

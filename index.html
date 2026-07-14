@@ -6133,7 +6133,8 @@ function normalizeSeaLevelPoint(row){
   const ft = seaLevelNumber(row.ft ?? row.navd88 ?? row.value ?? row.mean ?? row.meanFt ?? row.waterLevel);
   if(!t || !Number.isFinite(ft)) return null;
   const month = row.month || monthKeyFromDate(t) || String(t).slice(0, 7);
-  return { t:String(t), month:String(month), ft };
+  const days = row.days == null ? null : seaLevelNumber(row.days);
+  return { t:String(t), month:String(month), ft, days:Number.isFinite(days) ? days : null };
 }
 
 function normalizeSeaLevelJson(json){
@@ -6172,14 +6173,29 @@ function computeMonthlySeaLevel(points){
   }
   return Array.from(byMonth.values())
     .filter(r => r.count)
-    .map(r => ({ month:r.month, ft:r.sum / r.count }))
+    .map(r => ({ month:r.month, ft:r.sum / r.count, days:r.count }))
     .sort((a,b)=>a.month.localeCompare(b.month));
+}
+
+const SEA_LEVEL_MIN_DAILY_VALUES_PER_MONTH = 20;
+const SEA_LEVEL_EXCLUDED_USGS_MONTHS = {
+  // Mantoloking September 2000 has a one-month station offset absent from neighboring gauges.
+  "01408168":new Set(["2000-09"])
+};
+
+function filterSeaLevelMonthlyQuality(monthly){
+  const excluded = SEA_LEVEL_EXCLUDED_USGS_MONTHS[String(USGS_SITE)] || new Set();
+  return monthly.filter(row => {
+    if(excluded.has(String(row.month))) return false;
+    if(Number.isFinite(row.days) && row.days < SEA_LEVEL_MIN_DAILY_VALUES_PER_MONTH) return false;
+    return true;
+  });
 }
 
 function relativeSeaLevelSeries(monthly){
   if(!monthly.length) return null;
   const baseRows = monthly.filter(r => r.month.startsWith("2000-"));
-  const baseSet = baseRows.length ? baseRows : monthly.slice(0, Math.min(12, monthly.length));
+  const baseSet = baseRows.length >= 6 ? baseRows : monthly.slice(0, Math.min(12, monthly.length));
   const base = baseSet.reduce((sum, r)=>sum + r.ft, 0) / Math.max(1, baseSet.length);
   return monthly.map(r => ({ month:r.month, relFt:r.ft - base, ft:r.ft }));
 }
@@ -6556,7 +6572,8 @@ async function updateSeaLevelTrends(){
       source = "USGS daily values";
     }
 
-    const monthly = normalized.monthly.length ? normalized.monthly : computeMonthlySeaLevel(normalized.daily);
+    const monthlyRaw = normalized.monthly.length ? normalized.monthly : computeMonthlySeaLevel(normalized.daily);
+    const monthly = filterSeaLevelMonthlyQuality(monthlyRaw);
     const relative = relativeSeaLevelSeries(monthly);
     if(!relative || !relative.length) throw new Error("No monthly sea level values available");
     const regression = seaLevelRegression(relative);
