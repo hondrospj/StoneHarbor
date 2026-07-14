@@ -2259,6 +2259,99 @@ a.brand *{
   }
 }
 
+/* Prominent all-years visibility controls. */
+.doyBulkActions{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  gap:7px;
+  margin:10px 0;
+  padding:9px;
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:12px;
+  background:rgba(0,0,0,.16);
+}
+.doyBulkActions[hidden]{
+  display:none !important;
+}
+.doyBulkLabel{
+  color:var(--muted);
+  font-size:10.5px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:.16px;
+  text-transform:uppercase;
+}
+.doyBulkButtons{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:7px;
+}
+.doyBulkBtn{
+  appearance:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-width:0;
+  min-height:40px;
+  padding:8px 10px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:10px;
+  background:rgba(255,255,255,.05);
+  color:var(--text);
+  font-size:11.5px;
+  font-weight:950;
+  line-height:1.1;
+  cursor:pointer;
+}
+.doyBulkBtn:hover{filter:brightness(1.1)}
+.doyBulkBtn:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(45,212,191,.18);
+}
+.doyBulkBtn.isShow{
+  border-color:rgba(34,197,94,.34);
+  background:rgba(34,197,94,.08);
+}
+.doyBulkBtn.isHide{
+  border-color:rgba(248,113,113,.32);
+  background:rgba(248,113,113,.07);
+}
+.doyBulkBtn.isShow.isActive{
+  border-color:rgba(34,197,94,.78);
+  background:rgba(34,197,94,.18);
+  box-shadow:inset 0 0 0 1px rgba(34,197,94,.18);
+}
+.doyBulkBtn.isHide.isActive{
+  border-color:rgba(248,113,113,.72);
+  background:rgba(248,113,113,.16);
+  box-shadow:inset 0 0 0 1px rgba(248,113,113,.16);
+}
+.doyBulkIcon{
+  flex:0 0 auto;
+  display:inline-grid;
+  place-items:center;
+  width:19px;
+  height:19px;
+  border:1px solid currentColor;
+  border-radius:6px;
+  font-size:13px;
+  line-height:1;
+}
+.doyPresetGrid{
+  grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+}
+@media(max-width:480px){
+  .doyBulkActions{
+    padding:8px;
+  }
+  .doyBulkBtn{
+    min-height:44px;
+    padding:8px 7px;
+    font-size:11px;
+  }
+}
+
 /* Compact the desktop header without hiding the dashboard tour. */
 @media(min-width:1121px){
   .top{
@@ -2573,17 +2666,29 @@ a.brand *{
             <button class="doyModeBtn" type="button" data-doy-mode="past">Past forecasts</button>
           </div>
 
+          <div class="doyBulkActions" id="doyBulkActions" role="group" aria-label="All years visibility">
+            <div class="doyBulkLabel">All years</div>
+            <div class="doyBulkButtons">
+              <button class="doyBulkBtn isShow" type="button" data-doy-preset="all" aria-pressed="false">
+                <span class="doyBulkIcon" aria-hidden="true">✓</span>
+                <span>Turn all on</span>
+              </button>
+              <button class="doyBulkBtn isHide" type="button" data-doy-preset="none" aria-pressed="false">
+                <span class="doyBulkIcon" aria-hidden="true">×</span>
+                <span>Turn all off</span>
+              </button>
+            </div>
+          </div>
+
           <div class="doyGradientKey" aria-label="Year color scale">
             <span>Past</span>
             <div class="doyGradientRail"></div>
             <span>Recent</span>
           </div>
 
-          <div class="doyPresetGrid" id="doyPresetGrid" aria-label="Year visibility presets">
-            <button class="miniKeyBtn" type="button" data-doy-preset="all">All</button>
-            <button class="miniKeyBtn" type="button" data-doy-preset="recent">Recent</button>
-            <button class="miniKeyBtn isDanger" type="button" data-doy-preset="none">None</button>
-            <button class="miniKeyBtn" type="button" data-doy-preset="current">Current</button>
+          <div class="doyPresetGrid" id="doyPresetGrid" aria-label="Quick year selections">
+            <button class="miniKeyBtn" type="button" data-doy-preset="recent">Show recent 8</button>
+            <button class="miniKeyBtn" type="button" data-doy-preset="current">Current year</button>
           </div>
 
           <div class="doyYearTableWrap">
@@ -3038,6 +3143,7 @@ const doyStartLabel = $("doyStartLabel");
 const doyEndLabel = $("doyEndLabel");
 const doyStartYear = $("doyStartYear");
 const doyEndYear = $("doyEndYear");
+const doyBulkActions = $("doyBulkActions");
 const doyPresetGrid = $("doyPresetGrid");
 const doyYearTable = $("doyYearTable");
 
@@ -7293,6 +7399,18 @@ function renderDOYVisibleSummary(years, curYear){
   const selected = normalizeDOYSelectedRange(years, curYear);
   updateDOYRangeInputs(selectable);
 
+  if(doyBulkActions){
+    const isPast = DOY_VIEW_MODE === "past";
+    const allOn = !isPast && selectable.length > 0 && selected.length === selectable.length;
+    const allOff = !isPast && selected.length === 0;
+    doyBulkActions.hidden = isPast;
+    doyBulkActions.querySelectorAll("[data-doy-preset]").forEach(btn=>{
+      const active = btn.dataset.doyPreset === "all" ? allOn : allOff;
+      btn.classList.toggle("isActive", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
+
   if(doyModeSeg){
     doyModeSeg.querySelectorAll("[data-doy-mode]").forEach(btn=>{
       btn.classList.toggle("isActive", btn.dataset.doyMode === DOY_VIEW_MODE);
@@ -7441,8 +7559,9 @@ function hookDOYControls(){
     });
   }
 
-  if(doyPresetGrid){
-    doyPresetGrid.addEventListener("click", event=>{
+  for(const host of [doyBulkActions, doyPresetGrid]){
+    if(!host) continue;
+    host.addEventListener("click", event=>{
       const btn = event.target?.closest?.("[data-doy-preset]");
       if(!btn) return;
       applyDOYYearPreset(btn.dataset.doyPreset || "all");
