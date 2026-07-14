@@ -6022,12 +6022,14 @@ function updateTsChartFromState(){
   yMin = Math.floor(yMin / STEP) * STEP;
   yMax = Math.ceil(yMax / STEP) * STEP;
   if(Number.isFinite(requiredMajorHeadroomFt)){
-    yMax = Math.max(yMax, requiredMajorHeadroomFt);
+    yMax = Math.max(yMax, Math.ceil(requiredMajorHeadroomFt / STEP) * STEP);
   }
 
   tsChart.options.scales.y.min = yMin;
   tsChart.options.scales.y.max = yMax;
   tsChart.options.scales.y.ticks.stepSize = STEP;
+  tsChart.options.scales.y.ticks.precision = 0;
+  tsChart.options.scales.y.ticks.callback = value => Number(value).toFixed(0);
 
   delete tsChart.options.scales.x.min;
   delete tsChart.options.scales.x.max;
@@ -7960,7 +7962,7 @@ function renderHist(rowsNavd){
     histBody.appendChild(tr);
   }
 
-  histMeta.textContent = `Showing ${Math.min(limit, rowsNavd.length)} of ${rowsNavd.length.toLocaleString()} daily maxima · NOAA Lewes fills pre-gauge history; USGS annual crests replace matching dates.`;
+  histMeta.textContent = `Showing ${Math.min(limit, rowsNavd.length)} of ${rowsNavd.length.toLocaleString()} daily maxima · Local observations with official USGS annual crest overrides.`;
 }
 
 function applyFilter(){
@@ -8396,7 +8398,11 @@ function normalizePeaksJson(json){
       officialCrestOverride: Boolean(r?.officialCrestOverride),
       officialCrestOnly: Boolean(r?.officialCrestOnly),
       officialCrestSourceSite: r?.officialCrestSourceSite ?? "",
-      surrogateForLocalHistory: Boolean(r?.surrogateForLocalHistory)
+      officialCrestSourceName: r?.officialCrestSourceName ?? "",
+      officialCrestDistanceMiles: Number.isFinite(Number(r?.officialCrestDistanceMiles)) ? Number(r.officialCrestDistanceMiles) : null,
+      officialCrestExactGauge: Boolean(r?.officialCrestExactGauge),
+      officialCrestReportedTime: r?.officialCrestReportedTime ?? "",
+      officialCrestQualificationCodes: r?.officialCrestQualificationCodes ?? ""
     });
   }
   return out;
