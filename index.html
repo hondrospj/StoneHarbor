@@ -7940,7 +7940,7 @@ function renderDOYCumPanel(){
 }
 
 function refreshDOYFromHistory(){
-  DOY_CACHE = computeDOYStatsFromEvents(USGS_HISTORY_NAVD);
+  DOY_CACHE = computeDOYStatsFromEvents(USGS_HISTORY_NAVD.filter(event => !event?.officialCrestOverride));
   renderDOYCumPanel();
 }
 
