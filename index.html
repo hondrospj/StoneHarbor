@@ -2678,6 +2678,7 @@ a.brand *{
           <option value="25">Show 25</option>
           <option value="50">Show 50</option>
           <option value="100">Show 100</option>
+          <option value="500">Show 500</option>
         </select>
         <button class="btn" id="applyBtn">Apply</button>
         <button class="btn" id="resetBtn">Reset</button>
@@ -7991,7 +7992,7 @@ function refreshDOYFromHistory(){
 function renderHist(rowsNavd){
   histBody.innerHTML = "";
 
-  const limit = Math.max(10, Math.min(100, Number(histLimitEl?.value || 10)));
+  const limit = Math.max(10, Math.min(500, Number(histLimitEl?.value || 10)));
   const show = rowsNavd.slice(0, limit);
 
   for(const r of show){
