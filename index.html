@@ -5012,6 +5012,69 @@ function annualYearFromEvent(e){
   return dt.getUTCFullYear();
 }
 
+function annualLocalDateFromEvent(e){
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(e?.localDate || ""))) return String(e.localDate);
+  const dt = new Date(e?.t);
+  if(Number.isNaN(dt.getTime())) return "";
+  const { y, m, d } = getESTParts(dt);
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+function officialCrestsForAnnualYear(year){
+  const bestByDate = new Map();
+  for(const event of (HIGH_TIDES_NAVD || [])){
+    if(!event?.officialCrestOverride || annualYearFromEvent(event) !== year) continue;
+    const dateKey = annualLocalDateFromEvent(event);
+    const ft = Number(event?.ft);
+    if(!dateKey || !Number.isFinite(ft)) continue;
+    const prior = bestByDate.get(dateKey);
+    if(!prior || ft > Number(prior.ft)) bestByDate.set(dateKey, event);
+  }
+  return Array.from(bestByDate.values());
+}
+
+function annualFloodCategoryForFt(ft){
+  const value = Number(ft);
+  const T = THRESH.NAVD88;
+  if(!Number.isFinite(value)) return "";
+  if(value >= T.majorLow) return "major";
+  if(value >= T.moderateLow) return "moderate";
+  if(value >= T.minorLow) return "minor";
+  return "";
+}
+
+function applyOfficialCrestsToFallbackAnnualCounts(counts, year){
+  const crests = officialCrestsForAnnualYear(year);
+  if(!crests.length) return counts;
+  const out = {
+    ...counts,
+    year,
+    minor: Math.max(0, annualNumber(counts?.minor) ?? 0),
+    moderate: Math.max(0, annualNumber(counts?.moderate) ?? 0),
+    major: Math.max(0, annualNumber(counts?.major) ?? 0),
+    officialCrestOverrides: crests.length
+  };
+  const categoryOrder = ["minor", "moderate", "major"];
+  for(const crest of crests){
+    const replaced = crest?.annualLongTermReplacedCounts || {};
+    for(const requestedCategory of categoryOrder){
+      const displaced = Math.max(0, annualNumber(replaced?.[requestedCategory]) ?? 0);
+      const requestedIndex = categoryOrder.indexOf(requestedCategory);
+      const candidates = [...categoryOrder].sort((a, b) =>
+        Math.abs(categoryOrder.indexOf(a) - requestedIndex) - Math.abs(categoryOrder.indexOf(b) - requestedIndex)
+      );
+      for(let occurrence = 0; occurrence < displaced; occurrence++){
+        const availableCategory = candidates.find(category => out[category] > 0);
+        if(!availableCategory) break;
+        out[availableCategory]--;
+      }
+    }
+    const category = annualFloodCategoryForFt(crest.ft);
+    if(category) out[category] += 1;
+  }
+  return out;
+}
+
 function countEventsFromListForYear(events, year){
   const T = THRESH.NAVD88;
   const out = { minor: 0, moderate: 0, major: 0 };
@@ -5185,15 +5248,15 @@ function buildAnnualArrays(){
       }
 
       const fallback = atlanticByYear.get(year);
-      if(fallback) return fallback;
+      if(fallback) return applyOfficialCrestsToFallbackAnnualCounts(fallback, year);
 
-      return {
+      return applyOfficialCrestsToFallbackAnnualCounts({
         year,
         minor:0,
         moderate:0,
         major:0,
         source: year >= STATION_ANNUAL_PRIORITY_START_YEAR ? "live" : "atlanticCity"
-      };
+      }, year);
     });
 
   const lastObservedYear = rows.reduce((max, r)=>Math.max(max, r.year), -Infinity);
@@ -8619,7 +8682,15 @@ function normalizePeaksJson(json){
       officialCrestDistanceMiles: Number.isFinite(Number(r?.officialCrestDistanceMiles)) ? Number(r.officialCrestDistanceMiles) : null,
       officialCrestExactGauge: Boolean(r?.officialCrestExactGauge),
       officialCrestReportedTime: r?.officialCrestReportedTime ?? "",
-      officialCrestQualificationCodes: r?.officialCrestQualificationCodes ?? ""
+      officialCrestQualificationCodes: r?.officialCrestQualificationCodes ?? "",
+      annualLongTermSourceStation: r?.annualLongTermSourceStation ?? "",
+      annualLongTermSourceName: r?.annualLongTermSourceName ?? "",
+      annualLongTermSourceNoData: Boolean(r?.annualLongTermSourceNoData),
+      annualLongTermReplacedCounts: {
+        minor: Math.max(0, Number(r?.annualLongTermReplacedCounts?.minor) || 0),
+        moderate: Math.max(0, Number(r?.annualLongTermReplacedCounts?.moderate) || 0),
+        major: Math.max(0, Number(r?.annualLongTermReplacedCounts?.major) || 0)
+      }
     });
   }
   return out;
@@ -8677,6 +8748,30 @@ async function initJSONBackedHistory(){
     return estHour(iso) < 12 ? "AM" : "PM";
   }
 
+  function eventLocalDateKey(event){
+    if(/^\d{4}-\d{2}-\d{2}$/.test(String(event?.localDate || ""))) return String(event.localDate);
+    const { y, m, d } = estParts(event?.t);
+    return y && m && d ? `${y}-${m}-${d}` : "";
+  }
+
+  function applyOfficialCrestDateAuthority(events){
+    const bestCrestByDate = new Map();
+    for(const event of (events || [])){
+      if(!event?.officialCrestOverride) continue;
+      const dateKey = eventLocalDateKey(event);
+      const ft = Number(event?.ft);
+      if(!dateKey || !Number.isFinite(ft)) continue;
+      const prior = bestCrestByDate.get(dateKey);
+      if(!prior || ft > Number(prior.ft)) bestCrestByDate.set(dateKey, event);
+    }
+    if(!bestCrestByDate.size) return events || [];
+    return (events || []).filter(event => {
+      const dateKey = eventLocalDateKey(event);
+      const authoritative = bestCrestByDate.get(dateKey);
+      return !authoritative || event === authoritative;
+    });
+  }
+
   function bestEventsByTideBucket(events){
     const bestByKey = new Map();
     for(const e of events){
@@ -8702,8 +8797,9 @@ async function initJSONBackedHistory(){
       || /USGS/i.test(String(event?.source || ""));
   }
 
-  HIGH_TIDES_NAVD = bestEventsByTideBucket(combined);
-  USGS_HISTORY_NAVD = bestEventsByTideBucket(combined.filter(isUSGSHistoryEvent));
+  const authoritativeCombined = applyOfficialCrestDateAuthority(combined);
+  HIGH_TIDES_NAVD = bestEventsByTideBucket(authoritativeCombined);
+  USGS_HISTORY_NAVD = bestEventsByTideBucket(authoritativeCombined.filter(isUSGSHistoryEvent));
 
   
  applyFilter();

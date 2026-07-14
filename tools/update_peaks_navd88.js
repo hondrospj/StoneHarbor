@@ -118,6 +118,39 @@ function classifyNAVD(ft, T) {
   return type;
 }
 
+const OFFICIAL_CREST_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit"
+});
+
+function officialCrestLocalDate(event) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(event?.localDate || ""))) return String(event.localDate);
+  const instant = new Date(event?.t || event?.time || event?.timestamp || "");
+  if (Number.isNaN(instant.getTime())) return "";
+  const parts = OFFICIAL_CREST_DATE_FORMATTER.formatToParts(instant);
+  const value = type => parts.find(part => part.type === type)?.value;
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
+function applyOfficialCrestDateAuthority(events) {
+  const bestCrestByDate = new Map();
+  for (const event of (events || [])) {
+    if (!event?.officialCrestOverride) continue;
+    const dateKey = officialCrestLocalDate(event);
+    const ft = Number(event?.ft);
+    if (!dateKey || !Number.isFinite(ft)) continue;
+    const prior = bestCrestByDate.get(dateKey);
+    if (!prior || ft > Number(prior.ft)) bestCrestByDate.set(dateKey, event);
+  }
+  if (!bestCrestByDate.size) return events || [];
+  return (events || []).filter(event => {
+    const authoritative = bestCrestByDate.get(officialCrestLocalDate(event));
+    return !authoritative || event === authoritative;
+  });
+}
+
 // -------------------------
 // USGS IV fetch (15-min-ish)
 // -------------------------
@@ -288,7 +321,8 @@ async function main() {
   if (cache.method !== METHOD) {
     console.log(`Method changed (${cache.method || "none"} -> ${METHOD}). Clearing events for clean rebuild.`);
     cache.method = METHOD;
-    cache.events = [];
+    cache.events = (Array.isArray(cache.events) ? cache.events : []).filter(event => event?.officialCrestOverride);
+    // Preserve authoritative USGS storm crests across local cache-method rebuilds.
     // Leave lastProcessedISO as-is; you can run a backfill range to rebuild.
   }
 
@@ -384,9 +418,10 @@ async function main() {
     }
   }
 
-  // Keep chronological order
-  existing.sort((a, b) => new Date(a.t) - new Date(b.t));
-  cache.events = existing;
+  // A USGS storm crest is authoritative for its full New Jersey calendar date.
+  const authoritative = applyOfficialCrestDateAuthority(existing);
+  authoritative.sort((a, b) => new Date(a.t) - new Date(b.t));
+  cache.events = authoritative;
 
   // Advance lastProcessedISO to newest timestamp in the fetched USGS series
   const newestT = series[series.length - 1]?.t;
