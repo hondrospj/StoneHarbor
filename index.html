@@ -2247,6 +2247,39 @@ a.brand *{
   @media(max-width:420px){.dashboardTutorialActions button{flex:1;min-width:0}.dashboardTutorialProgress{letter-spacing:.06em}}
   @media(max-height:620px) and (max-width:720px){.dashboardTutorialCard{max-height:52dvh}.dashboardTutorialBody{font-size:13px}}
   @media(prefers-reduced-motion:reduce){.dashboardTutorialSpotlight{transition:none!important}}
+
+/* Keep the desktop header status pill inside the viewport. */
+.topRight{
+  flex:0 0 auto;
+  max-width:100%;
+}
+#lastPill{
+  flex:0 1 auto;
+  width:max-content;
+  max-width:min(340px, 100%);
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-align:center;
+  justify-content:center;
+  line-height:1.2;
+}
+@media(max-width:1120px){
+  .top{
+    flex-wrap:wrap;
+  }
+  .topRight{
+    flex:1 1 100%;
+    width:100%;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  #lastPill{
+    flex:1 1 100%;
+    width:100%;
+    max-width:100%;
+  }
+}
 </style>
 </head>
 
