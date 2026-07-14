@@ -3582,7 +3582,7 @@ function historicRowPriority(r){
 
 function combinedHistoricRowsNavd(){
   const bestByDate = new Map();
-  for(const r of [...manualHistoricRowsNavd(), ...(HIGH_TIDES_NAVD || [])]){
+  for(const r of (USGS_HISTORY_NAVD || [])){
     const dateKey = historicDateKey(r);
     const ft = Number(r?.ft);
     if(!dateKey || !Number.isFinite(ft)) continue;
@@ -4655,6 +4655,7 @@ function attachChartZoom(chart){
 
 
 let HIGH_TIDES_NAVD=[];
+let USGS_HISTORY_NAVD=[];
 let annualChart=null, tsChart=null, monthAvgChart=null;
 let YEARS=[], annualMinor=[], annualModerate=[], annualMajor=[];
 
@@ -7962,7 +7963,7 @@ function renderHist(rowsNavd){
     histBody.appendChild(tr);
   }
 
-  histMeta.textContent = `Showing ${Math.min(limit, rowsNavd.length)} of ${rowsNavd.length.toLocaleString()} daily maxima · Local observations with official USGS annual crest overrides.`;
+  histMeta.textContent = "";
 }
 
 function applyFilter(){
@@ -8218,7 +8219,7 @@ function renderMonthAveragesChart(monthStats){
 }
 
 function updateMonthAveragesFromHistory(){
-  if(!HIGH_TIDES_NAVD.length){
+  if(!USGS_HISTORY_NAVD.length){
     monthAvgMeta.textContent = "";
     const zeros = Array.from({length:12},(_,i)=>({
       month:i+1, avgTotal:0, avgMinor:0, avgModerate:0, avgMajor:0, years:0
@@ -8227,7 +8228,7 @@ function updateMonthAveragesFromHistory(){
     return;
   }
 
-  const stats = computeMonthlyAveragesFromEvents(HIGH_TIDES_NAVD);
+  const stats = computeMonthlyAveragesFromEvents(USGS_HISTORY_NAVD);
   monthAvgMeta.textContent = "";
   renderMonthAveragesChart(stats);
 }
@@ -8395,6 +8396,7 @@ function normalizePeaksJson(json){
       localDate: /^\d{4}-\d{2}-\d{2}$/.test(String(r?.localDate || "")) ? String(r.localDate) : null,
       kind: r?.kind ?? r?.type ?? "Peak",
       source: r?.historySource ?? r?.source ?? "JSON",
+      historyAgency: String(r?.historyAgency ?? (GAUGE_TYPE === "USGS" ? "USGS" : "NOAA")).toUpperCase(),
       officialCrestOverride: Boolean(r?.officialCrestOverride),
       officialCrestOnly: Boolean(r?.officialCrestOnly),
       officialCrestSourceSite: r?.officialCrestSourceSite ?? "",
@@ -8421,7 +8423,10 @@ async function initJSONBackedHistory(){
   let livePeaks = [];
   if(!has2026Plus){
     try{
-      livePeaks = await buildLiveFloodPeaksSince2026();
+      livePeaks = (await buildLiveFloodPeaksSince2026()).map(event => ({
+        ...event,
+        historyAgency: GAUGE_TYPE === "USGS" ? "USGS" : "NOAA"
+      }));
     }catch(e){
       console.warn("Live peaks build failed:", e);
       livePeaks = [];
@@ -8457,30 +8462,33 @@ async function initJSONBackedHistory(){
     return estHour(iso) < 12 ? "AM" : "PM";
   }
 
-  const bestByKey = new Map();
+  function bestEventsByTideBucket(events){
+    const bestByKey = new Map();
+    for(const e of events){
+      const dt = new Date(e.t);
+      if(Number.isNaN(dt.getTime())) continue;
 
-  for(const e of combined){
-    const dt = new Date(e.t);
-    if(Number.isNaN(dt.getTime())) continue;
+      const ft = Number(e.ft);
+      if(!Number.isFinite(ft)) continue;
 
-    const ft = Number(e.ft);
-    if(!Number.isFinite(ft)) continue;
+      const {y,m,d} = estParts(e.t);
+      if(!y || !m || !d) continue;
 
-    const {y,m,d} = estParts(e.t);
-    if(!y || !m || !d) continue;
-
-    const key = `${y}-${m}-${d}|${tideBucket(e.t)}`;
-
-    const prev = bestByKey.get(key);
-    if(!prev || ft > prev.ft){
-      bestByKey.set(key, e);
+      const key = `${y}-${m}-${d}|${tideBucket(e.t)}`;
+      const prev = bestByKey.get(key);
+      if(!prev || ft > prev.ft) bestByKey.set(key, e);
     }
+    return Array.from(bestByKey.values()).sort((a,b)=>new Date(b.t)-new Date(a.t));
   }
 
-  HIGH_TIDES_NAVD = Array.from(bestByKey.values());
+  function isUSGSHistoryEvent(event){
+    return String(event?.historyAgency || "").toUpperCase() === "USGS"
+      || Boolean(event?.officialCrestOverride)
+      || /USGS/i.test(String(event?.source || ""));
+  }
 
-  
-  HIGH_TIDES_NAVD.sort((a,b)=>new Date(b.t)-new Date(a.t));
+  HIGH_TIDES_NAVD = bestEventsByTideBucket(combined);
+  USGS_HISTORY_NAVD = bestEventsByTideBucket(combined.filter(isUSGSHistoryEvent));
 
   
  applyFilter();
