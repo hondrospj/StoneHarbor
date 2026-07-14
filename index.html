@@ -2259,6 +2259,41 @@ a.brand *{
   }
 }
 
+/* Compact the desktop header without hiding the dashboard tour. */
+@media(min-width:1121px){
+  .top{
+    align-items:center;
+  }
+  .top .brand{
+    align-items:center;
+  }
+  .top .brandTitle{
+    padding-top:0;
+  }
+  .topRight{
+    align-items:center;
+  }
+}
+@media(min-width:721px){
+  .liveConditionsCard > .dashboardTutorialLaunchRow{
+    position:absolute;
+    z-index:5;
+    top:14px;
+    right:14px;
+    margin:0;
+  }
+  .liveConditionsCard > .hrow{
+    min-height:42px;
+    align-items:center;
+    padding-right:220px;
+  }
+}
+@media(max-width:720px){
+  .liveConditionsCard > .dashboardTutorialLaunchRow{
+    margin:0 0 12px;
+  }
+}
+
 /* Keep the desktop header status pill inside the viewport. */
 .topRight{
   flex:0 0 auto;
@@ -2351,11 +2386,10 @@ a.brand *{
       </div>
     </div>
   </div>
-  <div class="dashboardTutorialLaunchRow">
-    <button id="dashboardTutorialBtn" class="dashboardTutorialBtn" type="button" aria-haspopup="dialog">Take the dashboard tour</button>
-  </div>
-
-<div class="card">
+<div class="card liveConditionsCard">
+    <div class="dashboardTutorialLaunchRow">
+      <button id="dashboardTutorialBtn" class="dashboardTutorialBtn" type="button" aria-haspopup="dialog">Take the dashboard tour</button>
+    </div>
     <div class="hrow">
       <h2>Live conditions</h2>
       <div class="kicker" style="text-transform:none">Time Expressed In ET</div>
