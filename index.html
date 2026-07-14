@@ -2248,6 +2248,17 @@ a.brand *{
   @media(max-height:620px) and (max-width:720px){.dashboardTutorialCard{max-height:52dvh}.dashboardTutorialBody{font-size:13px}}
   @media(prefers-reduced-motion:reduce){.dashboardTutorialSpotlight{transition:none!important}}
 
+/* Optimize the dashboard title for desktop header space. */
+.top .name{
+  text-wrap:balance;
+}
+@media(min-width:1121px){
+  .top .name{
+    font-size:clamp(20px,1.375vw,22px);
+    line-height:1.04;
+  }
+}
+
 /* Keep the desktop header status pill inside the viewport. */
 .topRight{
   flex:0 0 auto;
