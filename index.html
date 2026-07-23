@@ -2749,6 +2749,7 @@ a.brand *{
       <div class="seaLevelHeader paneControlHeader">
         <div class="paneTitleBlock">
           <div class="hint seaLevelMeta" id="seaLevelMeta"></div>
+          <div class="seaLevelStats" id="seaLevelStats" aria-live="polite"></div>
         </div>
         <div class="paneToggleGroup seaLevelToggleGroup">
           <button class="btn predictionToggle" id="seaLevelProjectionToggle" type="button" aria-pressed="false">
@@ -6562,7 +6563,22 @@ function buildSeaLevelDatasets(labels, state){
 }
 
 function renderSeaLevelStats(state){
-  return;
+  const stats = $("seaLevelStats");
+  if(!stats) return;
+  const annualFt = Number(state?.regression?.annualFt ?? state?.regression?.slope);
+  const mmPerYear = annualFt * 304.8;
+  if(!Number.isFinite(mmPerYear)){
+    stats.textContent = "";
+    return;
+  }
+  const direction = mmPerYear >= 0 ? "Rising" : "Falling";
+  const rate = Math.abs(mmPerYear).toFixed(1);
+  stats.innerHTML = `
+    <div class="trendChip" aria-label="Sea level is ${direction.toLowerCase()} ${rate} millimeters per year">
+      <span class="lineChip" style="background:rgba(255,255,255,.88)" aria-hidden="true"></span>
+      ${direction} ${rate} mm/year
+    </div>
+  `;
 }
 
 function renderSeaLevelChart(){

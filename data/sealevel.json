@@ -4,30 +4,35 @@
   "parameter": "72279",
   "datum": "NAVD88",
   "source": "USGS daily mean",
-  "updated_utc": "2026-06-30T15:25:09.064Z",
+  "qualityControl": {
+    "minimumDailyValuesPerMonth": 20,
+    "excludedMonths": [],
+    "method": "Exclude incomplete USGS months and configured station discontinuities from trend analysis"
+  },
+  "updated_utc": "2026-07-23T13:41:07.436Z",
   "regression": {
-    "slopeFtPerYear": 0.01952064853983275,
-    "interceptFt": -39.2413059590378,
-    "monthlyPoints": 311,
+    "slopeFtPerYear": 0.019507073487492248,
+    "interceptFt": -39.21381686138295,
+    "monthlyPoints": 312,
     "method": "deseasonalized_monthly_mean_linear_regression",
     "rawRegression": {
-      "slopeFtPerYear": 0.01897847365231189,
-      "interceptFt": -38.149712294572446,
-      "monthlyPoints": 311
+      "slopeFtPerYear": 0.019018625097296096,
+      "interceptFt": -38.230373385299295,
+      "monthlyPoints": 312
     },
     "seasonalAdjustmentsFt": {
-      "01": -0.316367,
-      "02": -0.326254,
-      "03": -0.169272,
-      "04": -0.058224,
-      "05": 0.038989,
-      "06": 0.098316,
-      "07": 0.068146,
-      "08": 0.15998,
-      "09": 0.400429,
-      "10": 0.346209,
-      "11": -0.027261,
-      "12": -0.243207
+      "10": 0.346034,
+      "11": -0.027439,
+      "12": -0.24339,
+      "01": -0.31656,
+      "02": -0.326451,
+      "03": -0.169444,
+      "04": -0.058399,
+      "05": 0.038811,
+      "06": 0.09811,
+      "07": 0.067539,
+      "08": 0.159811,
+      "09": 0.400257
     }
   },
   "daily": [
@@ -37322,6 +37327,98 @@
     {
       "date": "2026-06-29",
       "ft": 0.47
+    },
+    {
+      "date": "2026-06-30",
+      "ft": 0.3
+    },
+    {
+      "date": "2026-07-01",
+      "ft": -0.09
+    },
+    {
+      "date": "2026-07-02",
+      "ft": -0.2
+    },
+    {
+      "date": "2026-07-03",
+      "ft": -0.06
+    },
+    {
+      "date": "2026-07-04",
+      "ft": 0.28
+    },
+    {
+      "date": "2026-07-05",
+      "ft": 0.36
+    },
+    {
+      "date": "2026-07-06",
+      "ft": 0.74
+    },
+    {
+      "date": "2026-07-07",
+      "ft": 1.02
+    },
+    {
+      "date": "2026-07-08",
+      "ft": 0.73
+    },
+    {
+      "date": "2026-07-09",
+      "ft": 0.59
+    },
+    {
+      "date": "2026-07-10",
+      "ft": 0.56
+    },
+    {
+      "date": "2026-07-11",
+      "ft": 0.81
+    },
+    {
+      "date": "2026-07-12",
+      "ft": 0.79
+    },
+    {
+      "date": "2026-07-13",
+      "ft": 0.48
+    },
+    {
+      "date": "2026-07-14",
+      "ft": 0
+    },
+    {
+      "date": "2026-07-15",
+      "ft": -0.19
+    },
+    {
+      "date": "2026-07-16",
+      "ft": 0.44
+    },
+    {
+      "date": "2026-07-17",
+      "ft": 0.41
+    },
+    {
+      "date": "2026-07-18",
+      "ft": 0.29
+    },
+    {
+      "date": "2026-07-19",
+      "ft": 0.21
+    },
+    {
+      "date": "2026-07-20",
+      "ft": 0.34
+    },
+    {
+      "date": "2026-07-21",
+      "ft": 0.35
+    },
+    {
+      "date": "2026-07-22",
+      "ft": 0.23
     }
   ],
   "monthly": [
@@ -37741,11 +37838,6 @@
       "days": 30
     },
     {
-      "month": "2007-02",
-      "ft": -0.6088,
-      "days": 17
-    },
-    {
       "month": "2007-03",
       "ft": -0.6232,
       "days": 31
@@ -37854,11 +37946,6 @@
       "month": "2008-12",
       "ft": -0.4207,
       "days": 29
-    },
-    {
-      "month": "2009-01",
-      "ft": -0.4787,
-      "days": 15
     },
     {
       "month": "2009-02",
@@ -38116,11 +38203,6 @@
       "days": 30
     },
     {
-      "month": "2013-05",
-      "ft": 0.3843,
-      "days": 7
-    },
-    {
       "month": "2013-07",
       "ft": 0.273,
       "days": 20
@@ -38214,11 +38296,6 @@
       "month": "2015-01",
       "ft": -0.4532,
       "days": 31
-    },
-    {
-      "month": "2015-02",
-      "ft": 0.0742,
-      "days": 12
     },
     {
       "month": "2015-03",
@@ -38897,45 +38974,13 @@
     },
     {
       "month": "2026-06",
-      "ft": 0.3186,
-      "days": 29
-    }
-  ],
-  "regressionRaw": {
-    "slopeFtPerYear": 0.01897847365231189,
-    "interceptFt": -38.149712294572446,
-    "monthlyPoints": 311
-  },
-  "regressionDeseasonalized": {
-    "slopeFtPerYear": 0.01952064853983275,
-    "interceptFt": -39.2413059590378,
-    "monthlyPoints": 311,
-    "method": "deseasonalized_monthly_mean_linear_regression",
-    "rawRegression": {
-      "slopeFtPerYear": 0.01897847365231189,
-      "interceptFt": -38.149712294572446,
-      "monthlyPoints": 311
+      "ft": 0.318,
+      "days": 30
     },
-    "seasonalAdjustmentsFt": {
-      "01": -0.316367,
-      "02": -0.326254,
-      "03": -0.169272,
-      "04": -0.058224,
-      "05": 0.038989,
-      "06": 0.098316,
-      "07": 0.068146,
-      "08": 0.15998,
-      "09": 0.400429,
-      "10": 0.346209,
-      "11": -0.027261,
-      "12": -0.243207
+    {
+      "month": "2026-07",
+      "ft": 0.3677,
+      "days": 22
     }
-  },
-  "trendMethod": "deseasonalized_monthly_mean_linear_regression",
-  "regression_updated_utc": "2026-07-01T02:02:03.900217+00:00",
-  "qualityControl": {
-    "minimumDailyValuesPerMonth": 20,
-    "excludedMonths": [],
-    "method": "Exclude incomplete USGS months and configured station discontinuities from trend analysis"
-  }
+  ]
 }
