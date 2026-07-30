@@ -104,7 +104,9 @@ option{
 .name{
   font-size:32px;   
   font-weight:950;
-  letter-spacing:.2px
+  letter-spacing:.2px;
+  line-height:1.22;
+  padding-bottom:4px;
 }
 
     .pill{
@@ -1686,7 +1688,8 @@ a.brand *{
     }
     .name{
       font-size:clamp(23px, 3vw, 31px);
-      line-height:1.04;
+      line-height:1.22;
+      padding-bottom:4px;
     }
     .topRight{
       align-items:flex-start;
@@ -2883,6 +2886,10 @@ a.brand *{
 
 const TZ = "America/New_York";
 
+if(window.Chart?.defaults?.font){
+  Chart.defaults.font.size = 13;
+}
+
 
 
 
@@ -3820,43 +3827,21 @@ function normalizePetssJsonToPoints(json){
 
 async function fetchFirstOkJson(urls){
   const errs = [];
-  for(const u of urls){
-    try{
-      const res = await fetch(`${u}?v=${Date.now()}`, { cache:"no-store" });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const j = await res.json();
-      return { url: u, json: j };
-    }catch(e){
-      errs.push(`${u} (${e?.message || e})`);
+  const attempts = 2;
+  for(let attempt = 1; attempt <= attempts; attempt++){
+    for(const u of urls){
+      try{
+        const res = await fetch(`${u}?v=${Date.now()}`, { cache:"no-store" });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const j = await res.json();
+        return { url: u, json: j };
+      }catch(e){
+        errs.push(`${u} attempt ${attempt} (${e?.message || e})`);
+      }
     }
+    if(attempt < attempts) await new Promise(resolve => setTimeout(resolve, 350));
   }
   throw new Error("PETSS JSON not found. Tried: " + errs.join(" | "));
-}
-
-async function fetchNOAAHourlyPredictions({ station, beginYMD, endYMD, datum="MLLW" }){
-  const url = new URL("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter");
-  url.searchParams.set("product","predictions");
-  url.searchParams.set("application", COOPS_APP || "web");
-  url.searchParams.set("begin_date", beginYMD);
-  url.searchParams.set("end_date", endYMD);
-  url.searchParams.set("datum", datum);
-  url.searchParams.set("station", station);
-  url.searchParams.set("time_zone","gmt");
-  url.searchParams.set("units","english");
-  url.searchParams.set("interval","h");
-  url.searchParams.set("format","json");
-
-  const res = await fetchWithTimeout(url.toString(), { cache:"no-store" }, 8000);
-  if(!res.ok) throw new Error("NOAA hourly predictions failed " + res.status);
-  const j = await res.json();
-  const preds = j?.predictions || [];
-  return preds
-    .map(p => ({
-      t: new Date(String(p.t).replace(" ", "T") + "Z").toISOString(),
-      ft: Number(p.v)
-    }))
-    .filter(p => p.t && Number.isFinite(p.ft))
-    .sort((a,b)=> new Date(a.t) - new Date(b.t));
 }
 
 async function fetchPETSSForecast_MLLW(){
@@ -6497,8 +6482,7 @@ function buildSeaLevelDatasets(labels, state){
     order:20
   }];
 
-  if(state.regression){
-    datasets.push({
+  const historicalTrendDataset = state.regression ? {
       label:"Historical trend",
       data:labels.map(m => {
         if(lastObservedMonth && m > lastObservedMonth) return null;
@@ -6515,10 +6499,12 @@ function buildSeaLevelDatasets(labels, state){
       spanGaps:false,
       tension:0,
       order:15
-    });
-  }
+    } : null;
 
-  if(!SEA_LEVEL_PROJECTIONS_ENABLED || !state.regression) return datasets;
+  if(!SEA_LEVEL_PROJECTIONS_ENABLED || !state.regression){
+    if(historicalTrendDataset) datasets.push(historicalTrendDataset);
+    return datasets;
+  }
 
   datasets.push({
     label:"Current Trend",
@@ -6536,6 +6522,8 @@ function buildSeaLevelDatasets(labels, state){
     borderDash:[7,5],
     order:10
   });
+
+  if(historicalTrendDataset) datasets.push(historicalTrendDataset);
 
   const base2020 = state.regression.intercept + state.regression.slope * SEA_LEVEL_RSLR_PROJECTIONS.originYear;
   for(const scenario of SEA_LEVEL_RSLR_PROJECTIONS.scenarios){
@@ -8626,7 +8614,7 @@ async function updateTimeseries(){
   }
 
   try{
-    const { points } = await fetchPETSSForecast_MLLW({ hours: 72 });
+    const { points } = await fetchPETSSForecast_MLLW();
     STATE.pred72Mllw = points || [];
   }catch(e){
     console.warn("Forecast failed:", e);
@@ -9400,7 +9388,7 @@ setInterval(async ()=>{
     ["Observations", "Observations and forecast", "The solid line is measured water. The forecast line shows what water levels may do over the next few days."],
     ["Flooding throughout the year", "Flooding throughout the year", "Each line counts floods as the year goes on."],
     ["Flooding over the years", "Flooding over the years", "This compares yearly flood counts so you can see whether flooding is becoming more common."],
-    ["Sea Level Trends", "Sea level trend", "This shows the long-term water-level pattern at the nearest reliable tide station."],
+    ["Sea Level Trends", "Sea level trends", "Monthly mean sea level is the measured history. Historical trend is the fitted past pattern, while Current Trend and the other scenarios extend possible future sea level."],
     ["Average number of floods per month", "Average floods by month", "This shows which months usually have more coastal flooding in the historic record."],
     ["Historic flooding filter", "Historic flooding filter", "Choose a water-height and date range to look up past flood events."],
     ["NJ tide gauge map", "NJ tide gauge map", "This marks the tide gauge used for this dashboard, so the chart data has a place on the map."]
