@@ -4,35 +4,76 @@
   "parameter": "72279",
   "datum": "NAVD88",
   "source": "USGS daily mean",
+  "stationSelection": null,
+  "officialTrend": {
+    "station": "8536110",
+    "stationName": "Cape May",
+    "startYear": 1965,
+    "endYear": 2025,
+    "millimetersPerYear": 5.1,
+    "standardErrorMillimetersPerYear": 0.43,
+    "slopeFtPerYear": 0.016732283464566927,
+    "source": "https://tidesandcurrents.noaa.gov/sltrends/slmap.xml"
+  },
   "qualityControl": {
     "minimumDailyValuesPerMonth": 20,
     "excludedMonths": [],
     "method": "Exclude incomplete USGS months and configured station discontinuities from trend analysis"
   },
-  "updated_utc": "2026-07-23T13:41:07.436Z",
+  "updated_utc": "2026-08-03T00:11:04.421Z",
   "regression": {
-    "slopeFtPerYear": 0.019507073487492248,
-    "interceptFt": -39.21381686138295,
+    "slopeFtPerYear": 0.016732283464566927,
+    "interceptFt": -33.62685054572986,
     "monthlyPoints": 312,
-    "method": "deseasonalized_monthly_mean_linear_regression",
-    "rawRegression": {
-      "slopeFtPerYear": 0.019018625097296096,
-      "interceptFt": -38.230373385299295,
-      "monthlyPoints": 312
+    "method": "NOAA_official_linear_relative_mean_sea_level_trend",
+    "officialTrend": {
+      "station": "8536110",
+      "stationName": "Cape May",
+      "startYear": 1965,
+      "endYear": 2025,
+      "millimetersPerYear": 5.1,
+      "standardErrorMillimetersPerYear": 0.43,
+      "slopeFtPerYear": 0.016732283464566927,
+      "source": "https://tidesandcurrents.noaa.gov/sltrends/slmap.xml"
+    },
+    "calculatedRegression": {
+      "slopeFtPerYear": 0.01955026338583998,
+      "interceptFt": -39.30058002140347,
+      "monthlyPoints": 312,
+      "method": "deseasonalized_monthly_mean_linear_regression",
+      "rawRegression": {
+        "slopeFtPerYear": 0.019062245840482103,
+        "interceptFt": -38.318004009629064,
+        "monthlyPoints": 312
+      },
+      "seasonalAdjustmentsFt": {
+        "10": 0.345843,
+        "11": -0.027634,
+        "12": -0.243588,
+        "01": -0.316769,
+        "02": -0.326665,
+        "03": -0.169631,
+        "04": -0.05859,
+        "05": 0.038616,
+        "06": 0.097912,
+        "07": 0.069596,
+        "08": 0.159628,
+        "09": 0.40007
+      }
     },
     "seasonalAdjustmentsFt": {
-      "10": 0.346034,
-      "11": -0.027439,
-      "12": -0.24339,
-      "01": -0.31656,
-      "02": -0.326451,
-      "03": -0.169444,
-      "04": -0.058399,
-      "05": 0.038811,
-      "06": 0.09811,
-      "07": 0.067539,
-      "08": 0.159811,
-      "09": 0.400257
+      "10": 0.345843,
+      "11": -0.027634,
+      "12": -0.243588,
+      "01": -0.316769,
+      "02": -0.326665,
+      "03": -0.169631,
+      "04": -0.05859,
+      "05": 0.038616,
+      "06": 0.097912,
+      "07": 0.069596,
+      "08": 0.159628,
+      "09": 0.40007
     }
   },
   "daily": [
@@ -37419,6 +37460,46 @@
     {
       "date": "2026-07-22",
       "ft": 0.23
+    },
+    {
+      "date": "2026-07-23",
+      "ft": 0.2
+    },
+    {
+      "date": "2026-07-24",
+      "ft": 0.27
+    },
+    {
+      "date": "2026-07-25",
+      "ft": 0.65
+    },
+    {
+      "date": "2026-07-26",
+      "ft": 0.74
+    },
+    {
+      "date": "2026-07-27",
+      "ft": 0.54
+    },
+    {
+      "date": "2026-07-28",
+      "ft": 0.61
+    },
+    {
+      "date": "2026-07-29",
+      "ft": 0.72
+    },
+    {
+      "date": "2026-07-30",
+      "ft": 0.79
+    },
+    {
+      "date": "2026-07-31",
+      "ft": 0.68
+    },
+    {
+      "date": "2026-08-01",
+      "ft": 0.44
     }
   ],
   "monthly": [
@@ -38979,8 +39060,16 @@
     },
     {
       "month": "2026-07",
-      "ft": 0.3677,
-      "days": 22
+      "ft": 0.4287,
+      "days": 31
     }
-  ]
+  ],
+  "trendStationSelection": {
+    "method": "Use the first configured nearby NOAA station with an official long-term relative sea-level trend",
+    "candidates": [
+      "8535581",
+      "8536110"
+    ],
+    "selected": "8536110"
+  }
 }
