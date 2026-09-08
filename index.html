@@ -5753,6 +5753,9 @@ function hookForecastToggles(){
   if(doyForecastToggle){
     doyForecastToggle.addEventListener("click", ()=>{
       DOY_ANNUAL_FORECAST_ENABLED = !DOY_ANNUAL_FORECAST_ENABLED;
+      if(DOY_ANNUAL_FORECAST_ENABLED) resetDOYForecastVisibility();
+      else DOY_VIEW_MODE = "years";
+      DOY_YEAR_RANGE_KEY = "";
       renderForecastToggle(doyForecastToggle, DOY_ANNUAL_FORECAST_ENABLED);
       renderDOYCumPanel();
       resetChartZoom(doyCumChart);
@@ -6815,6 +6818,23 @@ let DOY_SELECTED_YEARS = new Set();
 let DOY_CONTROL_YEARS = [];
 let DOY_VIEW_MODE = "years";
 let DOY_PAST_FORECAST_VISIBLE = true;
+let DOY_YEAR_VISIBILITY_INITIALIZED = false;
+let DOY_VISIBILITY_CURRENT_YEAR = null;
+let DOY_AVERAGE_VISIBLE = true;
+let DOY_HISTORIC_RANGE_VISIBLE = true;
+
+// Entering forecast mode is the only action that resets line visibility.
+function resetDOYForecastVisibility(){
+  const { y: curYear } = getESTParts(new Date());
+  DOY_SELECTED_YEARS = new Set([curYear]);
+  DOY_YEAR_VISIBILITY_INITIALIZED = true;
+  DOY_VISIBILITY_CURRENT_YEAR = curYear;
+  DOY_FORECAST_DOT_VISIBLE = true;
+  DOY_PAST_FORECAST_VISIBLE = true;
+  DOY_FORECAST_RANGE_VISIBLE = false;
+  DOY_AVERAGE_VISIBLE = false;
+  DOY_HISTORIC_RANGE_VISIBLE = false;
+}
 
 function doyFloodStageDisplayFt(){
   return THRESH?.[DISPLAY_DATUM]?.minorLow ?? 0;
@@ -7314,28 +7334,29 @@ function formatDoyForecastTooltip(chart, idx, dataset=null){
 }
 
 function getDOYSelectableYears(years, curYear){
-  const clean = (years || []).filter(Number.isFinite).sort((a,b)=>a-b);
-  if(DOY_VIEW_MODE === "past") return clean.filter(y => y < curYear);
+  const clean = [...new Set((years || []).map(Number).filter(Number.isInteger))].sort((a,b)=>a-b);
+  if(DOY_VIEW_MODE === "past"){
+    // Forecast selections start with 2026, including the current year.
+    return [...new Set([...clean, curYear])].filter(y => y >= 2026 && y <= curYear).sort((a,b)=>a-b);
+  }
   return clean;
 }
 
 function ensureDOYSelectedRange(years, curYear){
-  const key = [DOY_VIEW_MODE, years.join("|"), curYear].join("::");
-  const selectable = getDOYSelectableYears(years, curYear);
-  if(key !== DOY_YEAR_RANGE_KEY){
-    DOY_YEAR_RANGE_KEY = key;
-    if(DOY_VIEW_MODE === "past"){
-      const fallback = selectable.includes(DOY_PAST_SELECTED_YEAR)
-        ? DOY_PAST_SELECTED_YEAR
-        : (selectable[selectable.length - 1] ?? null);
-      DOY_PAST_SELECTED_YEAR = fallback;
-      DOY_RANGE_START = fallback;
-      DOY_RANGE_END = fallback;
-    }else{
-      DOY_RANGE_START = selectable[0] ?? null;
-      DOY_RANGE_END = selectable[selectable.length - 1] ?? null;
-      DOY_SELECTED_YEARS = new Set(selectable);
-    }
+  DOY_YEAR_RANGE_KEY = [DOY_VIEW_MODE, years.join("|"), curYear].join("::");
+  if(!DOY_YEAR_VISIBILITY_INITIALIZED){
+    DOY_SELECTED_YEARS = new Set(years);
+    DOY_YEAR_VISIBILITY_INITIALIZED = true;
+  }else if(DOY_VISIBILITY_CURRENT_YEAR != null && DOY_VISIBILITY_CURRENT_YEAR !== curYear){
+    // Carry the red line's checkbox choice into a new calendar year.
+    if(DOY_SELECTED_YEARS.has(DOY_VISIBILITY_CURRENT_YEAR)) DOY_SELECTED_YEARS.add(curYear);
+    else DOY_SELECTED_YEARS.delete(curYear);
+  }
+  DOY_VISIBILITY_CURRENT_YEAR = curYear;
+  // A data refresh or forecast-year change must not reset checkbox choices.
+  const available = new Set(years.map(Number));
+  for(const year of Array.from(DOY_SELECTED_YEARS)){
+    if(!available.has(year)) DOY_SELECTED_YEARS.delete(year);
   }
   normalizeDOYSelectedRange(years, curYear);
 }
@@ -7348,38 +7369,18 @@ function normalizeDOYSelectedRange(years, curYear){
     DOY_PAST_SELECTED_YEAR = null;
     return [];
   }
-  const min = selectable[0];
   const max = selectable[selectable.length - 1];
-
   if(DOY_VIEW_MODE === "past"){
-    let year = Number.isFinite(Number(DOY_PAST_SELECTED_YEAR))
-      ? Math.round(Number(DOY_PAST_SELECTED_YEAR))
-      : (Number.isFinite(Number(DOY_RANGE_START)) ? Math.round(Number(DOY_RANGE_START)) : max);
-    year = Math.max(min, Math.min(max, year));
+    const requested = DOY_PAST_SELECTED_YEAR == null ? max : Number(DOY_PAST_SELECTED_YEAR);
+    const year = selectable.includes(requested) ? requested : max;
     DOY_PAST_SELECTED_YEAR = year;
     DOY_RANGE_START = year;
     DOY_RANGE_END = year;
     return [year];
   }
-
-  let start = Number.isFinite(Number(DOY_RANGE_START)) ? Math.round(Number(DOY_RANGE_START)) : min;
-  let end = Number.isFinite(Number(DOY_RANGE_END)) ? Math.round(Number(DOY_RANGE_END)) : max;
-  start = Math.max(min, Math.min(max, start));
-  end = Math.max(min, Math.min(max, end));
-  if(start > end) [start, end] = [end, start];
-
-  if(!(DOY_SELECTED_YEARS instanceof Set)){
-    DOY_SELECTED_YEARS = new Set(selectable.filter(y => y >= start && y <= end));
-  }
-
-  for(const y of Array.from(DOY_SELECTED_YEARS)){
-    if(!selectable.includes(Number(y))) DOY_SELECTED_YEARS.delete(y);
-  }
-
   const selected = selectable.filter(y => DOY_SELECTED_YEARS.has(y));
   DOY_RANGE_START = selected[0] ?? null;
   DOY_RANGE_END = selected[selected.length - 1] ?? null;
-  DOY_PAST_SELECTED_YEAR = null;
   return selected;
 }
 
@@ -7416,6 +7417,7 @@ function updateDOYRangeInputs(selectable){
 function doyLastFiniteValue(series){
   if(!Array.isArray(series)) return 0;
   for(let i=series.length - 1; i>=0; i--){
+    if(series[i] == null) continue;
     const value = Number(series[i]);
     if(Number.isFinite(value)) return value;
   }
@@ -7456,13 +7458,14 @@ function renderDOYYearTable(years, curYear, selected){
 
   doyYearTable.innerHTML = selectable.map(year=>{
     const y = Number(year);
-    const isCurrent = y === curYear && !isPast;
+    const isCurrent = y === curYear;
     const visible = selectedSet.has(y);
     const total = formatFloodStat(doyYearTotalForControl(y, curYear)) || "0";
     const totalLabel = `${total} ${total === "1" ? "flood" : "floods"}`;
-    const color = isPast ? "rgba(239,68,68,1)" : (isCurrent ? "rgba(239,68,68,1)" : doyYearColor(y, minYear, maxYear, .84));
+    const color = isPast ? "rgba(251,191,36,.98)" : (isCurrent ? "rgba(239,68,68,1)" : doyYearColor(y, minYear, maxYear, .84));
+    const actionLabel = isPast ? `Select ${y} forecast` : `${visible ? "Hide" : "Show"} ${y}`;
     return `
-      <button class="doyYearCell${visible ? "" : " isOff"}" type="button" data-doy-year="${y}" aria-pressed="${visible ? "true" : "false"}" title="${visible ? "Hide" : "Show"} ${y}; ${totalLabel}">
+      <button class="doyYearCell${visible ? "" : " isOff"}" type="button" data-doy-year="${y}" aria-pressed="${visible ? "true" : "false"}" title="${actionLabel}; ${totalLabel}">
         <span class="doyYearCheck" aria-hidden="true"></span>
         <span class="doyYearLabel"><span class="doyYearSwatchMini" style="--doy-year-color:${color}"></span>${y}</span>
         <span class="doyYearValue">${totalLabel}</span>
@@ -7476,6 +7479,14 @@ function renderDOYVisibleSummary(years, curYear){
   const selectable = getDOYSelectableYears(years, curYear);
   const selected = normalizeDOYSelectedRange(years, curYear);
   updateDOYRangeInputs(selectable);
+  const keyCard = doyModeSeg?.closest?.(".doyKeyCard");
+  const gradient = keyCard?.querySelector?.(".doyGradientKey");
+  if(gradient) gradient.style.display = DOY_ANNUAL_FORECAST_ENABLED ? "none" : "";
+  const title = keyCard?.querySelector?.(".doyKeyTitle");
+  if(title) title.textContent = DOY_VIEW_MODE === "past" ? "Forecast selection" : "Year visibility (USGS)";
+  if(doyYearTable) doyYearTable.closest(".doyYearTableWrap")?.style.setProperty("display", "");
+  if(doyPresetGrid) doyPresetGrid.style.display = DOY_VIEW_MODE === "past" ? "none" : "";
+  if(doyYearTable) doyYearTable.style.display = "";
 
   if(doyBulkActions){
     const isPast = DOY_VIEW_MODE === "past";
@@ -7492,6 +7503,7 @@ function renderDOYVisibleSummary(years, curYear){
   if(doyModeSeg){
     doyModeSeg.querySelectorAll("[data-doy-mode]").forEach(btn=>{
       btn.classList.toggle("isActive", btn.dataset.doyMode === DOY_VIEW_MODE);
+      if(btn.dataset.doyMode === "years") btn.textContent = DOY_ANNUAL_FORECAST_ENABLED ? "Current forecast" : "Years";
     });
   }
 
@@ -7500,7 +7512,7 @@ function renderDOYVisibleSummary(years, curYear){
     if(doyRangeNote){
       doyRangeNote.textContent = selectable.length
         ? "0 years shown"
-        : (DOY_VIEW_MODE === "past" ? "No previous full years." : "No years available.");
+        : (DOY_VIEW_MODE === "past" ? "No forecast years available from 2026 onward." : "No years available.");
     }
     renderDOYYearTable(years, curYear, selected);
     return;
@@ -7510,7 +7522,7 @@ function renderDOYVisibleSummary(years, curYear){
   const end = selected[selected.length - 1];
   if(DOY_VIEW_MODE === "past"){
     doyVisibleBadge.textContent = String(start);
-    if(doyRangeNote) doyRangeNote.textContent = `Forecast vs. observed for ${start}`;
+    if(doyRangeNote) doyRangeNote.textContent = `${start} forecast · ${curYear} observed in red · 2026 onward`;
     renderDOYYearTable(years, curYear, selected);
     return;
   }
@@ -7556,7 +7568,6 @@ function setDOYRange(start, end, source){
   }
   DOY_RANGE_START = nextStart;
   DOY_RANGE_END = nextEnd;
-  DOY_PAST_SELECTED_YEAR = null;
   DOY_SELECTED_YEARS = new Set(selectable.filter(y => y >= nextStart && y <= nextEnd));
   renderDOYCumPanel();
 }
@@ -7570,7 +7581,6 @@ function setDOYSelectedYears(nextYears){
   const selected = selectable.filter(y => DOY_SELECTED_YEARS.has(y));
   DOY_RANGE_START = selected[0] ?? null;
   DOY_RANGE_END = selected[selected.length - 1] ?? null;
-  DOY_PAST_SELECTED_YEAR = null;
   renderDOYCumPanel();
 }
 
@@ -7630,6 +7640,7 @@ function hookDOYControls(){
       DOY_VIEW_MODE = mode;
       DOY_YEAR_RANGE_KEY = "";
       if(mode === "past"){
+        if(!DOY_ANNUAL_FORECAST_ENABLED) resetDOYForecastVisibility();
         DOY_ANNUAL_FORECAST_ENABLED = true;
         renderForecastToggle(doyForecastToggle, DOY_ANNUAL_FORECAST_ENABLED);
       }
@@ -7847,11 +7858,10 @@ function renderDOYCumPanel(){
   const minYear = colorYears[0] ?? years[0];
   const maxYear = colorYears[colorYears.length - 1] ?? years[years.length - 1];
   let displaySeries = (seriesByYear || []).slice();
-  if(isPastMode){
-    displaySeries = displaySeries.filter(yr => selectedYears.has(yr.y));
-  }else if(!displaySeries.some(yr => yr.y === CUR_Y)){
+  if(!displaySeries.some(yr => yr.y === CUR_Y)){
     displaySeries.push({ y:CUR_Y, cum:ytd || emptyCurrentYTDSeries() || new Array(365).fill(null) });
   }
+  if(isPastMode) displaySeries = displaySeries.filter(yr => yr.y === CUR_Y || selectedYears.has(yr.y));
   displaySeries.sort((a,b)=>a.y-b.y);
 
   const observedRed = "rgba(239,68,68,1)";
@@ -7860,18 +7870,19 @@ function renderDOYCumPanel(){
 
   const yearDatasets = displaySeries.map((yr, idx)=>{
     const isCurrent = yr.y === CUR_Y;
-    const color = isPastMode ? observedRed : (isCurrent ? observedRed : doyYearColor(yr.y, minYear, maxYear, .55));
-    const selected = isPastMode ? true : selectedYears.has(yr.y);
+    const isPastObserved = isPastMode && !isCurrent && selectedYears.has(yr.y);
+    const color = isCurrent ? observedRed : (isPastObserved ? "rgba(96,165,250,1)" : doyYearColor(yr.y, minYear, maxYear, .55));
+    const selected = DOY_SELECTED_YEARS.has(yr.y);
     return {
-      label:isPastMode ? "Observed" : (isCurrent ? "Current Year" : String(yr.y)),
-      data:(isCurrent && ytd && !isPastMode) ? ytd : yr.cum,
+      label:isCurrent ? "Current Year" : (isPastObserved ? "Observed" : String(yr.y)),
+      data:isCurrent ? (ytd || new Array(365).fill(null)) : yr.cum,
       _year:yr.y,
-      _kind:isPastMode ? "pastObserved" : (isCurrent ? "current" : "year"),
+      _kind:isCurrent ? "current" : (isPastObserved ? "pastObserved" : "year"),
       _drawLast:isCurrent,
       hidden:!selected,
-      borderWidth:isPastMode ? 3.2 : (isCurrent ? 4 : 1.4),
-      tension:isPastMode ? 0 : (isCurrent ? 0 : 0.18),
-      stepped:isPastMode ? "after" : (isCurrent ? "after" : false),
+      borderWidth:isCurrent ? 4 : (isPastObserved ? 3.2 : 1.4),
+      tension:isCurrent || isPastObserved ? 0 : 0.18,
+      stepped:isCurrent || isPastObserved ? "after" : false,
       borderColor:color,
       backgroundColor:color,
       pointStyle:"line",
@@ -7881,7 +7892,7 @@ function renderDOYCumPanel(){
       clip:{left:0,right:0,top:0,bottom:0},
       spanGaps:false,
       fill:false,
-      order:isPastMode ? 900 : (isCurrent ? 900 : 40 + idx)
+      order:isCurrent ? 900 : (isPastObserved ? 890 : 40 + idx)
     };
   });
 
@@ -7890,6 +7901,7 @@ function renderDOYCumPanel(){
     data:min,
     _legendHidden:true,
     _kind:"rangeFloor",
+    hidden:!DOY_HISTORIC_RANGE_VISIBLE,
     borderWidth:0,
     tension:0.2,
     borderColor:"rgba(148,163,184,0)",
@@ -7905,6 +7917,7 @@ function renderDOYCumPanel(){
     label:"Historic Range",
     data:max,
     _kind:"range",
+    hidden:!DOY_HISTORIC_RANGE_VISIBLE,
     borderWidth:0,
     tension:0.2,
     borderColor:"rgba(148,163,184,.40)",
@@ -7921,6 +7934,7 @@ function renderDOYCumPanel(){
     label:"Average",
     data:avg,
     _kind:"average",
+    hidden:!DOY_AVERAGE_VISIBLE,
     borderWidth:2.4,
     tension:0.2,
     borderColor:"rgba(255,255,255,.94)",
@@ -8072,10 +8086,10 @@ function renderDOYCumPanel(){
     }
   }
 
-  const baseDatasets = isPastMode ? [] : [dsRangeFloor, dsRange, dsAvg];
+  const baseDatasets = [dsRangeFloor, dsRange, dsAvg];
   const data = {
     labels,
-    datasets: [...baseDatasets, ...forecastDatasets, ...yearDatasets]
+    datasets:[...baseDatasets, ...forecastDatasets, ...yearDatasets]
   };
 
   const options = {
@@ -8102,7 +8116,7 @@ function renderDOYCumPanel(){
           filter:(legendItem, chartData)=>{
             const ds = chartData?.datasets?.[legendItem.datasetIndex];
             if(ds?._legendHidden) return false;
-            return ["Historic Range","Average","Current Year","Forecast","Forecast Range"].includes(ds?.label || "");
+            return ["Historic Range","Average","Current Year","Observed","Forecast","Forecast Range"].includes(ds?.label || "");
           }
         },
         onClick:(e, legendItem, legend)=>{
@@ -8110,36 +8124,32 @@ function renderDOYCumPanel(){
           const ds = chart?.data?.datasets?.[legendItem.datasetIndex];
           if(!chart || !ds) return;
 
-          if(ds._kind === "seasonalForecast"){
-            DOY_FORECAST_DOT_VISIBLE = !DOY_FORECAST_DOT_VISIBLE;
-            chart.data.datasets.forEach(d=>{
-              if(d?._kind === "seasonalForecast"){
-                d.hidden = !DOY_FORECAST_DOT_VISIBLE;
-              }
-            });
-            chart.update("none");
+          if(ds._kind === "current" || ds._kind === "year" || ds._kind === "pastObserved"){
+            if(DOY_SELECTED_YEARS.has(ds._year)) DOY_SELECTED_YEARS.delete(ds._year);
+            else DOY_SELECTED_YEARS.add(ds._year);
+            renderDOYCumPanel();
             return;
           }
-
-          if(ds._kind === "pastForecast"){
-            DOY_PAST_FORECAST_VISIBLE = !DOY_PAST_FORECAST_VISIBLE;
-            chart.data.datasets.forEach(d=>{
-              if(d?._kind === "pastForecast"){
-                d.hidden = !DOY_PAST_FORECAST_VISIBLE;
-              }
-            });
-            chart.update("none");
+          if(ds._kind === "seasonalForecast" || ds._kind === "pastForecast"){
+            const visible = ds._kind === "pastForecast" ? DOY_PAST_FORECAST_VISIBLE : DOY_FORECAST_DOT_VISIBLE;
+            DOY_FORECAST_DOT_VISIBLE = !visible;
+            DOY_PAST_FORECAST_VISIBLE = !visible;
+            renderDOYCumPanel();
             return;
           }
-
           if(ds._kind === "seasonalForecastRangeHigh"){
             DOY_FORECAST_RANGE_VISIBLE = !DOY_FORECAST_RANGE_VISIBLE;
-            chart.data.datasets.forEach(d=>{
-              if(d?._kind === "seasonalForecastRangeLow" || d?._kind === "seasonalForecastRangeHigh"){
-                d.hidden = !DOY_FORECAST_RANGE_VISIBLE;
-              }
-            });
-            chart.update("none");
+            renderDOYCumPanel();
+            return;
+          }
+          if(ds._kind === "average"){
+            DOY_AVERAGE_VISIBLE = !DOY_AVERAGE_VISIBLE;
+            renderDOYCumPanel();
+            return;
+          }
+          if(ds._kind === "range"){
+            DOY_HISTORIC_RANGE_VISIBLE = !DOY_HISTORIC_RANGE_VISIBLE;
+            renderDOYCumPanel();
             return;
           }
 
@@ -8166,7 +8176,7 @@ function renderDOYCumPanel(){
               return `Average: ${formatFloodStat(v)} floods`;
             }
             if(kind === "pastObserved"){
-              return `Observed: ${formatFloodStat(v)} floods`;
+              return `${ctx.dataset._year} observed: ${formatFloodStat(v)} floods`;
             }
             if(kind === "seasonalForecast" || kind === "pastForecast"){
               return formatDoyForecastTooltip(ctx.chart, idx, ctx.dataset);
@@ -9535,7 +9545,8 @@ setInterval(async ()=>{
         if(datasetIndex < 0) return null;
         const dataset = chart.data.datasets[datasetIndex];
         return {
-          text:label,
+          text:(label === "Current Year" || label === "Observed") && Number.isInteger(dataset._year)
+            ? `${dataset._year} Observed` : label,
           datasetIndex,
           hidden:chart ? !chart.isDatasetVisible(datasetIndex) : !!dataset.hidden,
           fillStyle:firstLegendColor(dataset.backgroundColor, firstLegendColor(dataset.borderColor, "rgba(234,240,255,.86)")),
