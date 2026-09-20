@@ -2610,6 +2610,7 @@ a.brand *{
     <div class="chartWrapTall">
       <canvas id="tsChart"></canvas>
     </div>
+    <div class="kicker" id="tsRunMeta" role="status" style="padding:0 12px 12px">Loading observation and PETSS run times…</div>
 
     <div class="foot" id="threshKey" style="font-size:18px;">
       <span class="tag" style="padding:10px 16px;">
@@ -3761,7 +3762,10 @@ function manualHistoricRowsNavd(){
 
 function historicDateKey(r){
   if(/^\d{4}-\d{2}-\d{2}$/.test(String(r?.localDate || ""))) return String(r.localDate);
-  if(r?.t) return String(r.t).slice(0, 10);
+  if(r?.t){
+    const {y,m,d} = getESTParts(new Date(r.t));
+    return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+  }
   const parts = String(r?.manualDate || "").split("-");
   if(parts.length === 3){
     return `${parts[2]}-${parts[0].padStart(2, "0")}-${parts[1].padStart(2, "0")}`;
@@ -3776,21 +3780,23 @@ function historicRowPriority(r){
 }
 
 function combinedHistoricRowsNavd(){
-  const bestByDate = new Map();
-  for(const r of (USGS_HISTORY_NAVD || [])){
-    const dateKey = historicDateKey(r);
+  // The historic catalogue is independent of the USGS-only seasonal chart.
+  // A date can contain several distinct tidal crests; only exact duplicates merge.
+  const bestByCrest = new Map();
+  for(const r of (HISTORIC_CRESTS_NAVD || [])){
     const ft = Number(r?.ft);
-    if(!dateKey || !Number.isFinite(ft)) continue;
-    const existing = bestByDate.get(dateKey);
+    if(!r?.t || !Number.isFinite(ft)) continue;
+    const key = `${r.crest || r.t}|${ft.toFixed(3)}`;
+    const existing = bestByCrest.get(key);
     const priority = historicRowPriority(r);
     const existingPriority = historicRowPriority(existing);
-    if(!existing || priority > existingPriority || (priority === existingPriority && ft > Number(existing.ft))){
-      bestByDate.set(dateKey, r);
+    if(!existing || priority > existingPriority){
+      bestByCrest.set(key, r);
     }
   }
-  const rows = Array.from(bestByDate.values()).sort((a,b)=>Number(b.ft)-Number(a.ft));
-  rows.forEach((r, i)=>{ r.rank = i + 1; });
-  return rows;
+  return Array.from(bestByCrest.values())
+    .sort((a,b)=>Number(b.ft)-Number(a.ft) || new Date(a.t)-new Date(b.t))
+    .map((r, i)=>({...r, rank:i + 1}));
 }
 
 function fmtHistoricDate(r){
@@ -3800,31 +3806,13 @@ function fmtHistoricDate(r){
 }
 
 function normalizePetssJsonToPoints(json){
-  
-  if(Array.isArray(json?.points)){
-    return json.points
-      .map(p => ({ t: p.t, ft: Number(p.fcst ?? p.twl ?? p.value) }))
-      .filter(p => p.t && Number.isFinite(p.ft))
-      .sort((a,b)=> new Date(a.t) - new Date(b.t));
-  }
-
-  
-  if(Array.isArray(json)){
-    return json
-      .map(p => ({ t: p.t ?? p.time ?? p.validTime, ft: Number(p.fcst ?? p.twl ?? p.value ?? p.primary) }))
-      .filter(p => p.t && Number.isFinite(p.ft))
-      .sort((a,b)=> new Date(a.t) - new Date(b.t));
-  }
-
-  
-  if(Array.isArray(json?.data)){
-    return json.data
-      .map(p => ({ t: p.t ?? p.time ?? p.validTime, ft: Number(p.fcst ?? p.twl ?? p.value ?? p.primary) }))
-      .filter(p => p.t && Number.isFinite(p.ft))
-      .sort((a,b)=> new Date(a.t) - new Date(b.t));
-  }
-
-  return [];
+  const rows = Array.isArray(json?.points) ? json.points : Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
+  return rows.map(p => {
+    const value = p.fcst ?? p.twl ?? p.value ?? p.primary;
+    const ft = value == null || typeof value === "boolean" || String(value).trim() === "" ? NaN : Number(value);
+    return {t:p.t ?? p.time ?? p.validTime, ft};
+  }).filter(p=>Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft) && Math.abs(p.ft)<100)
+    .sort((a,b)=>Date.parse(a.t)-Date.parse(b.t));
 }
 
 async function fetchFirstOkJson(urls){
@@ -3848,8 +3836,15 @@ async function fetchFirstOkJson(urls){
 
 async function fetchPETSSForecast_MLLW(){
   const { url, json } = await fetchFirstOkJson(PETSS_JSON_CANDIDATES);
-
-  const issuedTime =
+  let meta = null;
+  try{
+    const r = await fetch(`data/petss_meta.json?v=${Date.now()}`,{cache:"no-store",signal:AbortSignal.timeout(7000)});
+    if(r.ok) meta = await r.json();
+  }catch(e){console.warn("PETSS run metadata unavailable",e);}
+  const runDate = String(meta?.run_dir || "").match(/(\d{4})(\d{2})(\d{2})/);
+  const runHour = String(meta?.cycle || "").match(/t(\d{2})z/);
+  const issuedTime = meta?.model_time_utc ||
+    (runDate && runHour ? `${runDate[1]}-${runDate[2]}-${runDate[3]}T${runHour[1]}:00:00Z` : null) ||
     json?.model_time_utc ||
     json?.issued_utc ||
     json?.fetched_utc ||
@@ -3858,6 +3853,7 @@ async function fetchPETSSForecast_MLLW(){
 
   const ptsAll = normalizePetssJsonToPoints(json);
   if(!ptsAll.length) throw new Error("PETSS JSON loaded but contained no usable forecast points");
+  if(Date.parse(ptsAll[ptsAll.length-1].t) <= Date.now()) throw new Error("Stored PETSS run has expired; waiting for a new NOAA run");
 
   return { issuedTime, points: ptsAll, urlUsed: url };
 }
@@ -4753,6 +4749,7 @@ function attachChartZoom(chart){
 
 let HIGH_TIDES_NAVD=[];
 let USGS_HISTORY_NAVD=[];
+let HISTORIC_CRESTS_NAVD=[];
 let annualChart=null, tsChart=null, monthAvgChart=null;
 let YEARS=[], annualMinor=[], annualModerate=[], annualMajor=[];
 
@@ -4903,6 +4900,7 @@ async function buildLiveFloodPeaksSince2026(){
 
 const STATION_ANNUAL_PRIORITY_START_YEAR = 2007;
 let stationAnnualCoverageYears = new Set();
+let annualCoverageByYear = new Map();
 let annualSource = [];
 let annualPredictionLookup = new Map();
 
@@ -4911,8 +4909,18 @@ function annualNumber(v){
   return Number.isFinite(n) ? Math.floor(n) : null;
 }
 
+function noaaLongTermSourceName(){
+  return ({
+    "8557380":"NOAA Lewes",
+    "8545240":"NOAA Philadelphia",
+    "8534720":"NOAA Atlantic City",
+    "8531680":"NOAA Sandy Hook",
+    "8518750":"NOAA The Battery"
+  })[String(COOPS_STATION)] || `NOAA ${COOPS_STATION}`;
+}
+
 function annualSourceName(source){
-  return "";
+  return source === "unavailable" ? "No observations available" : source;
 }
 
 function annualYearFromEvent(e){
@@ -5120,55 +5128,24 @@ function countEventsFromHistoryForYear(year){
 
 function buildAnnualArrays(){
   const { y: curYear } = getESTParts(new Date());
-  const atlanticByYear = new Map(
-    ATLANTIC_CITY_ANNUAL_COUNTS.map(r => [
-      Number(r.year),
-      {
-        year:Number(r.year),
-        minor:annualNumber(r.minor),
-        moderate:annualNumber(r.moderate),
-        major:annualNumber(r.major),
-        source:"atlanticCity"
-      }
-    ])
-  );
-
-  const stoneByYear = buildStationAnnualCountsMap();
-  const annualYears = new Set(atlanticByYear.keys());
-
-  for(const y of stationAnnualCoverageYears) annualYears.add(Number(y));
-  for(const y of stoneByYear.keys()) annualYears.add(Number(y));
-  annualYears.add(curYear);
-
-  let rows = Array.from(annualYears)
-    .filter(y => Number.isFinite(y) && y <= curYear)
-    .sort((a,b)=>a-b)
+  const countsByYear = buildStationAnnualCountsMap();
+  const coverage = new Set([...stationAnnualCoverageYears, ...countsByYear.keys()]);
+  const firstYear = Math.min(curYear, ...coverage);
+  // Keep the complete NOAA-to-USGS timeline, including explicit no-data gaps.
+  // An unavailable year is not a measured zero and must not use another station's counts.
+  let rows = Array.from({length:curYear - firstYear + 1}, (_, i)=>firstYear + i)
     .map(year => {
-      const stationYearAvailable =
-        year >= STATION_ANNUAL_PRIORITY_START_YEAR &&
-        (stationAnnualCoverageYears.has(year) || stoneByYear.has(year));
-
-      if(stationYearAvailable){
-        const counts = stoneByYear.get(year) || { minor:0, moderate:0, major:0 };
-        return {
-          year,
-          minor:annualNumber(counts.minor),
-          moderate:annualNumber(counts.moderate),
-          major:annualNumber(counts.major),
-          source: year === curYear && !stationAnnualCoverageYears.has(year) ? "live" : "stoneHarbor"
-        };
-      }
-
-      const fallback = atlanticByYear.get(year);
-      if(fallback) return applyOfficialCrestsToFallbackAnnualCounts(fallback, year);
-
-      return applyOfficialCrestsToFallbackAnnualCounts({
+      const counts = countsByYear.get(year) || {minor:0, moderate:0, major:0};
+      const available = coverage.has(year);
+      const agencies = new Set(HIGH_TIDES_NAVD.filter(e=>annualYearFromEvent(e) === year && !e.officialCrestOverride)
+        .map(e=>e.historyAgency));
+      return {
         year,
-        minor:0,
-        moderate:0,
-        major:0,
-        source: year >= STATION_ANNUAL_PRIORITY_START_YEAR ? "live" : "atlanticCity"
-      }, year);
+        minor:available ? counts.minor : null,
+        moderate:available ? counts.moderate : null,
+        major:available ? counts.major : null,
+        source:available ? (agencies.has("USGS") && agencies.has("NOAA") ? `${noaaLongTermSourceName()} / USGS` : agencies.has("USGS") ? "USGS" : `${noaaLongTermSourceName()}; official crests where available`) : "unavailable"
+      };
     });
 
   const lastObservedYear = rows.reduce((max, r)=>Math.max(max, r.year), -Infinity);
@@ -5315,7 +5292,13 @@ function ensureAnnual(){
       return sum + (Number.isFinite(v) ? v : 0);
     }, 0);
 
-  return `Total: ${Math.floor(total)} floods`;
+  const year = Number(items?.[0]?.label);
+  const coverage = annualCoverageByYear.get(year);
+  const source = annualSource[YEARS.indexOf(year)];
+  const days = Number(coverage?.observedDays);
+  const yearDays = isLeapYear(year) ? 366 : 365;
+  return [`Total: ${Math.floor(total)} floods`, annualSourceName(source),
+    Number.isFinite(days) ? `${days}/${yearDays} observed days${days < yearDays ? " · partial record" : ""}` : "Coverage unknown"];
 }
 
           }
@@ -7308,7 +7291,7 @@ function doyYearTotalForControl(year, curYear){
   const y = Number(year);
   if(!Number.isFinite(y)) return 0;
   if(y === curYear){
-    return doyLastFiniteValue(buildYTDSeriesFromEvents(HIGH_TIDES_NAVD) || emptyCurrentYTDSeries());
+    return doyLastFiniteValue(buildYTDSeriesFromEvents(USGS_HISTORY_NAVD) || emptyCurrentYTDSeries());
   }
   const row = DOY_CACHE?.seriesByYear?.find(item => Number(item?.y) === y);
   return doySeriesTotal(row?.cum);
@@ -7430,6 +7413,7 @@ function setDOYRange(start, end, source){
   if(DOY_VIEW_MODE === "past"){
     let nextYear = Math.max(min, Math.min(max, Math.round(Number(start))));
     if(!Number.isFinite(nextYear)) nextYear = max;
+    nextYear = selectable.reduce((best, candidate)=>Math.abs(candidate-nextYear) < Math.abs(best-nextYear) ? candidate : best, max);
     DOY_PAST_SELECTED_YEAR = nextYear;
     DOY_RANGE_START = nextYear;
     DOY_RANGE_END = nextYear;
@@ -7579,7 +7563,6 @@ function buildDOYYearDailyCountsFromEvents(eventsNavd){
   for(const e of (eventsNavd || [])){
     const ft = Number(e.ft);
     if(!Number.isFinite(ft)) continue;
-    if(ft < T.minorLow) continue; 
 
     const dt = new Date(e.t);
     if(Number.isNaN(dt.getTime())) continue;
@@ -7592,7 +7575,7 @@ function buildDOYYearDailyCountsFromEvents(eventsNavd){
     if(idx === null) continue;
 
     if(!byYear.has(y)) byYear.set(y, new Array(365).fill(0));
-    byYear.get(y)[idx] += 1;
+    if(ft >= T.minorLow) byYear.get(y)[idx] += 1;
   }
 
   return byYear;
@@ -7712,11 +7695,11 @@ function renderDOYCumPanel(){
     return;
   }
 
-  const { years, seriesByYear, statsYears, avg, min, max, stageLabel } = DOY_CACHE;
+  const { years, seriesByYear, avg, min, max, stageLabel } = DOY_CACHE;
   const nowParts = getESTParts(new Date());
   const { y: CUR_Y } = nowParts;
   const todayIdx = calIndex365(CUR_Y, nowParts.m, nowParts.d);
-  const ytd = buildYTDSeriesFromEvents(HIGH_TIDES_NAVD) || emptyCurrentYTDSeries();
+  const ytd = buildYTDSeriesFromEvents(USGS_HISTORY_NAVD) || emptyCurrentYTDSeries();
   const controlYears = years.includes(CUR_Y) ? years : [...years, CUR_Y].sort((a,b)=>a-b);
   const isPastMode = DOY_VIEW_MODE === "past";
   DOY_CONTROL_YEARS = controlYears;
@@ -7725,8 +7708,7 @@ function renderDOYCumPanel(){
   renderDOYYearControls(controlYears, CUR_Y);
 
   if(meta){
-    const metaYears = Array.isArray(statsYears) && statsYears.length ? statsYears : years;
-    meta.textContent = `${metaYears[0]}–${metaYears[metaYears.length - 1]} · ${stageLabel}`;
+    meta.textContent = `${years[0]}–${years[years.length - 1]} · ${stageLabel}`;
   }
 
   const labels  = Array.from({length:365}, (_,i)=> i+1);
@@ -7830,7 +7812,7 @@ function renderDOYCumPanel(){
   const forecastDatasets = [];
   if(DOY_ANNUAL_FORECAST_ENABLED && isPastMode){
     const year = Array.from(selectedYears)[0];
-    const forecastInfo = pastAnnualForecastInfo(year, HIGH_TIDES_NAVD);
+    const forecastInfo = pastAnnualForecastInfo(year, USGS_HISTORY_NAVD);
     if(forecastInfo){
       const priorSeries = (seriesByYear || []).filter(yr => Number(yr.y) < year);
       const seasonalForecast = buildDoySeasonalForecastPath(year, forecastInfo, priorSeries.length ? priorSeries : seriesByYear);
@@ -7841,7 +7823,7 @@ function renderDOYCumPanel(){
           _legendHidden:true,
           _kind:"seasonalForecastRangeLow",
           borderWidth:0,
-          tension:0.34,
+          tension:0.24,
           borderColor:"rgba(251,191,36,0)",
           backgroundColor:"rgba(251,191,36,0)",
           pointRadius:0,
@@ -7856,7 +7838,7 @@ function renderDOYCumPanel(){
           data:seasonalForecast?.high || new Array(365).fill(null),
           _kind:"seasonalForecastRangeHigh",
           borderWidth:0,
-          tension:0.34,
+          tension:0.24,
           borderColor:"rgba(251,191,36,0)",
           backgroundColor:forecastFill,
           pointBackgroundColor:forecastFill,
@@ -7882,7 +7864,7 @@ function renderDOYCumPanel(){
           _trainingLabel:forecastInfo.trainingLabel,
           _year:year,
           borderWidth:2.8,
-          tension:0.34,
+          tension:0.24,
           borderDash:[7,5],
           borderColor:forecastYellow,
           backgroundColor:forecastYellow,
@@ -7899,7 +7881,7 @@ function renderDOYCumPanel(){
   }else{
     const forecastInfo = DOY_ANNUAL_FORECAST_ENABLED ? (currentAnnualForecastInfo(CUR_Y) || seasonalHistoricForecastInfo(CUR_Y, avg, min, max)) : null;
     if(forecastInfo && Number.isFinite(todayIdx)){
-      const seasonalForecast = buildDoySeasonalForecastPath(CUR_Y, forecastInfo, seriesByYear, avg);
+      const seasonalForecast = buildDoySeasonalForecastPath(CUR_Y, forecastInfo, seriesByYear);
 
       forecastDatasets.push(
         {
@@ -7908,7 +7890,7 @@ function renderDOYCumPanel(){
           _legendHidden:true,
           _kind:"seasonalForecastRangeLow",
           borderWidth:0,
-          tension:0.34,
+          tension:0.24,
           borderColor:"rgba(251,191,36,0)",
           backgroundColor:"rgba(251,191,36,0)",
           pointRadius:0,
@@ -7923,7 +7905,7 @@ function renderDOYCumPanel(){
           data:seasonalForecast?.high || new Array(365).fill(null),
           _kind:"seasonalForecastRangeHigh",
           borderWidth:0,
-          tension:0.34,
+          tension:0.24,
           borderColor:"rgba(251,191,36,0)",
           backgroundColor:forecastFill,
           pointBackgroundColor:forecastFill,
@@ -7950,7 +7932,7 @@ function renderDOYCumPanel(){
           _forecastYear:forecastInfo.year,
           _forecastSourceYear:forecastInfo.sourceYear,
           borderWidth:2.8,
-          tension:0.34,
+          tension:0.24,
           borderDash:[7,5],
           borderColor:forecastYellow,
           backgroundColor:forecastYellow,
@@ -8162,8 +8144,6 @@ function applyFilter(){
   const maxNavd = Number.isFinite(maxDisplay) ? fromDisplayToNavd(maxDisplay) :  Infinity;
 
   
-  const fromMs = fromStr ? new Date(fromStr + "T00:00:00Z").getTime() : -Infinity;
-  const toMs   = toStr   ? new Date(toStr   + "T23:59:59Z").getTime() :  Infinity;
 
   const mode = sortModeEl.value;
 
@@ -8173,7 +8153,8 @@ function applyFilter(){
     const tMs = new Date(r.t).getTime();
     if(!Number.isFinite(tMs)) return false;
 
-    if(tMs < fromMs || tMs > toMs) return false;
+    const localDate = historicDateKey(r);
+    if((fromStr && localDate < fromStr) || (toStr && localDate > toStr)) return false;
 
     return true;
   });
@@ -8512,11 +8493,20 @@ async function updateTimeseries(){
   }
 
   try{
-    const { points } = await fetchPETSSForecast_MLLW();
+    const { points, issuedTime } = await fetchPETSSForecast_MLLW();
     STATE.pred72Mllw = points || [];
+    STATE.petssIssuedTime = issuedTime;
+    STATE.petssError = null;
   }catch(e){
     console.warn("Forecast failed:", e);
     STATE.pred72Mllw = [];
+    STATE.petssError = e?.message || "Forecast unavailable";
+  }
+
+  const runMeta = document.getElementById("tsRunMeta");
+  if(runMeta){
+    const observation = STATE.obs24Navd?.at(-1)?.t;
+    runMeta.textContent = `USGS observed: ${observation ? fmtESTFull(observation) : "unavailable"} · ${STATE.petssError || (STATE.petssIssuedTime ? `PETSS run: ${fmtESTFull(STATE.petssIssuedTime)}` : "PETSS run time unavailable")}`;
   }
 
   updateTsChartFromState();
@@ -8565,12 +8555,14 @@ function normalizePeaksJson(json){
     if(!Number.isFinite(ft)) continue;
 
     
-    const y = r?.y ?? r?.year ?? dt.getUTCFullYear();
-    const m = r?.m ?? r?.month ?? (dt.getUTCMonth() + 1);
-    const d = r?.d ?? r?.day ?? dt.getUTCDate();
+    const local = getESTParts(dt);
+    const y = r?.y ?? r?.year ?? local.y;
+    const m = r?.m ?? r?.month ?? local.m;
+    const d = r?.d ?? r?.day ?? local.d;
 
     out.push({
       t: dt.toISOString(),
+      crest: r?.crest || dt.toISOString(),
       ft,
       y, m, d,
       localDate: /^\d{4}-\d{2}-\d{2}$/.test(String(r?.localDate || "")) ? String(r.localDate) : null,
@@ -8623,6 +8615,7 @@ async function initJSONBackedHistory(){
 
   
   stationAnnualCoverageYears = inferStationAnnualCoverageYears(json, peaks, livePeaks);
+  annualCoverageByYear = new Map((json.coverage || []).filter(r=>r && Number.isFinite(Number(r.year))).map(r=>[Number(r.year),r]));
 
   const combined = [...peaks, ...livePeaks];
 
@@ -8636,13 +8629,10 @@ async function initJSONBackedHistory(){
     };
   }
 
+  const bucketHourFormatter = new Intl.DateTimeFormat("en-US", {timeZone:TZ, hour:"2-digit", hourCycle:"h23"});
   function estHour(iso){
     const dt = new Date(iso);
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: TZ,
-      hour: "2-digit",
-      hour12: false
-    }).formatToParts(dt);
+    const parts = bucketHourFormatter.formatToParts(dt);
     return +(parts.find(x=>x.type==="hour")?.value || "0");
   }
 
@@ -8683,10 +8673,10 @@ async function initJSONBackedHistory(){
       const ft = Number(e.ft);
       if(!Number.isFinite(ft)) continue;
 
-      const {y,m,d} = estParts(e.t);
-      if(!y || !m || !d) continue;
-
-      const key = `${y}-${m}-${d}|${tideBucket(e.t)}`;
+      const dateKey = eventLocalDateKey(e);
+      if(!dateKey) continue;
+      const bucket = ["AM","PM"].includes(e.sourceBucket) ? e.sourceBucket : tideBucket(e.t);
+      const key = `${dateKey}|${bucket}`;
       const prev = bestByKey.get(key);
       if(!prev || ft > prev.ft) bestByKey.set(key, e);
     }
@@ -8699,9 +8689,10 @@ async function initJSONBackedHistory(){
       || /USGS/i.test(String(event?.source || ""));
   }
 
+  HISTORIC_CRESTS_NAVD = combined;
   const authoritativeCombined = applyOfficialCrestDateAuthority(combined);
   HIGH_TIDES_NAVD = bestEventsByTideBucket(authoritativeCombined);
-  USGS_HISTORY_NAVD = HIGH_TIDES_NAVD;
+  USGS_HISTORY_NAVD = bestEventsByTideBucket(combined.filter(event => isUSGSHistoryEvent(event) && !event.officialCrestOverride && !event.officialCrestOnly));
 
   
  applyFilter();
