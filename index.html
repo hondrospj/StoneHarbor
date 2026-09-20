@@ -3991,82 +3991,6 @@ async function fetchNOAAObservedSeries({startISO=null,endISO=null,period=null}={
   throw new Error("NOAA observations unavailable. " + errors.join(" | "));
 }
 
-function isoFromNOAAPoint(t){
-  return String(t || "").replace(" ", "T") + ":00Z";
-}
-
-function startFromPeriod(period, endISO){
-  const end = endISO ? new Date(endISO) : new Date();
-  if(!period) return null;
-  const m = String(period).match(/^P(\d+)D$/i);
-  if(!m) return null;
-  return new Date(end.getTime() - Number(m[1]) * 86400000).toISOString();
-}
-
-async function fetchNOAAObservedSeries({startISO=null,endISO=null,period=null}={}){
-  const end = endISO ? new Date(endISO) : new Date();
-  const start = startISO ? new Date(startISO) : new Date(startFromPeriod(period, end.toISOString()) || (end.getTime() - 7*86400000));
-  if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) throw new Error("Invalid NOAA observed date range");
-
-  const stations = [...new Set([...(NOAA_STATION_CANDIDATES || []), NOAA_OBS_STATION, COOPS_STATION].filter(Boolean).map(String))];
-  const datums = ["MLLW", "MSL", "NAVD"];
-  const errors = [];
-
-  for(const station of stations){
-    for(const datum of datums){
-      const out = [];
-      try{
-        let cur = startOfUTCDate(start);
-        const endDay = startOfUTCDate(end);
-        while(cur <= endDay){
-          const chunkEnd = addDaysUTC(cur, 30);
-          const actualEnd = chunkEnd < endDay ? chunkEnd : endDay;
-          const url = new URL("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter");
-          url.searchParams.set("product", "water_level");
-          url.searchParams.set("station", station);
-          url.searchParams.set("datum", datum);
-          url.searchParams.set("units", "english");
-          url.searchParams.set("time_zone", "gmt");
-          url.searchParams.set("format", "json");
-          url.searchParams.set("application", COOPS_APP || "web");
-          url.searchParams.set("begin_date", yyyymmddUTC(cur));
-          url.searchParams.set("end_date", yyyymmddUTC(actualEnd));
-
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 8000);
-          let res;
-          try{
-            res = await fetch(url.toString(), { cache:"no-store", signal: controller.signal });
-          }catch(fetchErr){
-            if(fetchErr?.name === "AbortError") throw new Error("timeout after 8s");
-            throw fetchErr;
-          }finally{
-            clearTimeout(timer);
-          }
-          if(!res.ok) throw new Error(`HTTP ${res.status}`);
-          const j = await res.json();
-          if(j?.error?.message) throw new Error(j.error.message);
-          const arr = Array.isArray(j?.data) ? j.data : [];
-          for(const v of arr){
-            const raw = Number(v.v);
-            if(!Number.isFinite(raw) || !v.t) continue;
-            const sourceDatum = datum === "NAVD" ? "NAVD88" : datum;
-            out.push({ t: isoFromNOAAPoint(v.t), ft: datumToDatum(raw, sourceDatum, "NAVD88") });
-          }
-          cur = addDaysUTC(actualEnd, 1);
-        }
-        out.sort((a,b)=>new Date(a.t)-new Date(b.t));
-        if(out.length) return out;
-        errors.push(`${station}/${datum}: no values`);
-      }catch(e){
-        errors.push(`${station}/${datum}: ${e?.message || e}`);
-      }
-    }
-  }
-
-  throw new Error("NOAA observations unavailable. " + errors.join(" | "));
-}
-
 async function fetchObservedSeries({startISO=null,endISO=null,period=null}={}){
   if(GAUGE_TYPE === "NOAA") return fetchNOAAObservedSeries({startISO,endISO,period});
   const j = await fetchIV({startISO,endISO,period});
@@ -6688,50 +6612,6 @@ async function fetchUSGSDailySeaLevel(){
   return series
     .map(p => ({ t:p.dateTime, ft:Number(p.value) }))
     .filter(p => p.t && Number.isFinite(p.ft) && Math.abs(p.ft) < 100);
-}
-
-async function fetchNOAAMonthlySeaLevel(){
-  const stations = [...new Set((NOAA_SEA_LEVEL_STATION_CANDIDATES || []).filter(Boolean).map(String))];
-  const errors = [];
-  for(const station of stations){
-    try{
-      const url = new URL("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter");
-      url.searchParams.set("station", station);
-      url.searchParams.set("product", "monthly_mean");
-      url.searchParams.set("datum", "MSL");
-      url.searchParams.set("units", "english");
-      url.searchParams.set("time_zone", "gmt");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("begin_date", "19000101");
-      url.searchParams.set("end_date", ymdCompactFromISO(nowISO()));
-      const res = await fetchWithTimeout(url.toString(), { cache:"no-store" }, 8000);
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if(json?.error?.message) throw new Error(json.error.message);
-      const rows = Array.isArray(json?.data) ? json.data : [];
-      const points = rows
-        .map(r => {
-          const y = Number(r.year), m = Number(r.month), ft = Number(r.MSL);
-          if(!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(ft) || Math.abs(ft) >= 100) return null;
-          return { t:`${y}-${String(m).padStart(2,"0")}-15T00:00:00Z`, month:`${y}-${String(m).padStart(2,"0")}`, ft };
-        })
-        .filter(Boolean);
-      if(points.length) return points;
-      errors.push(`${station}: no monthly means`);
-    }catch(e){
-      errors.push(`${station}: ${e?.message || e}`);
-    }
-  }
-  throw new Error("NOAA monthly sea-level means unavailable. " + errors.join(" | "));
-}
-
-async function fetchDailySeaLevel(){
-  if(GAUGE_TYPE === "NOAA") return fetchNOAAMonthlySeaLevel();
-  try{
-    const daily = await fetchUSGSDailySeaLevel();
-    if(daily.length) return daily;
-  }catch(e){}
-  return fetchNOAAMonthlySeaLevel();
 }
 
 async function fetchNOAAMonthlySeaLevel(){
