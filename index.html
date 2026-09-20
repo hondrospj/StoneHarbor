@@ -8834,28 +8834,28 @@ refreshDOYFromHistory();
 
 
 const TOWN_DISPLAY_NAME = "Stone Harbor";
-const GAUGE_DISPLAY_NAME = "Great Channel at Stone Harbor";
+const GAUGE_DISPLAY_NAME = "Stone Harbor";
 const GAUGE_TYPE = "USGS";
 const JURISDICTION_SOURCE = "Cape May";
 const DEFAULT_GAUGE_ID = "01411360";
 const DEFAULT_GAUGE_ZOOM = 12;
 const USGS_SITE = "01411360";
 const USGS_PARAM_PRIMARY = "72279";
-const NOAA_OBS_STATION = "8535581";
-const NOAA_STATION_CANDIDATES = ["8535581","8535581","8535581"];
-const NOAA_SEA_LEVEL_STATION_CANDIDATES = ["8535581","8536110"];
-const COOPS_STATION = "8535581";
+const NOAA_OBS_STATION = "8557380";
+const NOAA_STATION_CANDIDATES = ["8557380"];
+const NOAA_SEA_LEVEL_STATION_CANDIDATES = ["8557380"];
+const COOPS_STATION = "8557380";
 const COOPS_APP = "cupajoe.live";
-const NOAA_STATION_TIDECLOCK = "8535581";
+const NOAA_STATION_TIDECLOCK = "8557380";
 const CREST_WINDOW_HOURS = 2;
 const REQUIRE_WITHIN_HOURS = 1;
 const LIVE_START_ISO = "2026-01-01T00:00:00Z";
 const ALERT_POINT = {"lat":39.0,"lon":-74.7};
 let DISPLAY_DATUM = "MLLW";
 const DATUMS = ["MLLW","NAVD88","MSL","MHHW"];
-const OFFSET_FROM_MLLW = {"MLLW":0.0,"NAVD88":-2.66,"MSL":-2.31,"MHHW":-4.74};
+const OFFSET_FROM_MLLW = {"MLLW":0,"NAVD88":-2.66,"MSL":-2.31,"MHHW":-4.74};
 const THRESH = {"MLLW":{"minorLow":6.1,"moderateLow":7.1,"majorLow":8.1},"NAVD88":{"minorLow":3.44,"moderateLow":4.44,"majorLow":5.44},"MSL":{"minorLow":3.79,"moderateLow":4.79,"majorLow":5.79},"MHHW":{"minorLow":1.36,"moderateLow":2.36,"majorLow":3.36}};
-const TOP_TEN_MLLW = [{"date":"01-23-2016","ft":8.88},{"date":"08-22-2025","ft":7.97},{"date":"08-28-2011","ft":7.96},{"date":"10-27-2018","ft":7.93},{"date":"05-12-2008","ft":7.87},{"date":"01-24-2016","ft":7.85},{"date":"10-29-2012","ft":7.75},{"date":"10-12-2025","ft":7.74},{"date":"05-12-2008","ft":7.72},{"date":"09-10-2018","ft":7.7}];
+const TOP_TEN_MLLW = [{"date":"10-29-2012","ft":9.39},{"date":"02-05-1998","ft":8.94},{"date":"03-29-1984","ft":8.68},{"date":"03-03-1994","ft":8.62},{"date":"01-04-1992","ft":8.58},{"date":"12-11-1992","ft":8.47},{"date":"11-13-2009","ft":8.1},{"date":"02-17-2003","ft":8.03},{"date":"08-27-2011","ft":7.96},{"date":"05-12-2008","ft":7.87}];
 const GAUGES = [
   {
     "name": "Absecon Creek at Absecon",
@@ -9204,6 +9204,7 @@ const PETSS_JSON_CANDIDATES = [
   `/data/petss_forecast_${COOPS_STATION}_mllw.json`
 ];
 const PEAKS_JSON_FILE = "peaks_navd88.json";
+const FLOODMAPPER_V2_PIPELINE = {"releaseVersion":"20260920-nj-universal-v2","primaryUsgsGaugeId":"01411360","noaaStationId":"8557380","noaaBiasCorrectionFt":0.066,"crestUsgsStationId":"01411360","sourcePrecedence":["primary-usgs-continuous","bias-corrected-noaa-historical-fill","official-usgs-storm-tide-crest-override"]};
 const PEAKS_JSON_PATH_CANDIDATES = [
   `data/${PEAKS_JSON_FILE}`,
   `./data/${PEAKS_JSON_FILE}`,

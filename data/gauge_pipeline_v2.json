@@ -1,0 +1,11 @@
+{
+  "schema": "nj-flood-dashboard-gauge-pipeline-v2",
+  "releaseVersion": "20260920-nj-universal-v2",
+  "floodmapperRepo": "Stone-Harbor-Borough-floodmapper",
+  "primaryUsgsGaugeId": "01411360",
+  "noaaStationId": "8557380",
+  "noaaRegion": "lewes",
+  "noaaBiasCorrectionFt": 0.066,
+  "crestUsgsStationId": "01411360",
+  "calibrationPairKey": "01411360:lewes"
+}
