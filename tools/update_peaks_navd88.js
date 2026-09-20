@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Crest-anchored NAVD88 "high tide events" builder for USGS 01412150 (param 72279)
+ * Crest-anchored NAVD88 "high tide events" builder for USGS 01411360 (param 72279)
  * - Uses NOAA CO-OPS predicted HIGH tide crest times (interval=hilo, type=H) as the "tide clock"
  * - For each predicted HIGH tide crest:
  *    - Search observed USGS IV points within ±2 hours and take the MAX
@@ -31,7 +31,7 @@ const SITE = "01411360";
 const PARAM = "72279";
 
 // NOAA tide-clock (predicted highs/lows) — used ONLY for crest times
-const NOAA_STATION = "8535581"; // , Maurice River, NJ (as in your dashboard)
+const NOAA_STATION = "8557380"; // regional NOAA tide clock
 
 // Keep this in cache for transparency; we still keep your 5-hour constant in JSON,
 // but we are no longer using declustering for cache building under this method.
@@ -290,7 +290,11 @@ function buildCrestAnchoredHighEvents({ series, predictedHighs, thresholdsNAVD88
       ft: roundFt(ft),
       type: classifyNAVD(ft, thresholdsNAVD88),
       crest: new Date(crestISO).toISOString(), // predicted crest time (key)
-      kind: "CrestHigh"
+      kind: "CrestHigh",
+      historyAgency: "USGS",
+      historySource: `USGS ${SITE} primary continuous record`,
+      source: "primary-usgs-continuous",
+      localDate: officialCrestLocalDate({ t: best.t })
     });
   }
 
