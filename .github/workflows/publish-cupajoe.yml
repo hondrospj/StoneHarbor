@@ -1,0 +1,46 @@
+name: Publish ShorelySafe to Cup A Joe
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy static Pages", "Peaks Cache", "Update PETSS Forecast", "pages-build-deployment"]
+    types: [completed]
+    branches: ["main"]
+permissions:
+  contents: read
+concurrency:
+  group: shorelysafe-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: "main"
+          path: "sources/StoneHarbor"
+          lfs: true
+          persist-credentials: false
+      - name: Publish application files
+        working-directory: "sources/StoneHarbor"
+        env:
+          SHORELYSAFE_TOKEN: ${{ secrets.SHORELYSAFE_PUBLISH_TOKEN }}
+          SHORELYSAFE_SITE: "https://cupajoe.live"
+          SHORELYSAFE_APP: "flooddashboard--stone-harbor"
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, ".shorelysafe")
+          import publish
+          token=os.environ["SHORELYSAFE_TOKEN"]
+          if not token: raise SystemExit("SHORELYSAFE_PUBLISH_TOKEN is not configured")
+          apps=json.loads(Path(".shorelysafe/apps.json").read_text())
+          app=next(a for a in apps if a["id"]==os.environ["SHORELYSAFE_APP"])
+          connection={"site":os.environ["SHORELYSAFE_SITE"],"tokens":{app["id"]:token}}
+          print(json.dumps(publish.publish(app,Path.cwd(),apps,connection)))
+          PY

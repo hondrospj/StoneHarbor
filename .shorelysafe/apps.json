@@ -1,0 +1,1721 @@
+[
+  {
+    "id": "flooddashboard--absecon",
+    "product": "flooddashboard",
+    "client": "absecon",
+    "repository": "hondrospj/Absecon",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/absecon/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--absecon",
+    "product": "floodmapper",
+    "client": "absecon",
+    "repository": "hondrospj/Absecon-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/absecon/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--absecon",
+    "product": "roads-at-risk",
+    "client": "absecon",
+    "repository": "hondrospj/Absecon-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/absecon/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--absecon-channel",
+    "product": "flooddashboard",
+    "client": "absecon-channel",
+    "repository": "hondrospj/AbseconChannel",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/absecon-channel/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--allenhurst",
+    "product": "floodmapper",
+    "client": "allenhurst",
+    "repository": "hondrospj/Allenhurst-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/allenhurst/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--allenhurst",
+    "product": "roads-at-risk",
+    "client": "allenhurst",
+    "repository": "hondrospj/Allenhurst-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/allenhurst/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--asbury-park",
+    "product": "floodmapper",
+    "client": "asbury-park",
+    "repository": "hondrospj/Asbury-Park-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/asbury-park/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--asbury-park",
+    "product": "roads-at-risk",
+    "client": "asbury-park",
+    "repository": "hondrospj/Asbury-Park-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/asbury-park/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--atlantic-city",
+    "product": "flooddashboard",
+    "client": "atlantic-city",
+    "repository": "hondrospj/Atlantic-City",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/atlantic-city/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "flooddashboard--avalon",
+    "product": "flooddashboard",
+    "client": "avalon",
+    "repository": "hondrospj/Avalon",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/avalon/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--avalon",
+    "product": "floodmapper",
+    "client": "avalon",
+    "repository": "hondrospj/Avalon-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/avalon/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--avalon",
+    "product": "roads-at-risk",
+    "client": "avalon",
+    "repository": "hondrospj/Avalon-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/avalon/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--avalon-test",
+    "product": "floodmapper",
+    "client": "avalon-test",
+    "repository": "hondrospj/AvalonTest",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/avalon-test/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--avon-by-the-sea",
+    "product": "floodmapper",
+    "client": "avon-by-the-sea",
+    "repository": "hondrospj/Avon-by-the-Sea-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/avon-by-the-sea/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--avon-by-the-sea",
+    "product": "roads-at-risk",
+    "client": "avon-by-the-sea",
+    "repository": "hondrospj/Avon-by-the-Sea-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/avon-by-the-sea/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--barnegat-light",
+    "product": "floodmapper",
+    "client": "barnegat-light",
+    "repository": "hondrospj/Barnegat-Light-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/barnegat-light/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--barnegat-light",
+    "product": "roads-at-risk",
+    "client": "barnegat-light",
+    "repository": "hondrospj/Barnegat-Light-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/barnegat-light/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--barnegat-township",
+    "product": "floodmapper",
+    "client": "barnegat-township",
+    "repository": "hondrospj/Barnegat-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/barnegat-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--barnegat-township",
+    "product": "roads-at-risk",
+    "client": "barnegat-township",
+    "repository": "hondrospj/Barnegat-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/barnegat-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--barnegat-light",
+    "product": "flooddashboard",
+    "client": "barnegat-light",
+    "repository": "hondrospj/BarnegatLight",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/barnegat-light/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--bay-head",
+    "product": "floodmapper",
+    "client": "bay-head",
+    "repository": "hondrospj/Bay-Head-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/bay-head/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--bay-head",
+    "product": "roads-at-risk",
+    "client": "bay-head",
+    "repository": "hondrospj/Bay-Head-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/bay-head/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--beach-haven",
+    "product": "floodmapper",
+    "client": "beach-haven",
+    "repository": "hondrospj/Beach-Haven-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/beach-haven/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--beach-haven",
+    "product": "roads-at-risk",
+    "client": "beach-haven",
+    "repository": "hondrospj/Beach-Haven-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/beach-haven/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--belmar",
+    "product": "flooddashboard",
+    "client": "belmar",
+    "repository": "hondrospj/Belmar",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/belmar/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--belmar",
+    "product": "floodmapper",
+    "client": "belmar",
+    "repository": "hondrospj/Belmar-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/belmar/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--belmar",
+    "product": "roads-at-risk",
+    "client": "belmar",
+    "repository": "hondrospj/Belmar-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/belmar/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--bergen-point",
+    "product": "flooddashboard",
+    "client": "bergen-point",
+    "repository": "hondrospj/BergenPoint",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/bergen-point/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "flooddashboard--bivalve",
+    "product": "flooddashboard",
+    "client": "bivalve",
+    "repository": "hondrospj/Bivalve",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/bivalve/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--bogota",
+    "product": "floodmapper",
+    "client": "bogota",
+    "repository": "hondrospj/Bogota-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/bogota/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--bogota",
+    "product": "roads-at-risk",
+    "client": "bogota",
+    "repository": "hondrospj/Bogota-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/bogota/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--bradley-beach",
+    "product": "floodmapper",
+    "client": "bradley-beach",
+    "repository": "hondrospj/Bradley-Beach-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/bradley-beach/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--bradley-beach",
+    "product": "roads-at-risk",
+    "client": "bradley-beach",
+    "repository": "hondrospj/Bradley-Beach-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/bradley-beach/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--bridesburg",
+    "product": "flooddashboard",
+    "client": "bridesburg",
+    "repository": "hondrospj/Bridesburg",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/bridesburg/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--brielle",
+    "product": "floodmapper",
+    "client": "brielle",
+    "repository": "hondrospj/Brielle-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/brielle/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--brielle",
+    "product": "roads-at-risk",
+    "client": "brielle",
+    "repository": "hondrospj/Brielle-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/brielle/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--brigantine",
+    "product": "floodmapper",
+    "client": "brigantine",
+    "repository": "hondrospj/Brigantine-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/brigantine/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--brigantine",
+    "product": "roads-at-risk",
+    "client": "brigantine",
+    "repository": "hondrospj/Brigantine-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/brigantine/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--burlington",
+    "product": "flooddashboard",
+    "client": "burlington",
+    "repository": "hondrospj/Burlington",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/burlington/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--cape-may",
+    "product": "floodmapper",
+    "client": "cape-may",
+    "repository": "hondrospj/Cape-May-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/cape-may/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--cape-may",
+    "product": "roads-at-risk",
+    "client": "cape-may",
+    "repository": "hondrospj/Cape-May-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/cape-may/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--cape-may",
+    "product": "flooddashboard",
+    "client": "cape-may",
+    "repository": "hondrospj/CapeMay",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/cape-may/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "flooddashboard--cape-may-harbor",
+    "product": "flooddashboard",
+    "client": "cape-may-harbor",
+    "repository": "hondrospj/CapeMayHarbor",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/cape-may-harbor/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--commercial-township",
+    "product": "floodmapper",
+    "client": "commercial-township",
+    "repository": "hondrospj/Commercial-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/commercial-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--commercial-township",
+    "product": "roads-at-risk",
+    "client": "commercial-township",
+    "repository": "hondrospj/Commercial-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/commercial-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--deal",
+    "product": "floodmapper",
+    "client": "deal",
+    "repository": "hondrospj/Deal-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/deal/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--deal",
+    "product": "roads-at-risk",
+    "client": "deal",
+    "repository": "hondrospj/Deal-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/deal/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--delaware-river",
+    "product": "flooddashboard",
+    "client": "delaware-river",
+    "repository": "hondrospj/Delaware-River",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/delaware-river/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--dennis-township",
+    "product": "floodmapper",
+    "client": "dennis-township",
+    "repository": "hondrospj/Dennis-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/dennis-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--dennis-township",
+    "product": "roads-at-risk",
+    "client": "dennis-township",
+    "repository": "hondrospj/Dennis-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/dennis-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--elizabeth",
+    "product": "floodmapper",
+    "client": "elizabeth",
+    "repository": "hondrospj/Elizabeth-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/elizabeth/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--elizabeth",
+    "product": "roads-at-risk",
+    "client": "elizabeth",
+    "repository": "hondrospj/Elizabeth-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/elizabeth/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--greenwich-township",
+    "product": "flooddashboard",
+    "client": "greenwich-township",
+    "repository": "hondrospj/Greenwich",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/greenwich-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--greenwich-township",
+    "product": "floodmapper",
+    "client": "greenwich-township",
+    "repository": "hondrospj/Greenwich-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/greenwich-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--greenwich-township",
+    "product": "roads-at-risk",
+    "client": "greenwich-township",
+    "repository": "hondrospj/Greenwich-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/greenwich-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--hackensack",
+    "product": "flooddashboard",
+    "client": "hackensack",
+    "repository": "hondrospj/Hackensack",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/hackensack/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--hackensack",
+    "product": "floodmapper",
+    "client": "hackensack",
+    "repository": "hondrospj/Hackensack-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/hackensack/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--hackensack",
+    "product": "roads-at-risk",
+    "client": "hackensack",
+    "repository": "hondrospj/Hackensack-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/hackensack/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--harvey-cedars",
+    "product": "floodmapper",
+    "client": "harvey-cedars",
+    "repository": "hondrospj/Harvey-Cedars-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/harvey-cedars/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--harvey-cedars",
+    "product": "roads-at-risk",
+    "client": "harvey-cedars",
+    "repository": "hondrospj/Harvey-Cedars-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/harvey-cedars/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--highlands",
+    "product": "floodmapper",
+    "client": "highlands",
+    "repository": "hondrospj/Highlands-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/highlands/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--highlands",
+    "product": "roads-at-risk",
+    "client": "highlands",
+    "repository": "hondrospj/Highlands-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/highlands/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--highlands-beta",
+    "product": "floodmapper",
+    "client": "highlands-beta",
+    "repository": "hondrospj/HighlandsBeta",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/highlands-beta/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "flooddashboard--inside-thorofare",
+    "product": "flooddashboard",
+    "client": "inside-thorofare",
+    "repository": "hondrospj/InsideThorofare",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/inside-thorofare/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--interlaken",
+    "product": "floodmapper",
+    "client": "interlaken",
+    "repository": "hondrospj/Interlaken-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/interlaken/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--interlaken",
+    "product": "roads-at-risk",
+    "client": "interlaken",
+    "repository": "hondrospj/Interlaken-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/interlaken/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--jersey-city",
+    "product": "floodmapper",
+    "client": "jersey-city",
+    "repository": "hondrospj/Jersey-City-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/jersey-city/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--jersey-city",
+    "product": "roads-at-risk",
+    "client": "jersey-city",
+    "repository": "hondrospj/Jersey-City-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/jersey-city/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--jersey-city",
+    "product": "flooddashboard",
+    "client": "jersey-city",
+    "repository": "hondrospj/JerseyCity",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/jersey-city/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--keansburg",
+    "product": "flooddashboard",
+    "client": "keansburg",
+    "repository": "hondrospj/Keansburg",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/keansburg/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--keansburg",
+    "product": "floodmapper",
+    "client": "keansburg",
+    "repository": "hondrospj/Keansburg-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/keansburg/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--keansburg",
+    "product": "roads-at-risk",
+    "client": "keansburg",
+    "repository": "hondrospj/Keansburg-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/keansburg/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--keyport",
+    "product": "floodmapper",
+    "client": "keyport",
+    "repository": "hondrospj/Keyport-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/keyport/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--keyport",
+    "product": "roads-at-risk",
+    "client": "keyport",
+    "repository": "hondrospj/Keyport-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/keyport/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--lavallette",
+    "product": "floodmapper",
+    "client": "lavallette",
+    "repository": "hondrospj/Lavallette-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/lavallette/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--lavallette",
+    "product": "roads-at-risk",
+    "client": "lavallette",
+    "repository": "hondrospj/Lavallette-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/lavallette/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--loch-arbour-village",
+    "product": "floodmapper",
+    "client": "loch-arbour-village",
+    "repository": "hondrospj/Loch-Arbour-Village-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/loch-arbour-village/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--loch-arbour-village",
+    "product": "roads-at-risk",
+    "client": "loch-arbour-village",
+    "repository": "hondrospj/Loch-Arbour-Village-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/loch-arbour-village/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--long-beach-township",
+    "product": "floodmapper",
+    "client": "long-beach-township",
+    "repository": "hondrospj/Long-Beach-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/long-beach-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--long-beach-township",
+    "product": "roads-at-risk",
+    "client": "long-beach-township",
+    "repository": "hondrospj/Long-Beach-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/long-beach-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--long-branch",
+    "product": "floodmapper",
+    "client": "long-branch",
+    "repository": "hondrospj/Long-Branch-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/long-branch/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--long-branch",
+    "product": "roads-at-risk",
+    "client": "long-branch",
+    "repository": "hondrospj/Long-Branch-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/long-branch/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--longport",
+    "product": "floodmapper",
+    "client": "longport",
+    "repository": "hondrospj/Longport-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/longport/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--longport",
+    "product": "roads-at-risk",
+    "client": "longport",
+    "repository": "hondrospj/Longport-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/longport/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--lower-township",
+    "product": "floodmapper",
+    "client": "lower-township",
+    "repository": "hondrospj/Lower-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/lower-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--lower-township",
+    "product": "roads-at-risk",
+    "client": "lower-township",
+    "repository": "hondrospj/Lower-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/lower-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--manasquan",
+    "product": "flooddashboard",
+    "client": "manasquan",
+    "repository": "hondrospj/Manasquan-",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/manasquan/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--manasquan",
+    "product": "floodmapper",
+    "client": "manasquan",
+    "repository": "hondrospj/Manasquan-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/manasquan/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--manasquan",
+    "product": "roads-at-risk",
+    "client": "manasquan",
+    "repository": "hondrospj/Manasquan-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/manasquan/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--mantoloking",
+    "product": "flooddashboard",
+    "client": "mantoloking",
+    "repository": "hondrospj/Mantoloking",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/mantoloking/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--mantoloking",
+    "product": "floodmapper",
+    "client": "mantoloking",
+    "repository": "hondrospj/Mantoloking-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/mantoloking/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--mantoloking",
+    "product": "roads-at-risk",
+    "client": "mantoloking",
+    "repository": "hondrospj/Mantoloking-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/mantoloking/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--marcus-hook",
+    "product": "flooddashboard",
+    "client": "marcus-hook",
+    "repository": "hondrospj/MarcusHook",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/marcus-hook/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "flooddashboard--margate",
+    "product": "flooddashboard",
+    "client": "margate",
+    "repository": "hondrospj/Margate",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/margate/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--margate",
+    "product": "floodmapper",
+    "client": "margate",
+    "repository": "hondrospj/Margate-City-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/margate/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--margate",
+    "product": "roads-at-risk",
+    "client": "margate",
+    "repository": "hondrospj/Margate-City-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/margate/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--middle-township",
+    "product": "floodmapper",
+    "client": "middle-township",
+    "repository": "hondrospj/Middle-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/middle-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--middle-township",
+    "product": "roads-at-risk",
+    "client": "middle-township",
+    "repository": "hondrospj/Middle-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/middle-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--middletown-township",
+    "product": "floodmapper",
+    "client": "middletown-township",
+    "repository": "hondrospj/Middletown-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/middletown-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--middletown-township",
+    "product": "roads-at-risk",
+    "client": "middletown-township",
+    "repository": "hondrospj/Middletown-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/middletown-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--monmouth-beach",
+    "product": "floodmapper",
+    "client": "monmouth-beach",
+    "repository": "hondrospj/Monmouth-Beach-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/monmouth-beach/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--monmouth-beach",
+    "product": "roads-at-risk",
+    "client": "monmouth-beach",
+    "repository": "hondrospj/Monmouth-Beach-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/monmouth-beach/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--neptune-city",
+    "product": "floodmapper",
+    "client": "neptune-city",
+    "repository": "hondrospj/Neptune-City-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/neptune-city/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--neptune-city",
+    "product": "roads-at-risk",
+    "client": "neptune-city",
+    "repository": "hondrospj/Neptune-City-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/neptune-city/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--neptune-township",
+    "product": "floodmapper",
+    "client": "neptune-township",
+    "repository": "hondrospj/Neptune-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/neptune-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--neptune-township",
+    "product": "roads-at-risk",
+    "client": "neptune-township",
+    "repository": "hondrospj/Neptune-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/neptune-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--newark",
+    "product": "flooddashboard",
+    "client": "newark",
+    "repository": "hondrospj/Newark",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/newark/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "flooddashboard--newbold-island",
+    "product": "flooddashboard",
+    "client": "newbold-island",
+    "repository": "hondrospj/Newbold-Island",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/newbold-island/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--north-wildwood",
+    "product": "floodmapper",
+    "client": "north-wildwood",
+    "repository": "hondrospj/North-Wildwood-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/north-wildwood/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--north-wildwood",
+    "product": "roads-at-risk",
+    "client": "north-wildwood",
+    "repository": "hondrospj/North-Wildwood-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/north-wildwood/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--north-wildwood",
+    "product": "flooddashboard",
+    "client": "north-wildwood",
+    "repository": "hondrospj/NorthWildwood",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/north-wildwood/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--north-wildwood-legacy",
+    "product": "floodmapper",
+    "client": "north-wildwood-legacy",
+    "repository": "hondrospj/NorthWildwood-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/north-wildwood-legacy/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--north-wildwood-coastal",
+    "product": "flooddashboard",
+    "client": "north-wildwood-coastal",
+    "repository": "hondrospj/NorthWildwoodCoastalDashboard",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/north-wildwood-coastal/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--ocean-city",
+    "product": "floodmapper",
+    "client": "ocean-city",
+    "repository": "hondrospj/Ocean-City-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/ocean-city/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--ocean-city",
+    "product": "roads-at-risk",
+    "client": "ocean-city",
+    "repository": "hondrospj/Ocean-City-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/ocean-city/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--ocean-township",
+    "product": "floodmapper",
+    "client": "ocean-township",
+    "repository": "hondrospj/Ocean-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/ocean-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--ocean-township",
+    "product": "roads-at-risk",
+    "client": "ocean-township",
+    "repository": "hondrospj/Ocean-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/ocean-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--ocean-city",
+    "product": "flooddashboard",
+    "client": "ocean-city",
+    "repository": "hondrospj/OceanCity",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/ocean-city/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--perth-amboy",
+    "product": "floodmapper",
+    "client": "perth-amboy",
+    "repository": "hondrospj/Perth-Amboy-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/perth-amboy/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--perth-amboy",
+    "product": "roads-at-risk",
+    "client": "perth-amboy",
+    "repository": "hondrospj/Perth-Amboy-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/perth-amboy/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--perth-amboy",
+    "product": "flooddashboard",
+    "client": "perth-amboy",
+    "repository": "hondrospj/PerthAmboy",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/perth-amboy/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--point-pleasant-beach",
+    "product": "floodmapper",
+    "client": "point-pleasant-beach",
+    "repository": "hondrospj/Point-Pleasant-Beach-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/point-pleasant-beach/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--point-pleasant-beach",
+    "product": "roads-at-risk",
+    "client": "point-pleasant-beach",
+    "repository": "hondrospj/Point-Pleasant-Beach-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/point-pleasant-beach/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--point-pleasant",
+    "product": "floodmapper",
+    "client": "point-pleasant",
+    "repository": "hondrospj/Point-Pleasant-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/point-pleasant/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--point-pleasant",
+    "product": "roads-at-risk",
+    "client": "point-pleasant",
+    "repository": "hondrospj/Point-Pleasant-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/point-pleasant/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--reedy-point",
+    "product": "flooddashboard",
+    "client": "reedy-point",
+    "repository": "hondrospj/Reedy-Point",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/reedy-point/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--original",
+    "product": "roads-at-risk",
+    "client": "original",
+    "repository": "hondrospj/Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/original/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--rumson",
+    "product": "floodmapper",
+    "client": "rumson",
+    "repository": "hondrospj/Rumson-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/rumson/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--rumson",
+    "product": "roads-at-risk",
+    "client": "rumson",
+    "repository": "hondrospj/Rumson-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/rumson/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--salem",
+    "product": "flooddashboard",
+    "client": "salem",
+    "repository": "hondrospj/Salem",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/salem/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--salem-beta",
+    "product": "floodmapper",
+    "client": "salem-beta",
+    "repository": "hondrospj/SalemBeta",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/salem-beta/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "flooddashboard--sandy-hook",
+    "product": "flooddashboard",
+    "client": "sandy-hook",
+    "repository": "hondrospj/Sandy-Hook",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/sandy-hook/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--sea-bright",
+    "product": "floodmapper",
+    "client": "sea-bright",
+    "repository": "hondrospj/Sea-Bright-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/sea-bright/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--sea-bright",
+    "product": "roads-at-risk",
+    "client": "sea-bright",
+    "repository": "hondrospj/Sea-Bright-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/sea-bright/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--sea-girt",
+    "product": "floodmapper",
+    "client": "sea-girt",
+    "repository": "hondrospj/Sea-Girt-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/sea-girt/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--sea-girt",
+    "product": "roads-at-risk",
+    "client": "sea-girt",
+    "repository": "hondrospj/Sea-Girt-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/sea-girt/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--sea-isle-city",
+    "product": "floodmapper",
+    "client": "sea-isle-city",
+    "repository": "hondrospj/Sea-Isle-City-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/sea-isle-city/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--sea-isle-city",
+    "product": "roads-at-risk",
+    "client": "sea-isle-city",
+    "repository": "hondrospj/Sea-Isle-City-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/sea-isle-city/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--sea-bright-test",
+    "product": "flooddashboard",
+    "client": "sea-bright-test",
+    "repository": "hondrospj/sea_bright_test",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/sea-bright-test/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "flooddashboard--sea-bright",
+    "product": "flooddashboard",
+    "client": "sea-bright",
+    "repository": "hondrospj/SeaBright",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/sea-bright/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--sea-isle-city",
+    "product": "flooddashboard",
+    "client": "sea-isle-city",
+    "repository": "hondrospj/SeaIsle",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/sea-isle-city/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--seaside-heights",
+    "product": "floodmapper",
+    "client": "seaside-heights",
+    "repository": "hondrospj/Seaside-Heights-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/seaside-heights/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--seaside-park",
+    "product": "floodmapper",
+    "client": "seaside-park",
+    "repository": "hondrospj/Seaside-Park-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/seaside-park/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--seaside-park",
+    "product": "roads-at-risk",
+    "client": "seaside-park",
+    "repository": "hondrospj/Seaside-Park-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/seaside-park/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--seaside-heights",
+    "product": "flooddashboard",
+    "client": "seaside-heights",
+    "repository": "hondrospj/SeasideHeights",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/seaside-heights/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--ship-bottom",
+    "product": "floodmapper",
+    "client": "ship-bottom",
+    "repository": "hondrospj/Ship-Bottom-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/ship-bottom/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--ship-bottom",
+    "product": "roads-at-risk",
+    "client": "ship-bottom",
+    "repository": "hondrospj/Ship-Bottom-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/ship-bottom/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--ship-bottom",
+    "product": "flooddashboard",
+    "client": "ship-bottom",
+    "repository": "hondrospj/ShipBottom",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/ship-bottom/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--sea-bright-original",
+    "product": "flooddashboard",
+    "client": "sea-bright-original",
+    "repository": "hondrospj/shorelysafe_flooding",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/sea-bright-original/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--somers-point",
+    "product": "floodmapper",
+    "client": "somers-point",
+    "repository": "hondrospj/Somers-Point-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/somers-point/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--somers-point",
+    "product": "roads-at-risk",
+    "client": "somers-point",
+    "repository": "hondrospj/Somers-Point-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/somers-point/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--south-amboy",
+    "product": "floodmapper",
+    "client": "south-amboy",
+    "repository": "hondrospj/South-Amboy-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/south-amboy/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--south-amboy",
+    "product": "roads-at-risk",
+    "client": "south-amboy",
+    "repository": "hondrospj/South-Amboy-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/south-amboy/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--south-amboy",
+    "product": "flooddashboard",
+    "client": "south-amboy",
+    "repository": "hondrospj/SouthAmboy",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/south-amboy/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--dennis-township",
+    "product": "flooddashboard",
+    "client": "dennis-township",
+    "repository": "hondrospj/SouthDennis",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/dennis-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--spring-lake",
+    "product": "floodmapper",
+    "client": "spring-lake",
+    "repository": "hondrospj/Spring-Lake-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/spring-lake/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--spring-lake",
+    "product": "roads-at-risk",
+    "client": "spring-lake",
+    "repository": "hondrospj/Spring-Lake-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/spring-lake/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--stafford-township",
+    "product": "floodmapper",
+    "client": "stafford-township",
+    "repository": "hondrospj/Stafford-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/stafford-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--stafford-township",
+    "product": "roads-at-risk",
+    "client": "stafford-township",
+    "repository": "hondrospj/Stafford-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/stafford-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--stone-harbor",
+    "product": "floodmapper",
+    "client": "stone-harbor",
+    "repository": "hondrospj/Stone-Harbor-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/stone-harbor/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--stone-harbor",
+    "product": "roads-at-risk",
+    "client": "stone-harbor",
+    "repository": "hondrospj/Stone-Harbor-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/stone-harbor/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--stone-harbor",
+    "product": "flooddashboard",
+    "client": "stone-harbor",
+    "repository": "hondrospj/StoneHarbor",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/stone-harbor/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--surf-city",
+    "product": "floodmapper",
+    "client": "surf-city",
+    "repository": "hondrospj/Surf-City-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/surf-city/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--surf-city",
+    "product": "roads-at-risk",
+    "client": "surf-city",
+    "repository": "hondrospj/Surf-City-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/surf-city/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--toms-river-township",
+    "product": "floodmapper",
+    "client": "toms-river-township",
+    "repository": "hondrospj/Toms-River-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/toms-river-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--toms-river-township",
+    "product": "roads-at-risk",
+    "client": "toms-river-township",
+    "repository": "hondrospj/Toms-River-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/toms-river-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--tuckerton",
+    "product": "flooddashboard",
+    "client": "tuckerton",
+    "repository": "hondrospj/Tuckerton",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/tuckerton/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--union-beach",
+    "product": "floodmapper",
+    "client": "union-beach",
+    "repository": "hondrospj/Union-Beach-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/union-beach/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--union-beach",
+    "product": "roads-at-risk",
+    "client": "union-beach",
+    "repository": "hondrospj/Union-Beach-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/union-beach/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--upper-township",
+    "product": "floodmapper",
+    "client": "upper-township",
+    "repository": "hondrospj/Upper-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/upper-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--upper-township",
+    "product": "roads-at-risk",
+    "client": "upper-township",
+    "repository": "hondrospj/Upper-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/upper-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--ventnor",
+    "product": "flooddashboard",
+    "client": "ventnor",
+    "repository": "hondrospj/Ventnor-City-Flood-Dashboard",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/ventnor/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--ventnor",
+    "product": "floodmapper",
+    "client": "ventnor",
+    "repository": "hondrospj/Ventnor-City-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/ventnor/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--ventnor",
+    "product": "roads-at-risk",
+    "client": "ventnor",
+    "repository": "hondrospj/Ventnor-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/ventnor/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--ventnor-city-legacy",
+    "product": "flooddashboard",
+    "client": "ventnor-city-legacy",
+    "repository": "hondrospj/VentnorCity",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/ventnor-city-legacy/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--wall-township",
+    "product": "floodmapper",
+    "client": "wall-township",
+    "repository": "hondrospj/Wall-Township-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/wall-township/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--wall-township",
+    "product": "roads-at-risk",
+    "client": "wall-township",
+    "repository": "hondrospj/Wall-Township-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/wall-township/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--waretown",
+    "product": "flooddashboard",
+    "client": "waretown",
+    "repository": "hondrospj/Waretown",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/waretown/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--west-cape-may",
+    "product": "floodmapper",
+    "client": "west-cape-may",
+    "repository": "hondrospj/West-Cape-May-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/west-cape-may/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--west-cape-may",
+    "product": "roads-at-risk",
+    "client": "west-cape-may",
+    "repository": "hondrospj/West-Cape-May-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/west-cape-may/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--west-wildwood",
+    "product": "floodmapper",
+    "client": "west-wildwood",
+    "repository": "hondrospj/West-Wildwood-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/west-wildwood/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--west-wildwood",
+    "product": "roads-at-risk",
+    "client": "west-wildwood",
+    "repository": "hondrospj/West-Wildwood-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/west-wildwood/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--west-wildwood",
+    "product": "flooddashboard",
+    "client": "west-wildwood",
+    "repository": "hondrospj/WestWildwood",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/west-wildwood/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "floodmapper--wildwood-crest",
+    "product": "floodmapper",
+    "client": "wildwood-crest",
+    "repository": "hondrospj/Wildwood-Crest-Borough-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/wildwood-crest/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--wildwood-crest",
+    "product": "roads-at-risk",
+    "client": "wildwood-crest",
+    "repository": "hondrospj/Wildwood-Crest-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/wildwood-crest/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--wildwood",
+    "product": "floodmapper",
+    "client": "wildwood",
+    "repository": "hondrospj/Wildwood-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/wildwood/",
+    "github_pages_configured": false
+  },
+  {
+    "id": "roads-at-risk--wildwood",
+    "product": "roads-at-risk",
+    "client": "wildwood",
+    "repository": "hondrospj/Wildwood-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/wildwood/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--wildwood-crest",
+    "product": "flooddashboard",
+    "client": "wildwood-crest",
+    "repository": "hondrospj/WildwoodCrest",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/wildwood-crest/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "flooddashboard--wilmington",
+    "product": "flooddashboard",
+    "client": "wilmington",
+    "repository": "hondrospj/Wilmington",
+    "branch": "main",
+    "path": "/shorelysafe/flooddashboard/wilmington/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "floodmapper--wilmington",
+    "product": "floodmapper",
+    "client": "wilmington",
+    "repository": "hondrospj/Wilmington-floodmapper",
+    "branch": "main",
+    "path": "/shorelysafe/floodmapper/wilmington/",
+    "github_pages_configured": true
+  },
+  {
+    "id": "roads-at-risk--wilmington",
+    "product": "roads-at-risk",
+    "client": "wilmington",
+    "repository": "hondrospj/Wilmington-Roads-at-Risk",
+    "branch": "main",
+    "path": "/shorelysafe/roads-at-risk/wilmington/",
+    "github_pages_configured": true
+  }
+]
