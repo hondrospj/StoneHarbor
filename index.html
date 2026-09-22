@@ -2778,7 +2778,7 @@ a.brand *{
   
   <details class="acc" open>
     <summary class="accHeader">
-      <h2 class="accTitle">Average number of floods per month</h2>
+      <h2 class="accTitle">Average number of flood days per month</h2>
       <span class="chev"></span>
     </summary>
 
@@ -8174,56 +8174,90 @@ function monthNameFromIndex(i){
   return fmtMonthName.format(d);
 }
 
-const MIN_COMPLETE_MONTH_HIGH_TIDES = 40;
+const MIN_COMPLETE_MONTH_DAY_COVERAGE = 0.8;
+
+function daysInCalendarMonth(year, month){
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function monthlyEventLocalDateParts(event){
+  const explicitDate = String(event?.localDate || "");
+  if(/^\d{4}-\d{2}-\d{2}$/.test(explicitDate)){
+    const [year, month, day] = explicitDate.split("-").map(Number);
+    return {year, month, day};
+  }
+
+  const year = Number(event?.y ?? event?.year);
+  const month = Number(event?.m ?? event?.month);
+  const day = Number(event?.d ?? event?.day);
+  if(Number.isInteger(year) && Number.isInteger(month) && Number.isInteger(day)){
+    return {year, month, day};
+  }
+
+  const date = new Date(event?.t);
+  if(Number.isNaN(date.getTime())) return null;
+  const local = getESTParts(date);
+  return {year:Number(local.y), month:Number(local.m), day:Number(local.d)};
+}
 
 function computeMonthlyAveragesFromEvents(eventsNavd){
   const T = THRESH.NAVD88;
-  const byYearMonth = new Map();
+  const bestByLocalDay = new Map();
 
-  for(const p of eventsNavd){
-    let y = p.y, m = p.m;
-    if(!y || !m){
-      const dt = new Date(p.t);
-      if(Number.isNaN(dt.getTime())) continue;
-      y = dt.getUTCFullYear();
-      m = dt.getUTCMonth()+1;
+  for(const event of (eventsNavd || [])){
+    const parts = monthlyEventLocalDateParts(event);
+    const ft = Number(event?.ft);
+    if(!parts || !Number.isFinite(ft)) continue;
+    const {year, month, day} = parts;
+    if(!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) continue;
+    const dayKey = `${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const previous = bestByLocalDay.get(dayKey);
+    if(!previous || ft > previous.ft){
+      bestByLocalDay.set(dayKey, {year, month, day, ft});
     }
-    const key = `${y}-${m}`;
+  }
+
+  const byYearMonth = new Map();
+  for(const event of bestByLocalDay.values()){
+    const key = `${event.year}-${event.month}`;
     if(!byYearMonth.has(key)){
-      byYearMonth.set(key,{year:y, month:m, observedHighTides:0, total:0, minor:0, moderate:0, major:0});
+      byYearMonth.set(key,{year:event.year, month:event.month, observedDays:0, total:0, minor:0, moderate:0, major:0});
     }
     const rec = byYearMonth.get(key);
-    rec.observedHighTides++;
-
-    if(p.ft >= T.minorLow){
+    rec.observedDays++;
+    if(event.ft >= T.minorLow){
       rec.total++;
-      if(p.ft >= T.majorLow) rec.major++;
-      else if(p.ft >= T.moderateLow) rec.moderate++;
+      if(event.ft >= T.majorLow) rec.major++;
+      else if(event.ft >= T.moderateLow) rec.moderate++;
       else rec.minor++;
     }
   }
 
+  const now = getESTParts(new Date());
   const result = [];
-
-  for(let m=1;m<=12;m++){
-    const rowsForMonth = Array.from(byYearMonth.values())
-      .filter(r => r.month === m && r.observedHighTides >= MIN_COMPLETE_MONTH_HIGH_TIDES);
-    const n = rowsForMonth.length || 1;
-    const sum = rowsForMonth.reduce((acc,r)=>{
-      acc.total += r.total;
-      acc.minor += r.minor;
-      acc.moderate += r.moderate;
-      acc.major += r.major;
+  for(let month=1; month<=12; month++){
+    const rowsForMonth = Array.from(byYearMonth.values()).filter((row)=>{
+      if(row.month !== month) return false;
+      if(row.year === Number(now.y) && row.month === Number(now.m)) return false;
+      const requiredDays = Math.ceil(daysInCalendarMonth(row.year, row.month) * MIN_COMPLETE_MONTH_DAY_COVERAGE);
+      return row.observedDays >= requiredDays;
+    });
+    const divisor = rowsForMonth.length || 1;
+    const sum = rowsForMonth.reduce((acc,row)=>{
+      acc.total += row.total;
+      acc.minor += row.minor;
+      acc.moderate += row.moderate;
+      acc.major += row.major;
       return acc;
     },{total:0, minor:0, moderate:0, major:0});
 
     result.push({
-      month:m,
-      avgTotal: sum.total / n,
-      avgMinor: sum.minor / n,
-      avgModerate: sum.moderate / n,
-      avgMajor: sum.major / n,
-      years:n
+      month,
+      avgTotal: sum.total / divisor,
+      avgMinor: sum.minor / divisor,
+      avgModerate: sum.moderate / divisor,
+      avgMajor: sum.major / divisor,
+      years: rowsForMonth.length
     });
   }
   return result;
@@ -9280,7 +9314,7 @@ setInterval(async ()=>{
     ["Flooding throughout the year", "Flooding throughout the year", "Each line counts floods as the year goes on. The year grid lists each annual total and controls which years are visible."],
     ["Flooding over the years", "Flooding over the years", "This compares yearly flood counts so you can see whether flooding is becoming more common."],
     ["Sea Level Trends", "Sea level trends", "Monthly mean sea level is the measured history. Historical trend is the fitted past pattern, while Current Trend and the other scenarios extend possible future sea level."],
-    ["Average number of floods per month", "Average floods by month", "This shows which months usually have more coastal flooding in the historic record."],
+    ["Average number of flood days per month", "Average floods by month", "This shows which months usually have more coastal flooding in the historic record."],
     ["Historic flooding filter", "Historic flooding filter", "Choose a water-height and date range to look up past flood events."],
     ["NJ tide gauge map", "NJ tide gauge map", "This marks the tide gauge used for this dashboard, so the chart data has a place on the map."]
   ];
@@ -9701,7 +9735,7 @@ setInterval(async ()=>{
     },
     {
       title:()=>"Find the flood-active months",
-      needle:"Average number of floods per month",
+      needle:"Average number of flood days per month",
       body:()=>"<p>Monthly averages reveal the flood-active seasons. Use the category buttons to separate minor, moderate, and major events.</p>"
     },
     {
