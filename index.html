@@ -596,6 +596,14 @@ option{
       white-space:nowrap;
       flex:0 0 auto;
     }
+    .floodMoreToggle{cursor:pointer;list-style:none}
+    .floodMoreToggle::-webkit-details-marker{display:none}
+    .floodMoreToggle:hover{background:rgba(255,255,255,.06)}
+    .floodMoreToggle:focus-visible{outline:2px solid var(--ok);outline-offset:3px}
+    .floodMoreEvents{margin-top:10px}
+    .floodMoreOpen{display:none}
+    .floodMore[open] .floodMoreClosed{display:none}
+    .floodMore[open] .floodMoreOpen{display:inline}
     @media(max-width:520px){
       .event{align-items:flex-start}
       .eventWhen,.eventSub{white-space:normal}
@@ -3657,6 +3665,7 @@ function buildExactFloodAccounting(rawPoints, t0, t1){
 function updateFloodOutlook48(){
   if(!f48MinorHrsEl || !f48ModerHrsEl || !f48MajorHrsEl || !f48ListEl || !f48MetaEl) return;
 
+  const moreWasOpen = !!f48ListEl.querySelector("details.floodMore")?.open;
   const pred = STATE.pred72Mllw || [];
   if(!pred.length){
     f48MinorHrsEl.textContent = "—";
@@ -3709,7 +3718,7 @@ function updateFloodOutlook48(){
   }else{
     const show = segs.slice(0,4);
 
-    f48ListEl.innerHTML = show.map(seg=>{
+    const renderEvent = seg=>{
       const durH = Math.max(0, (seg.endMs - seg.startMs) / 3600000);
       const when = `${fmtNiceDate(isoFromMs(seg.startMs))} · ${fmtESTTime(isoFromMs(seg.startMs))} → ${fmtESTTime(isoFromMs(seg.endMs))}`;
       const sub  = `${durH.toFixed(1)}h · Peak ${seg.peakFt.toFixed(2)} ${unitText()}`;
@@ -3723,17 +3732,24 @@ function updateFloodOutlook48(){
           </div>
           <div class="eventBadge" style="color:${badgeColor}">${seg.peakStage}</div>
         </div>`;
-    }).join("");
+    };
+    f48ListEl.innerHTML = show.map(renderEvent).join("");
 
     if(segs.length > show.length){
+      const remaining = segs.slice(show.length);
       f48ListEl.innerHTML += `
-        <div class="event">
-          <div class="eventLeft">
-            <div class="eventWhen">${segs.length - show.length} additional flood period(s)</div>
-            <div class="eventSub">Included in the hour totals above</div>
-          </div>
-          <div class="eventBadge" style="color:var(--muted)">More</div>
-        </div>`;
+        <details class="floodMore"${moreWasOpen ? " open" : ""}>
+          <summary class="event floodMoreToggle">
+            <span class="eventLeft">
+              <span class="eventWhen">${remaining.length} additional flood period${remaining.length === 1 ? "" : "s"}</span>
+              <span class="eventSub">Included in the hour totals above</span>
+            </span>
+            <span class="eventBadge" style="color:var(--muted)">
+              <span class="floodMoreClosed">More</span><span class="floodMoreOpen">Less</span>
+            </span>
+          </summary>
+          <div class="events floodMoreEvents">${remaining.map(renderEvent).join("")}</div>
+        </details>`;
     }
   }
 
