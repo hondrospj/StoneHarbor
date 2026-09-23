@@ -2618,7 +2618,7 @@ a.brand *{
     <div class="chartWrapTall">
       <canvas id="tsChart"></canvas>
     </div>
-    <div class="kicker" id="tsRunMeta" role="status" style="padding:0 12px 12px">Loading observation and PETSS run times…</div>
+    
 
     <div class="foot" id="threshKey" style="font-size:18px;">
       <span class="tag" style="padding:10px 16px;">
@@ -3754,7 +3754,7 @@ function updateFloodOutlook48(){
   }
 
   f48MetaEl.textContent =
-    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS${petssAlignmentDescription()}`;
+    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS`;
 }
 
 
@@ -6176,12 +6176,6 @@ function alignPetssForecastWithObservation(points){
       maxFt:Number.isFinite(p.maxFt) ? p.maxFt+correction : p.maxFt};
   });
   return {points:aligned, alignment:{correctionFt, observationMs:last.ms}};
-}
-
-function petssAlignmentDescription(){
-  if(!STATE.petssAlignment) return "";
-  const ft = STATE.petssAlignment.correctionFt;
-  return ` · PETSS adjusted ${ft >= 0 ? "+" : ""}${ft.toFixed(2)} ft at handoff (fades by 6h)`;
 }
 
 function updateTsChartFromState(){
@@ -8671,16 +8665,6 @@ async function updateTimeseries(){
     STATE.petssError = e?.message || "Forecast unavailable";
   }
 
-  const runMeta = document.getElementById("tsRunMeta");
-  if(runMeta){
-    const observation = STATE.obs24Navd?.at(-1)?.t;
-    runMeta.textContent = `USGS observed: ${observation ? fmtESTFull(observation) : "unavailable"} · ${STATE.petssError || (STATE.petssIssuedTime ? `PETSS run: ${fmtESTFull(STATE.petssIssuedTime)}` : "PETSS run time unavailable")}`;
-  }
-
-  const tsRunMeta = document.getElementById("tsRunMeta");
-  if(tsRunMeta && STATE.petssAlignment){
-    tsRunMeta.textContent += petssAlignmentDescription();
-  }
   updateTsChartFromState();
   updateFloodOutlook48();
 }
