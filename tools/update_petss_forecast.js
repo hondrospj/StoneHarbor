@@ -131,10 +131,11 @@ function parseNomadsStationCsv(text, stid) {
   const header = lines[headerIdx].split(",").map((s) => s.trim().toUpperCase());
   const idxTIME = header.indexOf("TIME");
   const idxTWL = header.indexOf("TWL");
+  const idxTWL90 = header.indexOf("TWL90P");
   const idxTIDE = header.indexOf("TIDE");
   const idxSURGE = header.indexOf("SURGE");
 
-  if (idxTIME === -1 || idxTWL === -1) {
+  if (idxTIME === -1 || idxTWL === -1 || idxTWL90 === -1) {
     throw new Error(`Header missing TIME or TWL for STID=${stid}. Header=${header.join("|")}`);
   }
 
@@ -174,6 +175,7 @@ function parseNomadsStationCsv(text, stid) {
     const tide = idxTIDE >= 0 ? parseNum(parts[idxTIDE]) : null;
     const surge = idxSURGE >= 0 ? parseNum(parts[idxSURGE]) : null;
     const twl = parseNum(parts[idxTWL]);
+    const twl90 = parseNum(parts[idxTWL90]);
 
     // Ensemble mean TWL is TWL when present; fallback to tide+surge if TWL missing but both exist
     const twlBest =
@@ -181,11 +183,21 @@ function parseNomadsStationCsv(text, stid) {
       (tide != null && surge != null ? (tide + surge) : null);
 
     // For plotting: keep only points with a usable ensemble mean
-    if (twlBest == null) continue;
+    if (twlBest == null || twl90 == null) continue;
+    // PETSS publishes a 10th non-exceedance value, not p01/p25/p50.
+    const spread = Math.max(0, twlBest - twl90);
+    const z10 = 1.2815515655446004;
+    const p01 = twlBest - (2.3263478740408408 / z10) * spread;
+    const p25 = twlBest - (0.6744897501960817 / z10) * spread;
+    const p50 = twlBest;
 
     rows.push({
       t: dt.toISOString(),
-      twl: Number(twlBest.toFixed(3)),
+      twl: Number(p25.toFixed(3)),
+      twl_min: Number(p01.toFixed(3)),
+      twl_max: Number(p50.toFixed(3)),
+      source_twl_mean: Number(twlBest.toFixed(3)),
+      source_twl90p: Number(twl90.toFixed(3)),
       tide: tide != null ? Number(tide.toFixed(3)) : null,
       surge: surge != null ? Number(surge.toFixed(3)) : null,
       src_time: String(parts[idxTIME]).trim()
@@ -262,11 +274,11 @@ async function main() {
 
   // 6) Write outputs
   const outCsv = [
-    "time_utc_iso,twl_ft_mllw,tide_ft_mllw,surge_ft,src_time",
+    "time_utc_iso,twl_ft_mllw,tide_ft_mllw,surge_ft,src_time,min_ft_mllw,max_ft_mllw,source_mean_ft_mllw,source_twl90p_ft_mllw",
     ...rows.map(r => {
       const tide = (r.tide == null ? "" : r.tide);
       const surge = (r.surge == null ? "" : r.surge);
-      return `${r.t},${r.twl},${tide},${surge},${r.src_time}`;
+      return `${r.t},${r.twl},${tide},${surge},${r.src_time},${r.twl_min},${r.twl_max},${r.source_twl_mean},${r.source_twl90p}`;
     })
   ].join("\n") + "\n";
 
@@ -281,7 +293,9 @@ async function main() {
     source_url: url,
     updated_utc: new Date().toISOString(),
     n_points: rows.length,
-    notes: "Ensemble mean plotted as TWL (fallback to TIDE+SURGE when TWL missing)."
+    notes: "Displayed minimum=p01, mean=p25, maximum=p50 are estimates from PETSS TWL and TWL90p, using a normal lower-tail assumption. p01 extrapolates beyond the published range; p50 approximates the median using the ensemble mean. They are not NOAA-published percentiles or absolute bounds.",
+    scenario_percentiles: { minimum: 1, mean: 25, maximum: 50 },
+    percentile_method: "estimated-normal-lower-tail-from-TWL-and-TWL90p"
   };
   fs.writeFileSync("data/petss_meta.json", JSON.stringify(meta, null, 2) + "\n", "utf8");
 

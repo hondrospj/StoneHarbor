@@ -3823,10 +3823,12 @@ function fmtHistoricDate(r){
 
 function normalizePetssJsonToPoints(json){
   const rows = Array.isArray(json?.points) ? json.points : Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
-  return rows.map(p => {
+  return rows.map(p=>{
     const value = p.fcst ?? p.twl ?? p.value ?? p.primary;
     const ft = value == null || typeof value === "boolean" || String(value).trim() === "" ? NaN : Number(value);
-    return {t:p.t ?? p.time ?? p.validTime, ft};
+    const minFt = p.twl_min == null ? NaN : Number(p.twl_min);
+    const maxFt = p.twl_max == null ? NaN : Number(p.twl_max);
+    return {t:p.t ?? p.time ?? p.validTime, ft, minFt, maxFt};
   }).filter(p=>Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft) && Math.abs(p.ft)<100)
     .sort((a,b)=>Date.parse(a.t)-Date.parse(b.t));
 }
@@ -3869,6 +3871,8 @@ async function fetchPETSSForecast_MLLW(){
 
   const ptsAll = normalizePetssJsonToPoints(json);
   if(!ptsAll.length) throw new Error("PETSS JSON loaded but contained no usable forecast points");
+  if(!ptsAll.every(p=>Number.isFinite(p.minFt) && Number.isFinite(p.maxFt)))
+    throw new Error("Stored PETSS forecast is waiting for the new percentile estimate fields");
   if(Date.parse(ptsAll[ptsAll.length-1].t) <= Date.now()) throw new Error("Stored PETSS run has expired; waiting for a new NOAA run");
 
   return { issuedTime, points: ptsAll, urlUsed: url };
@@ -5828,14 +5832,14 @@ function buildTsLineLegendLabels(chart){
   return (chart?.data?.datasets || [])
     .map((ds, datasetIndex) => {
       const label = ds?.label === "Observed highs (cached)" ? "Observed" : (ds?.label || "");
-      if(label !== "Observed" && label !== "Forecast") return null;
-      const isForecast = label === "Forecast";
+      if(label !== "Observed" && !label.startsWith("PETSS ")) return null;
+      const isForecast = label.startsWith("PETSS ");
       return {
         text: label,
         datasetIndex,
         hidden: chart ? !chart.isDatasetVisible(datasetIndex) : !!ds?.hidden,
         fillStyle:"rgba(0,0,0,0)",
-        strokeStyle:"rgba(45,212,191,1)",
+        strokeStyle:ds?.borderColor || "rgba(45,212,191,1)",
         fontColor:"rgba(234,240,255,.9)",
         lineWidth:isForecast ? 3.2 : 3,
         lineDash:isForecast ? [9, 5] : [],
@@ -5998,11 +6002,11 @@ function tsObservedDataset(data, {cachedHighs=false}={}){
   };
 }
 
-function tsPredictedDataset(data){
+function tsPredictedDataset(data, label="PETSS mean · 25th (est.)", color="rgba(45,212,191,.9)", width=3){
   return {
-    label:"Forecast",
+    label,
     data:data || [],
-    borderWidth:3,
+    borderWidth:width,
     pointRadius:0,
     pointHoverRadius:0,
     pointHitRadius:0,
@@ -6011,7 +6015,7 @@ function tsPredictedDataset(data){
     pointStyle:"line",
     borderDash:[9,5],
     borderDashOffset:0,
-    borderColor:"rgba(45,212,191,.9)"
+    borderColor:color
   };
 }
 
@@ -6168,7 +6172,10 @@ function alignPetssForecastWithObservation(points){
     const ft = Number(p.ft);
     if(!Number.isFinite(ms) || !Number.isFinite(ft) || ms <= last.ms || ms >= last.ms+fadeMs) return p;
     const weight = 1 - (ms-last.ms)/fadeMs;
-    return {...p, ft:ft+correctionFt*weight};
+    const correction = correctionFt * weight;
+    return {...p, ft:ft+correction,
+      minFt:Number.isFinite(p.minFt) ? p.minFt+correction : p.minFt,
+      maxFt:Number.isFinite(p.maxFt) ? p.maxFt+correction : p.maxFt};
   });
   return {points:aligned, alignment:{correctionFt, observationMs:last.ms}};
 }
@@ -6216,37 +6223,40 @@ function updateTsChartFromState(){
     TS_MAX_DELTA_FT
   );
 
-  const predRaw = (STATE.pred72Mllw || [])
-    .map(p => ({ t:p.t, ft:Number(p.ft) }))
-    .filter(p=>{
-      const tMs = new Date(p.t).getTime();
-      return p.t && Number.isFinite(p.ft) && Number.isFinite(tMs)
-        && tMs >= predStartMs
-        && tMs <= predEndMs;
+  const forecastValuesDisplay = field => {
+    const raw = (STATE.pred72Mllw || [])
+      .map(p => ({t:p.t, ft:Number(p[field])}))
+      .filter(p=>{
+        const tMs = Date.parse(p.t);
+        return p.t && Number.isFinite(p.ft) && Number.isFinite(tMs)
+          && tMs >= predStartMs && tMs <= predEndMs;
+      });
+    const resampled = resampleTo15Min_MLLW(raw, predStartISO, predEndISO);
+    const values = new Map();
+    for(let i=0;i<resampled.labels.length;i++){
+      const ms = Date.parse(resampled.labels[i]);
+      const ft = resampled.values[i];
+      if(Number.isFinite(ms) && Number.isFinite(ft)) values.set(ms, ft);
+    }
+    return labels.map(iso=>{
+      const t = Date.parse(iso);
+      if(t < predStartMs || t > predEndMs) return null;
+      const mllw = values.get(t);
+      return Number.isFinite(mllw) ? toDisplayFtFromMllw(mllw) : null;
     });
-
-  const predRes = resampleTo15Min_MLLW(predRaw, predStartISO, predEndISO);
-
-  const predMap = new Map();
-  for(let i=0;i<predRes.labels.length;i++){
-    const ms = new Date(predRes.labels[i]).getTime();
-    const ft = predRes.values[i];
-    if(Number.isFinite(ms) && Number.isFinite(ft)) predMap.set(ms, ft);
-  }
-
-  const predValsDisplay = labels.map(iso=>{
-    const t = new Date(iso).getTime();
-    if(t < predStartMs || t > predEndMs) return null;
-    const mllw = predMap.get(t);
-    return Number.isFinite(mllw) ? toDisplayFtFromMllw(mllw) : null;
-  });
+  };
+  const predMinValsDisplay = forecastValuesDisplay("minFt");
+  const predValsDisplay = forecastValuesDisplay("ft");
+  const predMaxValsDisplay = forecastValuesDisplay("maxFt");
 
   // Start the dashed guidance at the last measured point so the handoff is explicit.
   if(STATE.petssAlignment){
     const anchorMs = Math.round(STATE.petssAlignment.observationMs/TS_STEP_MS)*TS_STEP_MS;
     const anchorIndex = labels.findIndex(iso => Date.parse(iso) === anchorMs);
     if(anchorIndex >= 0 && Number.isFinite(obsFiltered[anchorIndex])){
+      predMinValsDisplay[anchorIndex] = obsFiltered[anchorIndex];
       predValsDisplay[anchorIndex] = obsFiltered[anchorIndex];
+      predMaxValsDisplay[anchorIndex] = obsFiltered[anchorIndex];
     }
   }
 
@@ -6257,7 +6267,9 @@ function updateTsChartFromState(){
   tsChart.data.labels = labels;
   const tsDatasets = [tsObservedDataset(obsFiltered, {cachedHighs: !!STATE.obs24CachedHighs})];
   if(TS_ANNUAL_FORECAST_ENABLED){
-    tsDatasets.push(tsPredictedDataset(predValsDisplay));
+    tsDatasets.push(tsPredictedDataset(predMinValsDisplay, "PETSS minimum · 1st (est.)", "rgba(118,184,244,.85)", 2));
+    tsDatasets.push(tsPredictedDataset(predValsDisplay, "PETSS mean · 25th (est.)", "rgba(45,212,191,.95)", 3));
+    tsDatasets.push(tsPredictedDataset(predMaxValsDisplay, "PETSS maximum · 50th (est.)", "rgba(250,183,92,.9)", 2));
   }
   tsChart.data.datasets = tsDatasets;
 
@@ -6270,7 +6282,7 @@ function updateTsChartFromState(){
   const requiredMajorHeadroomFt = Number.isFinite(major) ? major + 1 : null;
   const plottedYs = [
     ...obsFiltered,
-    ...(TS_ANNUAL_FORECAST_ENABLED ? predValsDisplay : [])
+    ...(TS_ANNUAL_FORECAST_ENABLED ? [...predMinValsDisplay, ...predValsDisplay, ...predMaxValsDisplay] : [])
   ].filter(v => Number.isFinite(v));
   const thresholds = [minor, moderate, major].filter(v => Number.isFinite(v));
   const dataMin = plottedYs.length ? Math.min(...plottedYs) : Math.min(...thresholds);
