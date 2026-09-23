@@ -3754,7 +3754,7 @@ function updateFloodOutlook48(){
   }
 
   f48MetaEl.textContent =
-    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS`;
+    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS${petssAlignmentDescription()}`;
 }
 
 
@@ -6133,6 +6133,52 @@ function updateTsAnnualForecastChartFromState(){
   syncChartZoomToData(tsChart);
 }
 
+function alignPetssForecastWithObservation(points){
+  const unchanged = {points, alignment:null};
+  if(!Array.isArray(points) || !points.length || STATE.obs24CachedHighs) return unchanged;
+  const observations = (STATE.obs24Navd || [])
+    .map(p => ({ms:Date.parse(p.t), ft:Number(p.ft)}))
+    .filter(p => Number.isFinite(p.ms) && Number.isFinite(p.ft))
+    .sort((a,b) => a.ms-b.ms);
+  if(!observations.length) return unchanged;
+
+  const last = observations[observations.length-1];
+  const ageMs = Date.now() - last.ms;
+  if(ageMs < 0 || ageMs > 90*60000) return unchanged;
+
+  const forecast = points
+    .map(p => ({ms:Date.parse(p.t), ft:Number(p.ft)}))
+    .filter(p => Number.isFinite(p.ms) && Number.isFinite(p.ft))
+    .sort((a,b) => a.ms-b.ms);
+  let before = null, after = null;
+  for(const p of forecast){
+    if(p.ms <= last.ms) before = p;
+    if(p.ms >= last.ms){ after = p; break; }
+  }
+  if(!before || !after || after.ms-before.ms > 2*3600000) return unchanged;
+
+  const modelAtObservation = before.ms === after.ms ? before.ft :
+    before.ft + (after.ft-before.ft)*(last.ms-before.ms)/(after.ms-before.ms);
+  const correctionFt = navdToMllw(last.ft) - modelAtObservation;
+  if(!Number.isFinite(correctionFt) || Math.abs(correctionFt) < 0.05 || Math.abs(correctionFt) > 3) return unchanged;
+
+  const fadeMs = 6*3600000;
+  const aligned = points.map(p => {
+    const ms = Date.parse(p.t);
+    const ft = Number(p.ft);
+    if(!Number.isFinite(ms) || !Number.isFinite(ft) || ms <= last.ms || ms >= last.ms+fadeMs) return p;
+    const weight = 1 - (ms-last.ms)/fadeMs;
+    return {...p, ft:ft+correctionFt*weight};
+  });
+  return {points:aligned, alignment:{correctionFt, observationMs:last.ms}};
+}
+
+function petssAlignmentDescription(){
+  if(!STATE.petssAlignment) return "";
+  const ft = STATE.petssAlignment.correctionFt;
+  return ` · PETSS adjusted ${ft >= 0 ? "+" : ""}${ft.toFixed(2)} ft at handoff (fades by 6h)`;
+}
+
 function updateTsChartFromState(){
   const endISO = nowISO();
   const startObsISO = new Date(new Date(endISO).getTime() - 24*3600*1000).toISOString();
@@ -6194,6 +6240,17 @@ function updateTsChartFromState(){
     const mllw = predMap.get(t);
     return Number.isFinite(mllw) ? toDisplayFtFromMllw(mllw) : null;
   });
+
+  // Start the dashed guidance at the last measured point so the handoff is explicit.
+  if(STATE.petssAlignment){
+    const anchorMs = Math.round(STATE.petssAlignment.observationMs/TS_STEP_MS)*TS_STEP_MS;
+    const anchorIndex = labels.findIndex(iso => Date.parse(iso) === anchorMs);
+    if(anchorIndex >= 0 && Number.isFinite(obsFiltered[anchorIndex])){
+      predValsDisplay[anchorIndex] = obsFiltered[anchorIndex];
+    }
+  }
+
+
 
   ensureTsChart();
   styleTsLegendAsLines();
@@ -8592,12 +8649,17 @@ async function updateTimeseries(){
 
   try{
     const { points, issuedTime } = await fetchPETSSForecast_MLLW();
-    STATE.pred72Mllw = points || [];
+    const alignedForecast = alignPetssForecastWithObservation(points || []);
+    STATE.pred72MllwRaw = points || [];
+    STATE.pred72Mllw = alignedForecast.points;
+    STATE.petssAlignment = alignedForecast.alignment;
     STATE.petssIssuedTime = issuedTime;
     STATE.petssError = null;
   }catch(e){
     console.warn("Forecast failed:", e);
     STATE.pred72Mllw = [];
+    STATE.pred72MllwRaw = [];
+    STATE.petssAlignment = null;
     STATE.petssError = e?.message || "Forecast unavailable";
   }
 
@@ -8607,6 +8669,10 @@ async function updateTimeseries(){
     runMeta.textContent = `USGS observed: ${observation ? fmtESTFull(observation) : "unavailable"} · ${STATE.petssError || (STATE.petssIssuedTime ? `PETSS run: ${fmtESTFull(STATE.petssIssuedTime)}` : "PETSS run time unavailable")}`;
   }
 
+  const tsRunMeta = document.getElementById("tsRunMeta");
+  if(tsRunMeta && STATE.petssAlignment){
+    tsRunMeta.textContent += petssAlignmentDescription();
+  }
   updateTsChartFromState();
   updateFloodOutlook48();
 }
