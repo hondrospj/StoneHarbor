@@ -1,0 +1,1712 @@
+{
+  "schema": "experimental-petss-guidance-v1",
+  "generatedUtc": "2026-09-23T16:33:44.712588Z",
+  "model": {
+    "version": "research-pooled-v1-20260923",
+    "official": false,
+    "useForMapsOrAlerts": false,
+    "pointFormula": "tide + lead_gain*(issued_mean-tide) + lead_offset_ft",
+    "lowerQuartileFormula": "corrected_central + lead_q25_offset_ft + 0.1*(issued_lower10-issued_mean)",
+    "coefficients": [
+      {
+        "modelLeadHours": 12.0,
+        "gain": 0.69,
+        "offsetFt": 0.17639,
+        "q25OffsetFt": -0.201845
+      },
+      {
+        "modelLeadHours": 24.0,
+        "gain": 0.6,
+        "offsetFt": 0.2302,
+        "q25OffsetFt": -0.217
+      },
+      {
+        "modelLeadHours": 48.0,
+        "gain": 0.57,
+        "offsetFt": 0.24387,
+        "q25OffsetFt": -0.22076
+      },
+      {
+        "modelLeadHours": 72.0,
+        "gain": 0.56,
+        "offsetFt": 0.24668,
+        "q25OffsetFt": -0.23095
+      }
+    ],
+    "interpolation": "Linear between 12/24/48/72-hour anchors; unavailable outside the tested 12\u201372-hour model-lead range",
+    "validation": "Ten directly observed NOAA gauges; 2021-2024 fit, 2025 and Jan-Aug 2026 test. NOT universal.",
+    "pooledBacktest": {
+      "2025": {
+        "issuedMaeFt": 0.458,
+        "correctedMaeFt": 0.401,
+        "issuedHighThresholdMissCases": 236,
+        "correctedHighThresholdMissCases": 300,
+        "estimatedLowerQuartileMissCases": 340
+      },
+      "2026JanAug": {
+        "issuedMaeFt": 0.407,
+        "correctedMaeFt": 0.352,
+        "issuedHighThresholdMissCases": 123,
+        "correctedHighThresholdMissCases": 151,
+        "estimatedLowerQuartileMissCases": 216
+      },
+      "highThresholdDefinition": "Each station's training-period observed 99th percentile; counts repeat forecast cases, not storms"
+    },
+    "warning": "Research-only. It increased high-water misses; estimated lower quartile is not site-calibrated and is not an exact ensemble-member percentile. Keep issued PETSS for maps and alerts."
+  },
+  "zones": [
+    {
+      "zoneId": "default",
+      "stationId": "8535581",
+      "petssCycleUtc": "2026-09-23T06:00:00Z",
+      "sourceUrl": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20260923/petss.t06z.csv.tar.gz",
+      "cycleAgeHours": 10.56,
+      "status": "experimental",
+      "hours": [
+        {
+          "validUtc": "2026-09-18T06:00:00.000Z",
+          "modelLeadHours": -120.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T07:00:00.000Z",
+          "modelLeadHours": -119.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T08:00:00.000Z",
+          "modelLeadHours": -118.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T09:00:00.000Z",
+          "modelLeadHours": -117.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T10:00:00.000Z",
+          "modelLeadHours": -116.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T11:00:00.000Z",
+          "modelLeadHours": -115.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T12:00:00.000Z",
+          "modelLeadHours": -114.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T13:00:00.000Z",
+          "modelLeadHours": -113.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T14:00:00.000Z",
+          "modelLeadHours": -112.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T15:00:00.000Z",
+          "modelLeadHours": -111.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T16:00:00.000Z",
+          "modelLeadHours": -110.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T17:00:00.000Z",
+          "modelLeadHours": -109.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T18:00:00.000Z",
+          "modelLeadHours": -108.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T19:00:00.000Z",
+          "modelLeadHours": -107.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T20:00:00.000Z",
+          "modelLeadHours": -106.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T21:00:00.000Z",
+          "modelLeadHours": -105.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T22:00:00.000Z",
+          "modelLeadHours": -104.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-18T23:00:00.000Z",
+          "modelLeadHours": -103.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T00:00:00.000Z",
+          "modelLeadHours": -102.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T01:00:00.000Z",
+          "modelLeadHours": -101.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T02:00:00.000Z",
+          "modelLeadHours": -100.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T03:00:00.000Z",
+          "modelLeadHours": -99.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T04:00:00.000Z",
+          "modelLeadHours": -98.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T05:00:00.000Z",
+          "modelLeadHours": -97.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T06:00:00.000Z",
+          "modelLeadHours": -96.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T07:00:00.000Z",
+          "modelLeadHours": -95.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T08:00:00.000Z",
+          "modelLeadHours": -94.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T09:00:00.000Z",
+          "modelLeadHours": -93.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T10:00:00.000Z",
+          "modelLeadHours": -92.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T11:00:00.000Z",
+          "modelLeadHours": -91.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T12:00:00.000Z",
+          "modelLeadHours": -90.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T13:00:00.000Z",
+          "modelLeadHours": -89.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T14:00:00.000Z",
+          "modelLeadHours": -88.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T15:00:00.000Z",
+          "modelLeadHours": -87.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T16:00:00.000Z",
+          "modelLeadHours": -86.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T17:00:00.000Z",
+          "modelLeadHours": -85.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T18:00:00.000Z",
+          "modelLeadHours": -84.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T19:00:00.000Z",
+          "modelLeadHours": -83.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T20:00:00.000Z",
+          "modelLeadHours": -82.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T21:00:00.000Z",
+          "modelLeadHours": -81.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T22:00:00.000Z",
+          "modelLeadHours": -80.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-19T23:00:00.000Z",
+          "modelLeadHours": -79.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T00:00:00.000Z",
+          "modelLeadHours": -78.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T01:00:00.000Z",
+          "modelLeadHours": -77.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T02:00:00.000Z",
+          "modelLeadHours": -76.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T03:00:00.000Z",
+          "modelLeadHours": -75.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T04:00:00.000Z",
+          "modelLeadHours": -74.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T05:00:00.000Z",
+          "modelLeadHours": -73.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T06:00:00.000Z",
+          "modelLeadHours": -72.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T07:00:00.000Z",
+          "modelLeadHours": -71.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T08:00:00.000Z",
+          "modelLeadHours": -70.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T09:00:00.000Z",
+          "modelLeadHours": -69.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T10:00:00.000Z",
+          "modelLeadHours": -68.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T11:00:00.000Z",
+          "modelLeadHours": -67.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T12:00:00.000Z",
+          "modelLeadHours": -66.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T13:00:00.000Z",
+          "modelLeadHours": -65.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T14:00:00.000Z",
+          "modelLeadHours": -64.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T15:00:00.000Z",
+          "modelLeadHours": -63.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T16:00:00.000Z",
+          "modelLeadHours": -62.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T17:00:00.000Z",
+          "modelLeadHours": -61.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T18:00:00.000Z",
+          "modelLeadHours": -60.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T19:00:00.000Z",
+          "modelLeadHours": -59.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T20:00:00.000Z",
+          "modelLeadHours": -58.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T21:00:00.000Z",
+          "modelLeadHours": -57.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T22:00:00.000Z",
+          "modelLeadHours": -56.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-20T23:00:00.000Z",
+          "modelLeadHours": -55.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T00:00:00.000Z",
+          "modelLeadHours": -54.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T01:00:00.000Z",
+          "modelLeadHours": -53.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T02:00:00.000Z",
+          "modelLeadHours": -52.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T03:00:00.000Z",
+          "modelLeadHours": -51.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T04:00:00.000Z",
+          "modelLeadHours": -50.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T05:00:00.000Z",
+          "modelLeadHours": -49.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T06:00:00.000Z",
+          "modelLeadHours": -48.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T07:00:00.000Z",
+          "modelLeadHours": -47.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T08:00:00.000Z",
+          "modelLeadHours": -46.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T09:00:00.000Z",
+          "modelLeadHours": -45.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T10:00:00.000Z",
+          "modelLeadHours": -44.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T11:00:00.000Z",
+          "modelLeadHours": -43.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T12:00:00.000Z",
+          "modelLeadHours": -42.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T13:00:00.000Z",
+          "modelLeadHours": -41.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T14:00:00.000Z",
+          "modelLeadHours": -40.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T15:00:00.000Z",
+          "modelLeadHours": -39.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T16:00:00.000Z",
+          "modelLeadHours": -38.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T17:00:00.000Z",
+          "modelLeadHours": -37.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T18:00:00.000Z",
+          "modelLeadHours": -36.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T19:00:00.000Z",
+          "modelLeadHours": -35.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T20:00:00.000Z",
+          "modelLeadHours": -34.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T21:00:00.000Z",
+          "modelLeadHours": -33.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T22:00:00.000Z",
+          "modelLeadHours": -32.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-21T23:00:00.000Z",
+          "modelLeadHours": -31.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T00:00:00.000Z",
+          "modelLeadHours": -30.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T01:00:00.000Z",
+          "modelLeadHours": -29.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T02:00:00.000Z",
+          "modelLeadHours": -28.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T03:00:00.000Z",
+          "modelLeadHours": -27.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T04:00:00.000Z",
+          "modelLeadHours": -26.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T05:00:00.000Z",
+          "modelLeadHours": -25.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T06:00:00.000Z",
+          "modelLeadHours": -24.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T07:00:00.000Z",
+          "modelLeadHours": -23.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T08:00:00.000Z",
+          "modelLeadHours": -22.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T09:00:00.000Z",
+          "modelLeadHours": -21.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T10:00:00.000Z",
+          "modelLeadHours": -20.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T11:00:00.000Z",
+          "modelLeadHours": -19.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T12:00:00.000Z",
+          "modelLeadHours": -18.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T13:00:00.000Z",
+          "modelLeadHours": -17.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T14:00:00.000Z",
+          "modelLeadHours": -16.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T15:00:00.000Z",
+          "modelLeadHours": -15.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T16:00:00.000Z",
+          "modelLeadHours": -14.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T17:00:00.000Z",
+          "modelLeadHours": -13.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T18:00:00.000Z",
+          "modelLeadHours": -12.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T19:00:00.000Z",
+          "modelLeadHours": -11.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T20:00:00.000Z",
+          "modelLeadHours": -10.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T21:00:00.000Z",
+          "modelLeadHours": -9.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T22:00:00.000Z",
+          "modelLeadHours": -8.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-22T23:00:00.000Z",
+          "modelLeadHours": -7.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T00:00:00.000Z",
+          "modelLeadHours": -6.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T01:00:00.000Z",
+          "modelLeadHours": -5.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T02:00:00.000Z",
+          "modelLeadHours": -4.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T03:00:00.000Z",
+          "modelLeadHours": -3.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T04:00:00.000Z",
+          "modelLeadHours": -2.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T05:00:00.000Z",
+          "modelLeadHours": -1.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T06:00:00.000Z",
+          "modelLeadHours": 0.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T07:00:00.000Z",
+          "modelLeadHours": 1.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T08:00:00.000Z",
+          "modelLeadHours": 2.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T09:00:00.000Z",
+          "modelLeadHours": 3.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T10:00:00.000Z",
+          "modelLeadHours": 4.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T11:00:00.000Z",
+          "modelLeadHours": 5.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T12:00:00.000Z",
+          "modelLeadHours": 6.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T13:00:00.000Z",
+          "modelLeadHours": 7.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T14:00:00.000Z",
+          "modelLeadHours": 8.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T15:00:00.000Z",
+          "modelLeadHours": 9.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T16:00:00.000Z",
+          "modelLeadHours": 10.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T17:00:00.000Z",
+          "modelLeadHours": 11.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-23T18:00:00.000Z",
+          "modelLeadHours": 12.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.965,
+          "astronomicalTideMllwFt": 1.567,
+          "correctedCentralMllwFt": 3.398,
+          "issuedLower10MllwFt": 3.465,
+          "estimatedLowerQuartileMllwFt": 3.146
+        },
+        {
+          "validUtc": "2026-09-23T19:00:00.000Z",
+          "modelLeadHours": 13.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.846,
+          "astronomicalTideMllwFt": 2.344,
+          "correctedCentralMllwFt": 4.232,
+          "issuedLower10MllwFt": 4.346,
+          "estimatedLowerQuartileMllwFt": 3.979
+        },
+        {
+          "validUtc": "2026-09-23T20:00:00.000Z",
+          "modelLeadHours": 14.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.685,
+          "astronomicalTideMllwFt": 3.179,
+          "correctedCentralMllwFt": 5.056,
+          "issuedLower10MllwFt": 5.385,
+          "estimatedLowerQuartileMllwFt": 4.822
+        },
+        {
+          "validUtc": "2026-09-23T21:00:00.000Z",
+          "modelLeadHours": 15.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.593,
+          "astronomicalTideMllwFt": 3.983,
+          "correctedCentralMllwFt": 5.915,
+          "issuedLower10MllwFt": 6.193,
+          "estimatedLowerQuartileMllwFt": 5.669
+        },
+        {
+          "validUtc": "2026-09-23T22:00:00.000Z",
+          "modelLeadHours": 16.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.179,
+          "astronomicalTideMllwFt": 4.565,
+          "correctedCentralMllwFt": 6.485,
+          "issuedLower10MllwFt": 6.879,
+          "estimatedLowerQuartileMllwFt": 6.248
+        },
+        {
+          "validUtc": "2026-09-23T23:00:00.000Z",
+          "modelLeadHours": 17.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.342,
+          "astronomicalTideMllwFt": 4.724,
+          "correctedCentralMllwFt": 6.631,
+          "issuedLower10MllwFt": 7.042,
+          "estimatedLowerQuartileMllwFt": 6.393
+        },
+        {
+          "validUtc": "2026-09-24T00:00:00.000Z",
+          "modelLeadHours": 18.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.128,
+          "astronomicalTideMllwFt": 4.41,
+          "correctedCentralMllwFt": 6.366,
+          "issuedLower10MllwFt": 6.828,
+          "estimatedLowerQuartileMllwFt": 6.127
+        },
+        {
+          "validUtc": "2026-09-24T01:00:00.000Z",
+          "modelLeadHours": 19.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.461,
+          "astronomicalTideMllwFt": 3.743,
+          "correctedCentralMllwFt": 5.684,
+          "issuedLower10MllwFt": 6.261,
+          "estimatedLowerQuartileMllwFt": 5.453
+        },
+        {
+          "validUtc": "2026-09-24T02:00:00.000Z",
+          "modelLeadHours": 20.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.621,
+          "astronomicalTideMllwFt": 2.903,
+          "correctedCentralMllwFt": 4.828,
+          "issuedLower10MllwFt": 5.421,
+          "estimatedLowerQuartileMllwFt": 4.596
+        },
+        {
+          "validUtc": "2026-09-24T03:00:00.000Z",
+          "modelLeadHours": 21.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.824,
+          "astronomicalTideMllwFt": 2.006,
+          "correctedCentralMllwFt": 3.977,
+          "issuedLower10MllwFt": 4.524,
+          "estimatedLowerQuartileMllwFt": 3.734
+        },
+        {
+          "validUtc": "2026-09-24T04:00:00.000Z",
+          "modelLeadHours": 22.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.026,
+          "astronomicalTideMllwFt": 1.208,
+          "correctedCentralMllwFt": 3.162,
+          "issuedLower10MllwFt": 3.726,
+          "estimatedLowerQuartileMllwFt": 2.918
+        },
+        {
+          "validUtc": "2026-09-24T05:00:00.000Z",
+          "modelLeadHours": 23.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.63,
+          "astronomicalTideMllwFt": 0.812,
+          "correctedCentralMllwFt": 2.75,
+          "issuedLower10MllwFt": 3.33,
+          "estimatedLowerQuartileMllwFt": 2.504
+        },
+        {
+          "validUtc": "2026-09-24T06:00:00.000Z",
+          "modelLeadHours": 24.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.813,
+          "astronomicalTideMllwFt": 0.995,
+          "correctedCentralMllwFt": 2.916,
+          "issuedLower10MllwFt": 3.513,
+          "estimatedLowerQuartileMllwFt": 2.669
+        },
+        {
+          "validUtc": "2026-09-24T07:00:00.000Z",
+          "modelLeadHours": 25.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.423,
+          "astronomicalTideMllwFt": 1.605,
+          "correctedCentralMllwFt": 3.523,
+          "issuedLower10MllwFt": 4.123,
+          "estimatedLowerQuartileMllwFt": 3.276
+        },
+        {
+          "validUtc": "2026-09-24T08:00:00.000Z",
+          "modelLeadHours": 26.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.225,
+          "astronomicalTideMllwFt": 2.407,
+          "correctedCentralMllwFt": 4.322,
+          "issuedLower10MllwFt": 4.925,
+          "estimatedLowerQuartileMllwFt": 4.075
+        },
+        {
+          "validUtc": "2026-09-24T09:00:00.000Z",
+          "modelLeadHours": 27.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.082,
+          "astronomicalTideMllwFt": 3.264,
+          "correctedCentralMllwFt": 5.176,
+          "issuedLower10MllwFt": 5.782,
+          "estimatedLowerQuartileMllwFt": 4.929
+        },
+        {
+          "validUtc": "2026-09-24T10:00:00.000Z",
+          "modelLeadHours": 28.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.798,
+          "astronomicalTideMllwFt": 3.98,
+          "correctedCentralMllwFt": 5.889,
+          "issuedLower10MllwFt": 6.498,
+          "estimatedLowerQuartileMllwFt": 5.642
+        },
+        {
+          "validUtc": "2026-09-24T11:00:00.000Z",
+          "modelLeadHours": 29.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.125,
+          "astronomicalTideMllwFt": 4.307,
+          "correctedCentralMllwFt": 6.213,
+          "issuedLower10MllwFt": 6.725,
+          "estimatedLowerQuartileMllwFt": 5.955
+        },
+        {
+          "validUtc": "2026-09-24T12:00:00.000Z",
+          "modelLeadHours": 30.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.944,
+          "astronomicalTideMllwFt": 4.126,
+          "correctedCentralMllwFt": 6.029,
+          "issuedLower10MllwFt": 6.544,
+          "estimatedLowerQuartileMllwFt": 5.771
+        },
+        {
+          "validUtc": "2026-09-24T13:00:00.000Z",
+          "modelLeadHours": 31.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.344,
+          "astronomicalTideMllwFt": 3.526,
+          "correctedCentralMllwFt": 5.426,
+          "issuedLower10MllwFt": 5.944,
+          "estimatedLowerQuartileMllwFt": 5.168
+        },
+        {
+          "validUtc": "2026-09-24T14:00:00.000Z",
+          "modelLeadHours": 32.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.533,
+          "astronomicalTideMllwFt": 2.715,
+          "correctedCentralMllwFt": 4.612,
+          "issuedLower10MllwFt": 5.133,
+          "estimatedLowerQuartileMllwFt": 4.354
+        },
+        {
+          "validUtc": "2026-09-24T15:00:00.000Z",
+          "modelLeadHours": 33.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.689,
+          "astronomicalTideMllwFt": 1.871,
+          "correctedCentralMllwFt": 3.765,
+          "issuedLower10MllwFt": 4.289,
+          "estimatedLowerQuartileMllwFt": 3.507
+        },
+        {
+          "validUtc": "2026-09-24T16:00:00.000Z",
+          "modelLeadHours": 34.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.94,
+          "astronomicalTideMllwFt": 1.122,
+          "correctedCentralMllwFt": 3.013,
+          "issuedLower10MllwFt": 3.54,
+          "estimatedLowerQuartileMllwFt": 2.755
+        },
+        {
+          "validUtc": "2026-09-24T17:00:00.000Z",
+          "modelLeadHours": 35.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.425,
+          "astronomicalTideMllwFt": 0.707,
+          "correctedCentralMllwFt": 2.537,
+          "issuedLower10MllwFt": 3.125,
+          "estimatedLowerQuartileMllwFt": 2.288
+        },
+        {
+          "validUtc": "2026-09-24T18:00:00.000Z",
+          "modelLeadHours": 36.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.683,
+          "astronomicalTideMllwFt": 0.865,
+          "correctedCentralMllwFt": 2.751,
+          "issuedLower10MllwFt": 3.283,
+          "estimatedLowerQuartileMllwFt": 2.492
+        },
+        {
+          "validUtc": "2026-09-24T19:00:00.000Z",
+          "modelLeadHours": 37.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.347,
+          "astronomicalTideMllwFt": 1.529,
+          "correctedCentralMllwFt": 3.412,
+          "issuedLower10MllwFt": 3.947,
+          "estimatedLowerQuartileMllwFt": 3.153
+        },
+        {
+          "validUtc": "2026-09-24T20:00:00.000Z",
+          "modelLeadHours": 38.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.244,
+          "astronomicalTideMllwFt": 2.426,
+          "correctedCentralMllwFt": 4.306,
+          "issuedLower10MllwFt": 4.844,
+          "estimatedLowerQuartileMllwFt": 4.046
+        },
+        {
+          "validUtc": "2026-09-24T21:00:00.000Z",
+          "modelLeadHours": 39.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.19,
+          "astronomicalTideMllwFt": 3.372,
+          "correctedCentralMllwFt": 5.249,
+          "issuedLower10MllwFt": 5.79,
+          "estimatedLowerQuartileMllwFt": 4.989
+        },
+        {
+          "validUtc": "2026-09-24T22:00:00.000Z",
+          "modelLeadHours": 40.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.036,
+          "astronomicalTideMllwFt": 4.218,
+          "correctedCentralMllwFt": 6.092,
+          "issuedLower10MllwFt": 6.636,
+          "estimatedLowerQuartileMllwFt": 5.832
+        },
+        {
+          "validUtc": "2026-09-24T23:00:00.000Z",
+          "modelLeadHours": 41.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.658,
+          "astronomicalTideMllwFt": 4.74,
+          "correctedCentralMllwFt": 6.669,
+          "issuedLower10MllwFt": 7.158,
+          "estimatedLowerQuartileMllwFt": 6.399
+        },
+        {
+          "validUtc": "2026-09-25T00:00:00.000Z",
+          "modelLeadHours": 42.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.688,
+          "astronomicalTideMllwFt": 4.77,
+          "correctedCentralMllwFt": 6.696,
+          "issuedLower10MllwFt": 7.288,
+          "estimatedLowerQuartileMllwFt": 6.436
+        },
+        {
+          "validUtc": "2026-09-25T01:00:00.000Z",
+          "modelLeadHours": 43.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.229,
+          "astronomicalTideMllwFt": 4.311,
+          "correctedCentralMllwFt": 6.234,
+          "issuedLower10MllwFt": 6.829,
+          "estimatedLowerQuartileMllwFt": 5.974
+        },
+        {
+          "validUtc": "2026-09-25T02:00:00.000Z",
+          "modelLeadHours": 44.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.432,
+          "astronomicalTideMllwFt": 3.514,
+          "correctedCentralMllwFt": 5.433,
+          "issuedLower10MllwFt": 6.032,
+          "estimatedLowerQuartileMllwFt": 5.173
+        },
+        {
+          "validUtc": "2026-09-25T03:00:00.000Z",
+          "modelLeadHours": 45.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.484,
+          "astronomicalTideMllwFt": 2.566,
+          "correctedCentralMllwFt": 4.482,
+          "issuedLower10MllwFt": 5.084,
+          "estimatedLowerQuartileMllwFt": 4.222
+        },
+        {
+          "validUtc": "2026-09-25T04:00:00.000Z",
+          "modelLeadHours": 46.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.524,
+          "astronomicalTideMllwFt": 1.606,
+          "correctedCentralMllwFt": 3.519,
+          "issuedLower10MllwFt": 4.124,
+          "estimatedLowerQuartileMllwFt": 3.259
+        },
+        {
+          "validUtc": "2026-09-25T05:00:00.000Z",
+          "modelLeadHours": 47.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.863,
+          "astronomicalTideMllwFt": 0.845,
+          "correctedCentralMllwFt": 2.812,
+          "issuedLower10MllwFt": 3.363,
+          "estimatedLowerQuartileMllwFt": 2.542
+        },
+        {
+          "validUtc": "2026-09-25T06:00:00.000Z",
+          "modelLeadHours": 48.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.618,
+          "astronomicalTideMllwFt": 0.6,
+          "correctedCentralMllwFt": 2.564,
+          "issuedLower10MllwFt": 3.118,
+          "estimatedLowerQuartileMllwFt": 2.293
+        },
+        {
+          "validUtc": "2026-09-25T07:00:00.000Z",
+          "modelLeadHours": 49.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.009,
+          "astronomicalTideMllwFt": 0.991,
+          "correctedCentralMllwFt": 2.954,
+          "issuedLower10MllwFt": 3.509,
+          "estimatedLowerQuartileMllwFt": 2.683
+        },
+        {
+          "validUtc": "2026-09-25T08:00:00.000Z",
+          "modelLeadHours": 50.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.817,
+          "astronomicalTideMllwFt": 1.799,
+          "correctedCentralMllwFt": 3.761,
+          "issuedLower10MllwFt": 4.317,
+          "estimatedLowerQuartileMllwFt": 3.489
+        },
+        {
+          "validUtc": "2026-09-25T09:00:00.000Z",
+          "modelLeadHours": 51.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.779,
+          "astronomicalTideMllwFt": 2.761,
+          "correctedCentralMllwFt": 4.722,
+          "issuedLower10MllwFt": 5.279,
+          "estimatedLowerQuartileMllwFt": 4.45
+        },
+        {
+          "validUtc": "2026-09-25T10:00:00.000Z",
+          "modelLeadHours": 52.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.713,
+          "astronomicalTideMllwFt": 3.695,
+          "correctedCentralMllwFt": 5.655,
+          "issuedLower10MllwFt": 6.213,
+          "estimatedLowerQuartileMllwFt": 5.382
+        },
+        {
+          "validUtc": "2026-09-25T11:00:00.000Z",
+          "modelLeadHours": 53.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.394,
+          "astronomicalTideMllwFt": 4.376,
+          "correctedCentralMllwFt": 6.334,
+          "issuedLower10MllwFt": 6.894,
+          "estimatedLowerQuartileMllwFt": 6.062
+        },
+        {
+          "validUtc": "2026-09-25T12:00:00.000Z",
+          "modelLeadHours": 54.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.606,
+          "astronomicalTideMllwFt": 4.588,
+          "correctedCentralMllwFt": 6.545,
+          "issuedLower10MllwFt": 7.106,
+          "estimatedLowerQuartileMllwFt": 6.272
+        },
+        {
+          "validUtc": "2026-09-25T13:00:00.000Z",
+          "modelLeadHours": 55.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.291,
+          "astronomicalTideMllwFt": 4.273,
+          "correctedCentralMllwFt": 6.229,
+          "issuedLower10MllwFt": 6.791,
+          "estimatedLowerQuartileMllwFt": 5.955
+        },
+        {
+          "validUtc": "2026-09-25T14:00:00.000Z",
+          "modelLeadHours": 56.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.562,
+          "astronomicalTideMllwFt": 3.544,
+          "correctedCentralMllwFt": 5.499,
+          "issuedLower10MllwFt": 6.062,
+          "estimatedLowerQuartileMllwFt": 5.225
+        },
+        {
+          "validUtc": "2026-09-25T15:00:00.000Z",
+          "modelLeadHours": 57.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.732,
+          "astronomicalTideMllwFt": 2.614,
+          "correctedCentralMllwFt": 4.624,
+          "issuedLower10MllwFt": 5.132,
+          "estimatedLowerQuartileMllwFt": 4.34
+        },
+        {
+          "validUtc": "2026-09-25T16:00:00.000Z",
+          "modelLeadHours": 58.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.782,
+          "astronomicalTideMllwFt": 1.664,
+          "correctedCentralMllwFt": 3.673,
+          "issuedLower10MllwFt": 4.082,
+          "estimatedLowerQuartileMllwFt": 3.378
+        },
+        {
+          "validUtc": "2026-09-25T17:00:00.000Z",
+          "modelLeadHours": 59.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.98,
+          "astronomicalTideMllwFt": 0.862,
+          "correctedCentralMllwFt": 2.87,
+          "issuedLower10MllwFt": 3.38,
+          "estimatedLowerQuartileMllwFt": 2.585
+        },
+        {
+          "validUtc": "2026-09-25T18:00:00.000Z",
+          "modelLeadHours": 60.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.608,
+          "astronomicalTideMllwFt": 0.49,
+          "correctedCentralMllwFt": 2.497,
+          "issuedLower10MllwFt": 3.008,
+          "estimatedLowerQuartileMllwFt": 2.211
+        },
+        {
+          "validUtc": "2026-09-25T19:00:00.000Z",
+          "modelLeadHours": 61.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.89,
+          "astronomicalTideMllwFt": 0.772,
+          "correctedCentralMllwFt": 2.778,
+          "issuedLower10MllwFt": 3.29,
+          "estimatedLowerQuartileMllwFt": 2.491
+        },
+        {
+          "validUtc": "2026-09-25T20:00:00.000Z",
+          "modelLeadHours": 62.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.7,
+          "astronomicalTideMllwFt": 1.582,
+          "correctedCentralMllwFt": 3.587,
+          "issuedLower10MllwFt": 4.1,
+          "estimatedLowerQuartileMllwFt": 3.3
+        },
+        {
+          "validUtc": "2026-09-25T21:00:00.000Z",
+          "modelLeadHours": 63.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.723,
+          "astronomicalTideMllwFt": 2.605,
+          "correctedCentralMllwFt": 4.608,
+          "issuedLower10MllwFt": 5.023,
+          "estimatedLowerQuartileMllwFt": 4.311
+        },
+        {
+          "validUtc": "2026-09-25T22:00:00.000Z",
+          "modelLeadHours": 64.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.836,
+          "astronomicalTideMllwFt": 3.618,
+          "correctedCentralMllwFt": 5.677,
+          "issuedLower10MllwFt": 6.136,
+          "estimatedLowerQuartileMllwFt": 5.379
+        },
+        {
+          "validUtc": "2026-09-25T23:00:00.000Z",
+          "modelLeadHours": 65.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.649,
+          "astronomicalTideMllwFt": 4.431,
+          "correctedCentralMllwFt": 6.488,
+          "issuedLower10MllwFt": 6.849,
+          "estimatedLowerQuartileMllwFt": 6.18
+        },
+        {
+          "validUtc": "2026-09-26T00:00:00.000Z",
+          "modelLeadHours": 66.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 8.051,
+          "astronomicalTideMllwFt": 4.833,
+          "correctedCentralMllwFt": 6.889,
+          "issuedLower10MllwFt": 7.351,
+          "estimatedLowerQuartileMllwFt": 6.591
+        },
+        {
+          "validUtc": "2026-09-26T01:00:00.000Z",
+          "modelLeadHours": 67.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.924,
+          "astronomicalTideMllwFt": 4.706,
+          "correctedCentralMllwFt": 6.761,
+          "issuedLower10MllwFt": 7.224,
+          "estimatedLowerQuartileMllwFt": 6.462
+        },
+        {
+          "validUtc": "2026-09-26T02:00:00.000Z",
+          "modelLeadHours": 68.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 7.312,
+          "astronomicalTideMllwFt": 4.094,
+          "correctedCentralMllwFt": 6.148,
+          "issuedLower10MllwFt": 6.612,
+          "estimatedLowerQuartileMllwFt": 5.848
+        },
+        {
+          "validUtc": "2026-09-26T03:00:00.000Z",
+          "modelLeadHours": 69.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 6.389,
+          "astronomicalTideMllwFt": 3.171,
+          "correctedCentralMllwFt": 5.223,
+          "issuedLower10MllwFt": 5.689,
+          "estimatedLowerQuartileMllwFt": 4.924
+        },
+        {
+          "validUtc": "2026-09-26T04:00:00.000Z",
+          "modelLeadHours": 70.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 5.36,
+          "astronomicalTideMllwFt": 2.142,
+          "correctedCentralMllwFt": 4.193,
+          "issuedLower10MllwFt": 4.66,
+          "estimatedLowerQuartileMllwFt": 3.893
+        },
+        {
+          "validUtc": "2026-09-26T05:00:00.000Z",
+          "modelLeadHours": 71.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 4.394,
+          "astronomicalTideMllwFt": 1.176,
+          "correctedCentralMllwFt": 3.226,
+          "issuedLower10MllwFt": 3.594,
+          "estimatedLowerQuartileMllwFt": 2.915
+        },
+        {
+          "validUtc": "2026-09-26T06:00:00.000Z",
+          "modelLeadHours": 72.0,
+          "availability": "experimental",
+          "support": "in-range",
+          "issuedMeanMllwFt": 3.74,
+          "astronomicalTideMllwFt": 0.522,
+          "correctedCentralMllwFt": 2.571,
+          "issuedLower10MllwFt": 2.84,
+          "estimatedLowerQuartileMllwFt": 2.25
+        },
+        {
+          "validUtc": "2026-09-26T07:00:00.000Z",
+          "modelLeadHours": 73.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T08:00:00.000Z",
+          "modelLeadHours": 74.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T09:00:00.000Z",
+          "modelLeadHours": 75.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T10:00:00.000Z",
+          "modelLeadHours": 76.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T11:00:00.000Z",
+          "modelLeadHours": 77.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T12:00:00.000Z",
+          "modelLeadHours": 78.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T13:00:00.000Z",
+          "modelLeadHours": 79.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T14:00:00.000Z",
+          "modelLeadHours": 80.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T15:00:00.000Z",
+          "modelLeadHours": 81.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T16:00:00.000Z",
+          "modelLeadHours": 82.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T17:00:00.000Z",
+          "modelLeadHours": 83.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T18:00:00.000Z",
+          "modelLeadHours": 84.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T19:00:00.000Z",
+          "modelLeadHours": 85.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T20:00:00.000Z",
+          "modelLeadHours": 86.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T21:00:00.000Z",
+          "modelLeadHours": 87.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T22:00:00.000Z",
+          "modelLeadHours": 88.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-26T23:00:00.000Z",
+          "modelLeadHours": 89.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T00:00:00.000Z",
+          "modelLeadHours": 90.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T01:00:00.000Z",
+          "modelLeadHours": 91.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T02:00:00.000Z",
+          "modelLeadHours": 92.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T03:00:00.000Z",
+          "modelLeadHours": 93.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T04:00:00.000Z",
+          "modelLeadHours": 94.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T05:00:00.000Z",
+          "modelLeadHours": 95.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T06:00:00.000Z",
+          "modelLeadHours": 96.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T07:00:00.000Z",
+          "modelLeadHours": 97.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T08:00:00.000Z",
+          "modelLeadHours": 98.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T09:00:00.000Z",
+          "modelLeadHours": 99.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T10:00:00.000Z",
+          "modelLeadHours": 100.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T11:00:00.000Z",
+          "modelLeadHours": 101.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        },
+        {
+          "validUtc": "2026-09-27T12:00:00.000Z",
+          "modelLeadHours": 102.0,
+          "availability": "unavailable",
+          "reason": "unsupported lead or missing mean/tide"
+        }
+      ]
+    }
+  ]
+}

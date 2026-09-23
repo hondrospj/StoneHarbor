@@ -46,6 +46,9 @@ jobs:
           pwd
           node tools/update_petss_forecast.js
 
+      - name: Generate non-operational PETSS research comparison
+        run: python tools/experimental_petss_guidance.py --input data/petss_forecast.json --meta data/petss_meta.json --output data/experimental_petss_guidance.json
+
       - name: Commit & push if changed
         id: forecast_commit
         run: |
@@ -56,6 +59,7 @@ jobs:
 
           # Commit only the forecast products (+ debug header snapshot, optional)
           git add data/petss_forecast.csv data/petss_forecast.json data/petss_meta.json data/petss_station_debug.txt || true
+          git add data/experimental_petss_guidance.json
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
