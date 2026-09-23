@@ -199,7 +199,7 @@ def build_legacy(rows, meta):
         if not valid:
             continue
         lower = lower_by_source_time.get(str(row.get("src_time", "")))
-        hours.append(guidance_row(valid, cycle, finite(row.get("twl")), finite(row.get("tide")), lower))
+        hours.append(guidance_row(valid, cycle, finite(row.get("source_twl_mean", row.get("twl"))), finite(row.get("tide")), lower))
     age, fresh = cycle_freshness(cycle)
     zone = {"zoneId": "default", "stationId": meta.get("stid"), "petssCycleUtc": cycle,
             "sourceUrl": meta.get("source_url"), "cycleAgeHours": age,
