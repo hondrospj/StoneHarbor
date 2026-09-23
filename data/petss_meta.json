@@ -4,7 +4,13 @@
   "run_dir": "petss.20260923",
   "cycle": "t12z",
   "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20260923/petss.t12z.csv.tar.gz",
-  "updated_utc": "2026-09-23T18:31:30.854Z",
+  "updated_utc": "2026-09-23T18:34:01.174Z",
   "n_points": 223,
-  "notes": "Ensemble mean plotted as TWL (fallback to TIDE+SURGE when TWL missing)."
+  "notes": "Displayed minimum=p01, mean=p25, maximum=p50 are estimates from PETSS TWL and TWL90p, using a normal lower-tail assumption. p01 extrapolates beyond the published range; p50 approximates the median using the ensemble mean. They are not NOAA-published percentiles or absolute bounds.",
+  "scenario_percentiles": {
+    "minimum": 1,
+    "mean": 25,
+    "maximum": 50
+  },
+  "percentile_method": "estimated-normal-lower-tail-from-TWL-and-TWL90p"
 }
