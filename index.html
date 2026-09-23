@@ -3879,6 +3879,54 @@ async function fetchPETSSForecast_MLLW(){
 
 
 async function fetchIV({startISO=null,endISO=null,period=null}={}){
+  // Use the current USGS Water Data API for live observations. WaterServices is
+  // retained as a fallback while the old endpoint remains available.
+  try{
+    const end = endISO ? new Date(endISO) : new Date();
+    const periodStart = startFromPeriod(period, end.toISOString());
+    const start = startISO ? new Date(startISO) : new Date(periodStart || end.getTime() - 7*86400000);
+    if(!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start > end){
+      throw new Error("Invalid USGS observation date range");
+    }
+
+    const url = new URL("https://api.waterdata.usgs.gov/ogcapi/v1/collections/continuous/items");
+    url.searchParams.set("monitoring_location_id", `USGS-${USGS_SITE}`);
+    url.searchParams.set("parameter_code", USGS_PARAM_PRIMARY);
+    url.searchParams.set("datetime", `${start.toISOString()}/${end.toISOString()}`);
+    url.searchParams.set("limit", "10000");
+    url.searchParams.set("f", "json");
+
+    const readings = new Map();
+    let next = url.toString();
+    for(let page=0; next && page<20; page++){
+      const res = await fetchWithTimeout(next, {cache:"no-store"}, 12000);
+      if(!res.ok) throw new Error(`USGS Water Data API failed ${res.status}`);
+      const json = await res.json();
+      for(const feature of json?.features || []){
+        const p = feature?.properties || {};
+        if(p.monitoring_location_id !== `USGS-${USGS_SITE}` || p.parameter_code !== USGS_PARAM_PRIMARY) continue;
+        if(String(p.unit_of_measure || "").toLowerCase() !== "ft") continue;
+        const ft = Number(p.value);
+        if(!p.time || !Number.isFinite(ft)) continue;
+        readings.set(p.time, {dateTime:p.time, value:String(ft)});
+      }
+      next = json?.links?.find(link => link.rel === "next")?.href || null;
+    }
+    if(next) throw new Error("USGS observation pages exceeded safety limit");
+    if(!readings.size) throw new Error("USGS Water Data API returned no tidal elevation observations");
+    const values = [...readings.values()].sort((a,b) => Date.parse(a.dateTime) - Date.parse(b.dateTime));
+    return {value:{timeSeries:[{
+      sourceInfo:{siteCode:[{value:String(USGS_SITE)}]},
+      variable:{variableCode:[{value:USGS_PARAM_PRIMARY}],unit:{unitCode:"ft"}},
+      values:[{value:values}]
+    }]}};
+  }catch(modernError){
+    console.warn("Current USGS feed unavailable; trying legacy WaterServices", modernError);
+    return fetchLegacyIV({startISO,endISO,period});
+  }
+}
+
+async function fetchLegacyIV({startISO=null,endISO=null,period=null}={}){
   const url=new URL("https://waterservices.usgs.gov/nwis/iv/");
   url.searchParams.set("format","json");
   url.searchParams.set("sites",USGS_SITE);
