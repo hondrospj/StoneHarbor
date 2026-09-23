@@ -3871,8 +3871,6 @@ async function fetchPETSSForecast_MLLW(){
 
   const ptsAll = normalizePetssJsonToPoints(json);
   if(!ptsAll.length) throw new Error("PETSS JSON loaded but contained no usable forecast points");
-  if(!ptsAll.every(p=>Number.isFinite(p.minFt) && Number.isFinite(p.maxFt)))
-    throw new Error("Stored PETSS forecast is waiting for the new percentile estimate fields");
   if(Date.parse(ptsAll[ptsAll.length-1].t) <= Date.now()) throw new Error("Stored PETSS run has expired; waiting for a new NOAA run");
 
   return { issuedTime, points: ptsAll, urlUsed: url };
@@ -5832,8 +5830,8 @@ function buildTsLineLegendLabels(chart){
   return (chart?.data?.datasets || [])
     .map((ds, datasetIndex) => {
       const label = ds?.label === "Observed highs (cached)" ? "Observed" : (ds?.label || "");
-      if(label !== "Observed" && !label.startsWith("PETSS ")) return null;
-      const isForecast = label.startsWith("PETSS ");
+      if(label !== "Observed" && label !== "Forecast") return null;
+      const isForecast = label === "Forecast";
       return {
         text: label,
         datasetIndex,
@@ -6002,7 +6000,7 @@ function tsObservedDataset(data, {cachedHighs=false}={}){
   };
 }
 
-function tsPredictedDataset(data, label="PETSS mean · 25th (est.)", color="rgba(45,212,191,.9)", width=3){
+function tsPredictedDataset(data, label="Forecast", color="rgba(45,212,191,.9)", width=3){
   return {
     label,
     data:data || [],
@@ -6267,9 +6265,7 @@ function updateTsChartFromState(){
   tsChart.data.labels = labels;
   const tsDatasets = [tsObservedDataset(obsFiltered, {cachedHighs: !!STATE.obs24CachedHighs})];
   if(TS_ANNUAL_FORECAST_ENABLED){
-    tsDatasets.push(tsPredictedDataset(predMinValsDisplay, "PETSS minimum · 1st (est.)", "rgba(118,184,244,.85)", 2));
-    tsDatasets.push(tsPredictedDataset(predValsDisplay, "PETSS mean · 25th (est.)", "rgba(45,212,191,.95)", 3));
-    tsDatasets.push(tsPredictedDataset(predMaxValsDisplay, "PETSS maximum · 50th (est.)", "rgba(250,183,92,.9)", 2));
+    tsDatasets.push(tsPredictedDataset(predValsDisplay, "Forecast", "rgba(45,212,191,.95)", 3));
   }
   tsChart.data.datasets = tsDatasets;
 
@@ -6282,7 +6278,7 @@ function updateTsChartFromState(){
   const requiredMajorHeadroomFt = Number.isFinite(major) ? major + 1 : null;
   const plottedYs = [
     ...obsFiltered,
-    ...(TS_ANNUAL_FORECAST_ENABLED ? [...predMinValsDisplay, ...predValsDisplay, ...predMaxValsDisplay] : [])
+    ...(TS_ANNUAL_FORECAST_ENABLED ? predValsDisplay : [])
   ].filter(v => Number.isFinite(v));
   const thresholds = [minor, moderate, major].filter(v => Number.isFinite(v));
   const dataMin = plottedYs.length ? Math.min(...plottedYs) : Math.min(...thresholds);

@@ -193,7 +193,7 @@ function parseNomadsStationCsv(text, stid) {
 
     rows.push({
       t: dt.toISOString(),
-      twl: Number(p25.toFixed(3)),
+      twl: Number(twl90.toFixed(3)),
       twl_min: Number(p01.toFixed(3)),
       twl_max: Number(p50.toFixed(3)),
       source_twl_mean: Number(twlBest.toFixed(3)),
@@ -293,7 +293,7 @@ async function main() {
     source_url: url,
     updated_utc: new Date().toISOString(),
     n_points: rows.length,
-    notes: "Displayed minimum=p01, mean=p25, maximum=p50 are estimates from PETSS TWL and TWL90p, using a normal lower-tail assumption. p01 extrapolates beyond the published range; p50 approximates the median using the ensemble mean. They are not NOAA-published percentiles or absolute bounds.",
+    notes: "Forecast chart uses PETSS TWL90p; original ensemble mean remains in source_twl_mean.",
     scenario_percentiles: { minimum: 1, mean: 25, maximum: 50 },
     percentile_method: "estimated-normal-lower-tail-from-TWL-and-TWL90p"
   };
