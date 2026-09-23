@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import csv
 from datetime import datetime, timezone
+from functools import lru_cache
 import io
 import json
 import math
@@ -17,7 +18,7 @@ import tarfile
 import urllib.request
 
 
-VERSION = "research-pooled-v1-20260923"
+VERSION = "research-pooled-v2-90-exceedance-20260923"
 ANCHORS = (
     # Model lead hours, tide-relative gain, offset in feet, q25 residual offset.
     (12.0, 0.69, 0.17639, -0.201845),
@@ -70,11 +71,16 @@ def guidance_row(valid_utc, cycle_utc, mean, tide, lower10):
                   correctedCentralMllwFt=round(central, 3))
     if lower10 is not None and lower10 <= mean + 0.05:
         q25 = central + q25_offset + SPREAD_GAIN * (lower10 - mean)
+        shifted_low = central + (lower10 - mean)
         values.update(issuedLower10MllwFt=round(lower10, 3),
+                      issued90ExceedanceMllwFt=round(lower10, 3),
+                      biasShifted90ExceedanceMllwFt=round(shifted_low, 3),
                       estimatedLowerQuartileMllwFt=round(q25, 3))
     else:
-        values.update(estimatedLowerQuartileMllwFt=None,
-                      lowerQuartileReason="missing or inconsistent issued lower-10th level")
+        values.update(issued90ExceedanceMllwFt=None,
+                      biasShifted90ExceedanceMllwFt=None,
+                      estimatedLowerQuartileMllwFt=None,
+                      lowerTailReason="missing or inconsistent issued 90%-exceedance level")
     return values
 
 
@@ -83,12 +89,25 @@ def source_metadata():
         "version": VERSION,
         "official": False,
         "useForMapsOrAlerts": False,
+        "primaryResearchLine": "biasShifted90ExceedanceMllwFt",
         "pointFormula": "tide + lead_gain*(issued_mean-tide) + lead_offset_ft",
+        "biasShifted90ExceedanceFormula": "corrected_central + (issued_90_percent_exceedance - issued_mean)",
+        "biasShifted90ExceedanceMeaning": "Research shift of NOAA's low-end 90%-exceedance guidance; NOT an observation-calibrated 90% exceedance level",
         "lowerQuartileFormula": "corrected_central + lead_q25_offset_ft + 0.1*(issued_lower10-issued_mean)",
+        "lowerQuartileStatus": "Retained as a historical comparison, not the primary research line",
         "coefficients": [{"modelLeadHours": h, "gain": gain, "offsetFt": offset, "q25OffsetFt": q25}
                          for h, gain, offset, q25 in ANCHORS],
         "interpolation": "Linear between 12/24/48/72-hour anchors; unavailable outside the tested 12–72-hour model-lead range",
         "validation": "Ten directly observed NOAA gauges; 2021-2024 fit, 2025 and Jan-Aug 2026 test. NOT universal.",
+        "above6FtBacktest": {
+            "definition": "Hourly MLLW >6.0 ft; 10 observed gauges; forecast cases repeat tides across cycles and leads",
+            "2025": {"issuedMeanMisses": 1552, "issuedMeanFalseAlarms": 1357,
+                     "biasShifted90ExceedanceMisses": 1835,
+                     "biasShifted90ExceedanceFalseAlarms": 761},
+            "2026JanAug": {"issuedMeanMisses": 899, "issuedMeanFalseAlarms": 692,
+                           "biasShifted90ExceedanceMisses": 955,
+                           "biasShifted90ExceedanceFalseAlarms": 455},
+        },
         "pooledBacktest": {
             "2025": {"issuedMaeFt": 0.458, "correctedMaeFt": 0.401,
                      "issuedHighThresholdMissCases": 236, "correctedHighThresholdMissCases": 300,
@@ -98,7 +117,7 @@ def source_metadata():
                            "estimatedLowerQuartileMissCases": 216},
             "highThresholdDefinition": "Each station's training-period observed 99th percentile; counts repeat forecast cases, not storms",
         },
-        "warning": "Research-only. It increased high-water misses; estimated lower quartile is not site-calibrated and is not an exact ensemble-member percentile. Keep issued PETSS for maps and alerts.",
+        "warning": "Research-only. The low-end line reduces false alarms but increases missed >6-ft tides. Issued NOAA 90%-exceedance guidance was not observed-calibrated to 90% at all sites; the bias-shifted line has no 90% probability guarantee. Keep issued PETSS for maps and alerts.",
     }
 
 
@@ -125,21 +144,48 @@ def build_root(data):
         if not mean_hours or not forecast.get("petssCycleUtc"):
             zones.append({"zoneId": name, "status": "unsupported", "reason": "missing mean hours or cycle"})
             continue
-        lower_by_time = {r.get("timeUtc"): finite(r.get("twlMllwFt", r.get("mllwStageFt"))) for r in low_hours}
+        adjusted = "predictionStageAdjustmentFt" in forecast or "predictionTimeShiftMinutes" in forecast
+        adjustment = finite(forecast.get("predictionStageAdjustmentFt")) if adjusted else 0.0
+        if adjusted and (adjustment is None or forecast.get("predictionTimeShiftMinutes") is None):
+            zones.append({"zoneId": name, "status": "unsupported", "reason": "incomplete local prediction adjustment metadata"})
+            continue
+        time_key = "sourceTimeUtc" if adjusted else "timeUtc"
+        level_key = "rawPetssTwlMllwFt" if adjusted else "twlMllwFt"
+        lower_by_time = {r.get(time_key): finite(r.get(level_key, r.get("mllwStageFt"))) for r in low_hours}
         hours = []
         for row in mean_hours:
-            time = row.get("timeUtc")
-            if not time:
+            display_time = row.get("timeUtc")
+            source_time = row.get(time_key)
+            if not display_time or not source_time:
                 continue
-            hours.append(guidance_row(time, forecast["petssCycleUtc"],
-                                      finite(row.get("twlMllwFt", row.get("mllwStageFt"))),
-                                      finite(row.get("tideMllwFt")), lower_by_time.get(time)))
+            mean = finite(row.get(level_key, row.get("mllwStageFt")))
+            lower10 = lower_by_time.get(source_time)
+            if adjusted and (mean is None or lower10 is None):
+                # Never silently mix a locally shifted stage with the raw tide.
+                result = {"validUtc": display_time, "sourceValidUtc": source_time,
+                          "availability": "unavailable", "reason": "missing raw PETSS adjusted-product levels"}
+            else:
+                result = guidance_row(source_time, forecast["petssCycleUtc"], mean,
+                                      finite(row.get("tideMllwFt")), lower10)
+                if adjusted:
+                    result["sourceValidUtc"] = source_time
+                    result["validUtc"] = display_time
+                    for field in ("issuedMeanMllwFt", "issuedLower10MllwFt",
+                                  "issued90ExceedanceMllwFt", "biasShifted90ExceedanceMllwFt",
+                                  "correctedCentralMllwFt", "estimatedLowerQuartileMllwFt"):
+                        if result.get(field) is not None:
+                            result[field] = round(result[field] + adjustment, 3)
+            hours.append(result)
         age, fresh = cycle_freshness(forecast["petssCycleUtc"])
         zones.append({"zoneId": name, "stationId": forecast.get("stationId"),
                       "petssCycleUtc": forecast["petssCycleUtc"], "sourceUrl": forecast.get("sourceUrl"),
                       "cycleAgeHours": age,
                       "status": ("experimental" if fresh else "stale") if any(r["availability"] == "experimental" for r in hours) else "unavailable",
                       "hours": hours})
+        if adjusted:
+            zones[-1]["localStageAdjustmentFt"] = adjustment
+            zones[-1]["localTimeShiftMinutes"] = forecast["predictionTimeShiftMinutes"]
+            zones[-1]["adjustmentNote"] = "Model lead uses raw source time; displayed levels and validUtc include the dashboard's local shift."
     return zones
 
 
@@ -151,14 +197,19 @@ def legacy_cycle(meta):
     return datetime.strptime(match_date[1] + match_hour[1], "%Y%m%d%H").replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+@lru_cache(maxsize=4)
+def noaa_tarball(url):
+    request = urllib.request.Request(url, headers={"User-Agent": "floodmapper-experimental-sidecar/1.0"})
+    with urllib.request.urlopen(request, timeout=90) as response:
+        return response.read()
+
+
 def legacy_lower10(meta):
     url = meta.get("source_url")
     station = str(meta.get("stid", ""))
     if not url or not station or not url.startswith("https://nomads.ncep.noaa.gov/"):
         raise ValueError("Missing or untrusted NOAA source URL/station")
-    request = urllib.request.Request(url, headers={"User-Agent": "floodmapper-experimental-sidecar/1.0"})
-    with urllib.request.urlopen(request, timeout=90) as response:
-        payload = response.read()
+    payload = noaa_tarball(url)
     with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as tar:
         member = next((m for m in tar.getmembers() if m.isfile() and m.name.endswith("/" + station + ".csv")), None)
         if member is None:
@@ -199,7 +250,7 @@ def build_legacy(rows, meta):
         if not valid:
             continue
         lower = lower_by_source_time.get(str(row.get("src_time", "")))
-        hours.append(guidance_row(valid, cycle, finite(row.get("source_twl_mean", row.get("twl"))), finite(row.get("tide")), lower))
+        hours.append(guidance_row(valid, cycle, finite(row.get("twl")), finite(row.get("tide")), lower))
     age, fresh = cycle_freshness(cycle)
     zone = {"zoneId": "default", "stationId": meta.get("stid"), "petssCycleUtc": cycle,
             "sourceUrl": meta.get("source_url"), "cycleAgeHours": age,
