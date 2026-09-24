@@ -4,7 +4,7 @@
   "run_dir": "petss.20260924",
   "cycle": "t12z",
   "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20260924/petss.t12z.csv.tar.gz",
-  "updated_utc": "2026-09-24T18:31:35.690Z",
+  "updated_utc": "2026-09-24T21:24:38.237Z",
   "n_points": 223,
   "notes": "Forecast chart uses PETSS TWL90p; original ensemble mean remains in source_twl_mean.",
   "scenario_percentiles": {
