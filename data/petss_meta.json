@@ -1,10 +1,10 @@
 {
   "stid": "8535581",
   "datum": "MLLW",
-  "run_dir": "petss.20260923",
-  "cycle": "t18z",
-  "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20260923/petss.t18z.csv.tar.gz",
-  "updated_utc": "2026-09-24T03:30:49.983Z",
+  "run_dir": "petss.20260924",
+  "cycle": "t00z",
+  "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20260924/petss.t00z.csv.tar.gz",
+  "updated_utc": "2026-09-24T06:41:50.529Z",
   "n_points": 223,
   "notes": "Forecast chart uses PETSS TWL90p; original ensemble mean remains in source_twl_mean.",
   "scenario_percentiles": {
