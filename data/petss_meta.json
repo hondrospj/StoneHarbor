@@ -1,16 +1,19 @@
 {
   "stid": "8535581",
   "datum": "MLLW",
-  "run_dir": "petss.20260924",
-  "cycle": "t12z",
-  "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20260924/petss.t12z.csv.tar.gz",
-  "updated_utc": "2026-09-24T21:24:38.237Z",
+  "units": "feet",
+  "vertical_reference": "MLLW",
+  "run_dir": "petss.20260925",
+  "cycle": "t06z",
+  "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20260925/petss.t06z.csv.tar.gz",
+  "model_time_utc": "2026-09-25T06:00:00Z",
+  "updated_utc": "2026-09-25T12:54:51.451Z",
   "n_points": 223,
-  "notes": "Forecast chart uses PETSS TWL90p; original ensemble mean remains in source_twl_mean.",
-  "scenario_percentiles": {
-    "minimum": 1,
-    "mean": 25,
-    "maximum": 50
-  },
-  "percentile_method": "estimated-normal-lower-tail-from-TWL-and-TWL90p"
+  "valid_through_utc": "2026-09-29T12:00:00.000Z",
+  "forecast_product": "TWL90p",
+  "exceedance_probability_percent": 90,
+  "non_exceedance_percentile": 10,
+  "custom_bias_correction": false,
+  "percentile_method": "NOAA-published-TWL90p",
+  "notes": "NOAA TWL90p: the lower 90% exceedance total-water-level curve. No custom observation alignment, local adjustment, or estimated percentile is applied."
 }

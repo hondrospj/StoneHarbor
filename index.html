@@ -3823,14 +3823,12 @@ function fmtHistoricDate(r){
 
 function normalizePetssJsonToPoints(json){
   const rows = Array.isArray(json?.points) ? json.points : Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
-  return rows.map(p=>{
-    const value = p.fcst ?? p.twl ?? p.value ?? p.primary;
+  return rows.map(p => {
+    const value = p.source_twl90p;
     const ft = value == null || typeof value === "boolean" || String(value).trim() === "" ? NaN : Number(value);
-    const minFt = p.twl_min == null ? NaN : Number(p.twl_min);
-    const maxFt = p.twl_max == null ? NaN : Number(p.twl_max);
-    return {t:p.t ?? p.time ?? p.validTime, ft, minFt, maxFt};
-  }).filter(p=>Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft) && Math.abs(p.ft)<100)
-    .sort((a,b)=>Date.parse(a.t)-Date.parse(b.t));
+    return {t:p.t ?? p.time ?? p.validTime, ft, minFt:ft, maxFt:ft};
+  }).filter(p => Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft) && Math.abs(p.ft)<100)
+    .sort((a,b) => Date.parse(a.t)-Date.parse(b.t));
 }
 
 async function fetchFirstOkJson(urls){
@@ -5358,13 +5356,7 @@ function ensureAnnual(){
       return sum + (Number.isFinite(v) ? v : 0);
     }, 0);
 
-  const year = Number(items?.[0]?.label);
-  const coverage = annualCoverageByYear.get(year);
-  const source = annualSource[YEARS.indexOf(year)];
-  const days = Number(coverage?.observedDays);
-  const yearDays = isLeapYear(year) ? 366 : 365;
-  return [`Total: ${Math.floor(total)} floods`, annualSourceName(source),
-    Number.isFinite(days) ? `${days}/${yearDays} observed days${days < yearDays ? " · partial record" : ""}` : "Coverage unknown"];
+  return [`Total: ${Math.floor(total)} floods`];
 }
 
           }
@@ -5833,7 +5825,7 @@ function buildTsLineLegendLabels(chart){
       if(label !== "Observed" && label !== "Forecast") return null;
       const isForecast = label === "Forecast";
       return {
-        text: label,
+        text: isForecast ? "Forecast (90% exceedance)" : label,
         datasetIndex,
         hidden: chart ? !chart.isDatasetVisible(datasetIndex) : !!ds?.hidden,
         fillStyle:"rgba(0,0,0,0)",
@@ -6135,48 +6127,6 @@ function updateTsAnnualForecastChartFromState(){
   syncChartZoomToData(tsChart);
 }
 
-function alignPetssForecastWithObservation(points){
-  const unchanged = {points, alignment:null};
-  if(!Array.isArray(points) || !points.length || STATE.obs24CachedHighs) return unchanged;
-  const observations = (STATE.obs24Navd || [])
-    .map(p => ({ms:Date.parse(p.t), ft:Number(p.ft)}))
-    .filter(p => Number.isFinite(p.ms) && Number.isFinite(p.ft))
-    .sort((a,b) => a.ms-b.ms);
-  if(!observations.length) return unchanged;
-
-  const last = observations[observations.length-1];
-  const ageMs = Date.now() - last.ms;
-  if(ageMs < 0 || ageMs > 90*60000) return unchanged;
-
-  const forecast = points
-    .map(p => ({ms:Date.parse(p.t), ft:Number(p.ft)}))
-    .filter(p => Number.isFinite(p.ms) && Number.isFinite(p.ft))
-    .sort((a,b) => a.ms-b.ms);
-  let before = null, after = null;
-  for(const p of forecast){
-    if(p.ms <= last.ms) before = p;
-    if(p.ms >= last.ms){ after = p; break; }
-  }
-  if(!before || !after || after.ms-before.ms > 2*3600000) return unchanged;
-
-  const modelAtObservation = before.ms === after.ms ? before.ft :
-    before.ft + (after.ft-before.ft)*(last.ms-before.ms)/(after.ms-before.ms);
-  const correctionFt = navdToMllw(last.ft) - modelAtObservation;
-  if(!Number.isFinite(correctionFt) || Math.abs(correctionFt) < 0.05 || Math.abs(correctionFt) > 3) return unchanged;
-
-  const fadeMs = 6*3600000;
-  const aligned = points.map(p => {
-    const ms = Date.parse(p.t);
-    const ft = Number(p.ft);
-    if(!Number.isFinite(ms) || !Number.isFinite(ft) || ms <= last.ms || ms >= last.ms+fadeMs) return p;
-    const weight = 1 - (ms-last.ms)/fadeMs;
-    const correction = correctionFt * weight;
-    return {...p, ft:ft+correction,
-      minFt:Number.isFinite(p.minFt) ? p.minFt+correction : p.minFt,
-      maxFt:Number.isFinite(p.maxFt) ? p.maxFt+correction : p.maxFt};
-  });
-  return {points:aligned, alignment:{correctionFt, observationMs:last.ms}};
-}
 
 function updateTsChartFromState(){
   const endISO = nowISO();
@@ -6241,16 +6191,6 @@ function updateTsChartFromState(){
   const predValsDisplay = forecastValuesDisplay("ft");
   const predMaxValsDisplay = forecastValuesDisplay("maxFt");
 
-  // Start the dashed guidance at the last measured point so the handoff is explicit.
-  if(STATE.petssAlignment){
-    const anchorMs = Math.round(STATE.petssAlignment.observationMs/TS_STEP_MS)*TS_STEP_MS;
-    const anchorIndex = labels.findIndex(iso => Date.parse(iso) === anchorMs);
-    if(anchorIndex >= 0 && Number.isFinite(obsFiltered[anchorIndex])){
-      predMinValsDisplay[anchorIndex] = obsFiltered[anchorIndex];
-      predValsDisplay[anchorIndex] = obsFiltered[anchorIndex];
-      predMaxValsDisplay[anchorIndex] = obsFiltered[anchorIndex];
-    }
-  }
 
 
 
@@ -8651,17 +8591,16 @@ async function updateTimeseries(){
 
   try{
     const { points, issuedTime } = await fetchPETSSForecast_MLLW();
-    const alignedForecast = alignPetssForecastWithObservation(points || []);
     STATE.pred72MllwRaw = points || [];
-    STATE.pred72Mllw = alignedForecast.points;
-    STATE.petssAlignment = alignedForecast.alignment;
+    STATE.pred72Mllw = points || [];
+
     STATE.petssIssuedTime = issuedTime;
     STATE.petssError = null;
   }catch(e){
     console.warn("Forecast failed:", e);
     STATE.pred72Mllw = [];
     STATE.pred72MllwRaw = [];
-    STATE.petssAlignment = null;
+
     STATE.petssError = e?.message || "Forecast unavailable";
   }
 

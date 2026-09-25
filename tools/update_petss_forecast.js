@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Update PETSS forecast (ensemble mean) from NOMADS PETSS production tarballs.
+ * Update PETSS forecast (NOAA 90% exceedance TWL90p) from NOMADS PETSS production tarballs.
  *
  * Outputs:
  *  - data/petss_forecast.csv   (time_utc_iso, twl_ft_mllw, tide_ft_mllw, surge_ft, src_time)
@@ -13,6 +13,9 @@
  */
 
 "use strict";
+
+const {parseStationCsv: parseRawTwl90p, forecastCsv, forecastMetadata} = require("./petss-exceedance");
+
 
 const fs = require("fs");
 const path = require("path");
@@ -112,109 +115,7 @@ function findFileRecursive(rootDir, filename) {
   return null;
 }
 
-function parseNomadsStationCsv(text, stid) {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-
-  // Find header line containing TIME and TWL
-  let headerIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
-    const h = lines[i].trim();
-    if (h.toUpperCase().includes("TIME") && h.toUpperCase().includes("TWL")) {
-      headerIdx = i;
-      break;
-    }
-  }
-  if (headerIdx === -1) {
-    throw new Error(`Could not find NOMADS header row with TIME/TWL for STID=${stid}`);
-  }
-
-  const header = lines[headerIdx].split(",").map((s) => s.trim().toUpperCase());
-  const idxTIME = header.indexOf("TIME");
-  const idxTWL = header.indexOf("TWL");
-  const idxTWL90 = header.indexOf("TWL90P");
-  const idxTIDE = header.indexOf("TIDE");
-  const idxSURGE = header.indexOf("SURGE");
-
-  if (idxTIME === -1 || idxTWL === -1 || idxTWL90 === -1) {
-    throw new Error(`Header missing TIME or TWL for STID=${stid}. Header=${header.join("|")}`);
-  }
-
-  function parseNum(s) {
-    const v = Number(String(s).trim());
-    if (!Number.isFinite(v)) return null;
-    // NOMADS uses 9999.000 as missing
-    if (Math.abs(v - 9999) < 1e-6) return null;
-    return v;
-  }
-
-  function parseTimeYYYYMMDDHHMM(s) {
-    const t = String(s).trim();
-    // Expect 12 digits: YYYYMMDDHHMM
-    if (!/^\d{12}$/.test(t)) return null;
-    const Y = Number(t.slice(0, 4));
-    const M = Number(t.slice(4, 6));
-    const D = Number(t.slice(6, 8));
-    const h = Number(t.slice(8, 10));
-    const m = Number(t.slice(10, 12));
-    // UTC Date
-    const dt = new Date(Date.UTC(Y, M - 1, D, h, m, 0));
-    if (Number.isNaN(dt.getTime())) return null;
-    return dt;
-  }
-
-  const rows = [];
-  for (let i = headerIdx + 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    // skip separators or junk
-    if (!/^\d{12}\s*,/.test(line)) continue;
-
-    const parts = line.split(",").map((s) => s.trim());
-    const dt = parseTimeYYYYMMDDHHMM(parts[idxTIME]);
-    if (!dt) continue;
-
-    const tide = idxTIDE >= 0 ? parseNum(parts[idxTIDE]) : null;
-    const surge = idxSURGE >= 0 ? parseNum(parts[idxSURGE]) : null;
-    const twl = parseNum(parts[idxTWL]);
-    const twl90 = parseNum(parts[idxTWL90]);
-
-    // Ensemble mean TWL is TWL when present; fallback to tide+surge if TWL missing but both exist
-    const twlBest =
-      twl != null ? twl :
-      (tide != null && surge != null ? (tide + surge) : null);
-
-    // For plotting: keep only points with a usable ensemble mean
-    if (twlBest == null || twl90 == null) continue;
-    // PETSS publishes a 10th non-exceedance value, not p01/p25/p50.
-    const spread = Math.max(0, twlBest - twl90);
-    const z10 = 1.2815515655446004;
-    const p01 = twlBest - (2.3263478740408408 / z10) * spread;
-    const p25 = twlBest - (0.6744897501960817 / z10) * spread;
-    const p50 = twlBest;
-
-    rows.push({
-      t: dt.toISOString(),
-      twl: Number(twl90.toFixed(3)),
-      twl_min: Number(p01.toFixed(3)),
-      twl_max: Number(p50.toFixed(3)),
-      source_twl_mean: Number(twlBest.toFixed(3)),
-      source_twl90p: Number(twl90.toFixed(3)),
-      tide: tide != null ? Number(tide.toFixed(3)) : null,
-      surge: surge != null ? Number(surge.toFixed(3)) : null,
-      src_time: String(parts[idxTIME]).trim()
-    });
-  }
-
-  if (!rows.length) {
-    throw new Error(
-      `Parsed 0 usable rows (no valid TWL or TIDE+SURGE). ` +
-      `This can happen if the file is mostly 9999 missing values.`
-    );
-  }
-
-  // Sort time ascending
-  rows.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
-  return rows;
-}
+function parseNomadsStationCsv(text) { return parseRawTwl90p(text); }
 
 async function main() {
   const stid = process.env.PETSS_STID?.trim();
@@ -269,18 +170,11 @@ async function main() {
   ensureDir("data");
   fs.writeFileSync("data/petss_station_debug.txt", stationText.split(/\r?\n/).slice(0, 250).join("\n") + "\n", "utf8");
 
-  // 5) Parse NOMADS station CSV and keep ensemble mean TWL
+  // 5) Parse the exact NOAA TWL90p curve without custom correction
   const rows = parseNomadsStationCsv(stationText, stid);
 
   // 6) Write outputs
-  const outCsv = [
-    "time_utc_iso,twl_ft_mllw,tide_ft_mllw,surge_ft,src_time,min_ft_mllw,max_ft_mllw,source_mean_ft_mllw,source_twl90p_ft_mllw",
-    ...rows.map(r => {
-      const tide = (r.tide == null ? "" : r.tide);
-      const surge = (r.surge == null ? "" : r.surge);
-      return `${r.t},${r.twl},${tide},${surge},${r.src_time},${r.twl_min},${r.twl_max},${r.source_twl_mean},${r.source_twl90p}`;
-    })
-  ].join("\n") + "\n";
+  const outCsv = forecastCsv(rows);
 
   fs.writeFileSync("data/petss_forecast.csv", outCsv, "utf8");
   fs.writeFileSync("data/petss_forecast.json", JSON.stringify(rows, null, 2) + "\n", "utf8");
@@ -293,9 +187,7 @@ async function main() {
     source_url: url,
     updated_utc: new Date().toISOString(),
     n_points: rows.length,
-    notes: "Forecast chart uses PETSS TWL90p; original ensemble mean remains in source_twl_mean.",
-    scenario_percentiles: { minimum: 1, mean: 25, maximum: 50 },
-    percentile_method: "estimated-normal-lower-tail-from-TWL-and-TWL90p"
+    ...forecastMetadata
   };
   fs.writeFileSync("data/petss_meta.json", JSON.stringify(meta, null, 2) + "\n", "utf8");
 
