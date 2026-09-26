@@ -21,6 +21,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const {fetchObservations} = require("./usgs-observations");
 
 // -------------------------
 // Config (matches your dashboard)
@@ -155,31 +156,7 @@ function applyOfficialCrestDateAuthority(events) {
 // USGS IV fetch (15-min-ish)
 // -------------------------
 async function fetchUSGSIV({ startISO, endISO }) {
-  const url =
-    "https://waterservices.usgs.gov/nwis/iv/?" +
-    new URLSearchParams({
-      format: "json",
-      sites: SITE,
-      parameterCd: PARAM,
-      startDT: startISO,
-      endDT: endISO,
-      siteStatus: "all",
-      agencyCd: "USGS"
-    }).toString();
-
-  const res = await fetch(url, { headers: { "User-Agent": "peaks-cache/2.0" } });
-  if (!res.ok) throw new Error(`USGS IV fetch failed: ${res.status} ${res.statusText}`);
-  const j = await res.json();
-
-  const ts = j?.value?.timeSeries?.[0];
-  const vals = ts?.values?.[0]?.value || [];
-
-  const series = vals
-    .map(v => ({ t: v.dateTime, ft: Number(v.value) }))
-    .filter(p => p.t && Number.isFinite(p.ft));
-
-  series.sort((a, b) => new Date(a.t) - new Date(b.t));
-  return series;
+  return fetchObservations({site: SITE, parameter: PARAM, startISO, endISO});
 }
 
 // -------------------------

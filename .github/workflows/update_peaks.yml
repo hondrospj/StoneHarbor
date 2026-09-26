@@ -41,6 +41,9 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Verify USGS observation retrieval
+        run: node --test tests/usgs-observations.test.js
+
       - name: Run updater
         shell: bash
         run: |
