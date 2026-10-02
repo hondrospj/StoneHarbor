@@ -4,7 +4,7 @@
   "run_dir": "petss.20261001",
   "cycle": "t18z",
   "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20261001/petss.t18z.csv.tar.gz",
-  "updated_utc": "2026-10-02T01:03:57.909Z",
+  "updated_utc": "2026-10-02T03:32:51.655Z",
   "n_points": 223,
   "forecast_product": "TWL90p",
   "exceedance_probability_percent": 90,
