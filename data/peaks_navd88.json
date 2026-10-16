@@ -395808,6 +395808,28 @@
       "historySource": "USGS 01411360 primary continuous record",
       "source": "primary-usgs-continuous",
       "localDate": "2026-10-14"
+    },
+    {
+      "t": "2026-10-15T16:30:00.000Z",
+      "ft": 3.02,
+      "type": "Below",
+      "crest": "2026-10-15T16:22:00.000Z",
+      "kind": "CrestHigh",
+      "historyAgency": "USGS",
+      "historySource": "USGS 01411360 primary continuous record",
+      "source": "primary-usgs-continuous",
+      "localDate": "2026-10-15"
+    },
+    {
+      "t": "2026-10-16T04:06:00.000Z",
+      "ft": 1.83,
+      "type": "Below",
+      "crest": "2026-10-16T04:46:00.000Z",
+      "kind": "CrestHigh",
+      "historyAgency": "USGS",
+      "historySource": "USGS 01411360 primary continuous record",
+      "source": "primary-usgs-continuous",
+      "localDate": "2026-10-16"
     }
   ],
   "site": "01411360",
@@ -395820,5 +395842,5 @@
     "moderateLow": 4.44,
     "majorLow": 5.44
   },
-  "lastProcessedISO": "2026-10-15T06:30:00.000Z"
+  "lastProcessedISO": "2026-10-16T06:30:00.000Z"
 }
