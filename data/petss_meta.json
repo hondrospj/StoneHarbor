@@ -4,14 +4,14 @@
   "run_dir": "petss.20261017",
   "cycle": "t06z",
   "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20261017/petss.t06z.csv.tar.gz",
-  "updated_utc": "2026-10-17T12:54:22.813Z",
+  "updated_utc": "2026-10-17T15:23:06.977Z",
   "n_points": 223,
   "forecast_product": "TWL",
+  "forecast_statistic": "ensemble_mean",
   "exceedance_probability_percent": null,
   "non_exceedance_percentile": null,
   "custom_bias_correction": false,
+  "forecast_adjustment_ft": 0,
   "percentile_method": "NOAA-published-ensemble-mean-TWL",
-  "notes": "NOAA PETSS ensemble mean total water level (TWL). Issued values are retained without local adjustment, percentile estimation or observation alignment.",
-  "forecast_statistic": "ensemble_mean",
-  "forecast_adjustment_ft": 0
+  "notes": "NOAA PETSS ensemble mean total water level (TWL). Issued values are retained without local adjustment, percentile estimation or observation alignment."
 }
