@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Update PETSS forecast (NOAA 90% exceedance TWL90p) from NOMADS PETSS production tarballs.
+ * Update PETSS forecast (NOAA ensemble mean TWL) from NOMADS PETSS production tarballs.
  *
  * Outputs:
  *  - data/petss_forecast.csv   (time_utc_iso, twl_ft_mllw, tide_ft_mllw, surge_ft, src_time)
@@ -14,7 +14,7 @@
 
 "use strict";
 
-const {parseStationCsv: parseRawTwl90p, forecastCsv, forecastMetadata} = require("./petss-exceedance");
+const {parseStationCsv: parseRawMean, forecastCsv, forecastMetadata} = require("./petss-exceedance");
 
 
 const fs = require("fs");
@@ -115,7 +115,7 @@ function findFileRecursive(rootDir, filename) {
   return null;
 }
 
-function parseNomadsStationCsv(text) { return parseRawTwl90p(text); }
+function parseNomadsStationCsv(text) { return parseRawMean(text); }
 
 async function main() {
   const stid = process.env.PETSS_STID?.trim();
@@ -170,7 +170,7 @@ async function main() {
   ensureDir("data");
   fs.writeFileSync("data/petss_station_debug.txt", stationText.split(/\r?\n/).slice(0, 250).join("\n") + "\n", "utf8");
 
-  // 5) Parse the exact NOAA TWL90p curve without custom correction
+  // 5) Parse the exact NOAA ensemble mean TWL curve without custom correction
   const rows = parseNomadsStationCsv(stationText, stid);
 
   // 6) Write outputs

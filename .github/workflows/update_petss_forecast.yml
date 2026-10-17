@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Verify raw NOAA exceedance selection
+      - name: Verify issued NOAA ensemble mean selection
         run: node --test tests/petss-exceedance.test.js
 
       - name: Run PETSS forecast updater

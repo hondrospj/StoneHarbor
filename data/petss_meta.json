@@ -4,12 +4,14 @@
   "run_dir": "petss.20261017",
   "cycle": "t06z",
   "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20261017/petss.t06z.csv.tar.gz",
-  "updated_utc": "2026-10-17T12:31:52.268Z",
+  "updated_utc": "2026-10-17T12:54:22.813Z",
   "n_points": 223,
-  "forecast_product": "TWL90p",
-  "exceedance_probability_percent": 90,
-  "non_exceedance_percentile": 10,
+  "forecast_product": "TWL",
+  "exceedance_probability_percent": null,
+  "non_exceedance_percentile": null,
   "custom_bias_correction": false,
-  "percentile_method": "NOAA-published-TWL90p",
-  "notes": "NOAA TWL90p: the lower 90% exceedance total-water-level curve. No custom observation alignment, local adjustment, or estimated percentile is applied."
+  "percentile_method": "NOAA-published-ensemble-mean-TWL",
+  "notes": "NOAA PETSS ensemble mean total water level (TWL). Issued values are retained without local adjustment, percentile estimation or observation alignment.",
+  "forecast_statistic": "ensemble_mean",
+  "forecast_adjustment_ft": 0
 }

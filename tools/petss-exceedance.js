@@ -1,61 +1,31 @@
 "use strict";
 
-// NOAA TWL90p is the 90% exceedance (lower) total-water-level curve.
-// Keep NOAA's published values; do not estimate percentiles or add local bias.
+// Select NOAA's issued ensemble mean TWL, never a percentile or a locally shifted curve.
 function parseStationCsv(text) {
-  const lines = String(text).replace(/^\uFEFF/, "").split(/\r?\n/);
-  const headerIndex = lines.findIndex(line => {
-    const fields = line.split(",").map(value => value.trim().toUpperCase());
-    return fields.includes("TIME") && fields.includes("TWL90P");
-  });
-  if (headerIndex < 0) throw new Error("NOAA station CSV is missing TIME or TWL90p; no mean fallback is allowed.");
-  const header = lines[headerIndex].split(",").map(value => value.trim().toUpperCase());
-  const column = name => header.indexOf(name);
-  const numeric = value => {
-    if (value == null || String(value).trim() === "") return null;
-    const number = Number(value);
-    return Number.isFinite(number) && Math.abs(number) !== 9999 ? number : null;
-  };
-  const rows = [];
-  const seen = new Set();
-  for (const line of lines.slice(headerIndex + 1)) {
-    const fields = line.split(",").map(value => value.trim());
-    const rawTime = fields[column("TIME")];
-    if (!/^\d{12}$/.test(rawTime || "")) continue;
-    const iso = `${rawTime.slice(0,4)}-${rawTime.slice(4,6)}-${rawTime.slice(6,8)}T${rawTime.slice(8,10)}:${rawTime.slice(10,12)}:00.000Z`;
-    const time = Date.parse(iso);
-    if (!Number.isFinite(time) || new Date(time).toISOString() !== iso) continue;
-    const twl90 = numeric(fields[column("TWL90P")]);
-    if (twl90 === null) continue;
-    if (seen.has(iso)) throw new Error(`Duplicate NOAA forecast timestamp: ${iso}`);
-    seen.add(iso);
-    rows.push({
-      t: iso,
-      twl: twl90,
-      source_twl90p: twl90,
-      source_twl_mean: numeric(fields[column("TWL")]),
-      tide: numeric(fields[column("TIDE")]),
-      surge: numeric(fields[column("SURGE")]),
-      src_time: rawTime
-    });
+  const lines=String(text).replace(/^\uFEFF/, "").split(/\r?\n/);
+  const start=lines.findIndex(line=>{const h=line.split(',').map(x=>x.trim().toUpperCase());return h.includes('TIME')&&h.includes('TWL');});
+  if(start<0)throw new Error('NOAA station CSV is missing TIME or mean TWL; no percentile fallback is allowed.');
+  const header=lines[start].split(',').map(x=>x.trim().toUpperCase()),column=name=>header.indexOf(name);
+  const number=value=>{if(value==null||String(value).trim()==='')return null;const n=Number(value);return Number.isFinite(n)&&Math.abs(n)!==9999&&n!==-400?n:null;};
+  const rows=[],seen=new Set();
+  for(const line of lines.slice(start+1)){
+    const values=line.split(',').map(x=>x.trim()),raw=values[column('TIME')];if(!/^\d{12}$/.test(raw||''))continue;
+    const t=`${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}T${raw.slice(8,10)}:${raw.slice(10,12)}:00.000Z`;
+    if(!Number.isFinite(Date.parse(t))||new Date(t).toISOString()!==t)continue;
+    const mean=number(values[column('TWL')]);if(mean===null)continue;
+    if(seen.has(t))throw new Error(`Duplicate NOAA forecast timestamp: ${t}`);seen.add(t);
+    rows.push({t,twl:mean,source_twl_mean:mean,source_twl90p:number(values[column('TWL90P')]),source_twl10p:number(values[column('TWL10P')]),tide:number(values[column('TIDE')]),surge:number(values[column('SURGE')]),src_time:raw});
   }
-  if (!rows.length) throw new Error("NOAA station CSV has no usable TWL90p values.");
-  return rows.sort((a, b) => Date.parse(a.t) - Date.parse(b.t));
+  if(!rows.length)throw new Error('NOAA station CSV has no usable mean TWL values.');
+  return rows.sort((a,b)=>Date.parse(a.t)-Date.parse(b.t));
 }
-
-function forecastCsv(rows) {
-  const lines = ["time_utc_iso,twl_ft_mllw,tide_ft_mllw,surge_ft,src_time,source_mean_ft_mllw,source_twl90p_ft_mllw"];
-  for (const row of rows) lines.push([row.t, row.twl, row.tide ?? "", row.surge ?? "", row.src_time, row.source_twl_mean ?? "", row.source_twl90p].join(","));
-  return lines.join("\n") + "\n";
+function forecastCsv(rows){
+  const lines=['time_utc_iso,twl_ft_mllw,tide_ft_mllw,surge_ft,src_time,source_mean_ft_mllw,source_twl90p_ft_mllw,source_twl10p_ft_mllw'];
+  for(const r of rows)lines.push([r.t,r.twl,r.tide??'',r.surge??'',r.src_time,r.source_twl_mean,r.source_twl90p??'',r.source_twl10p??''].join(','));
+  return lines.join('\n')+'\n';
 }
-
-const forecastMetadata = Object.freeze({
-  forecast_product: "TWL90p",
-  exceedance_probability_percent: 90,
-  non_exceedance_percentile: 10,
-  custom_bias_correction: false,
-  percentile_method: "NOAA-published-TWL90p",
-  notes: "NOAA TWL90p: the lower 90% exceedance total-water-level curve. No custom observation alignment, local adjustment, or estimated percentile is applied."
-});
-
-module.exports = {parseStationCsv, forecastCsv, forecastMetadata};
+// Compatibility export for the North Wildwood updater; the operational curve stays unadjusted.
+const FORECAST_ADJUSTMENT_FT=0;
+function applyForecastAdjustment(rows){return rows.map(row=>{if(!Number.isFinite(row.source_twl_mean))throw new Error('Missing raw NOAA mean TWL.');return {...row,twl:row.source_twl_mean,forecast_adjustment_ft:0};});}
+const forecastMetadata=Object.freeze({forecast_product:'TWL',forecast_statistic:'ensemble_mean',exceedance_probability_percent:null,non_exceedance_percentile:null,custom_bias_correction:false,forecast_adjustment_ft:0,percentile_method:'NOAA-published-ensemble-mean-TWL',notes:'NOAA PETSS ensemble mean total water level (TWL). Issued values are retained without local adjustment, percentile estimation or observation alignment.'});
+module.exports={parseStationCsv,forecastCsv,applyForecastAdjustment,forecastMetadata,FORECAST_ADJUSTMENT_FT};
