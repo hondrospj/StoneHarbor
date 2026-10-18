@@ -34,7 +34,7 @@ jobs:
           node-version: "20"
 
       - name: Verify issued NOAA ensemble mean selection
-        run: node --test tests/petss-exceedance.test.js
+        run: node --test tests/petss-exceedance.test.js tests/petss-mean-reader.test.cjs
 
       - name: Run PETSS forecast updater
         env:

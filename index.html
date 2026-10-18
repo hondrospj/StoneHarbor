@@ -3824,7 +3824,7 @@ function fmtHistoricDate(r){
 function normalizePetssJsonToPoints(json){
   const rows = Array.isArray(json?.points) ? json.points : Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
   return rows.map(p => {
-    const value = p.source_twl90p;
+    const value = p.source_twl_mean ?? p.twl;
     const ft = value == null || typeof value === "boolean" || String(value).trim() === "" ? NaN : Number(value);
     return {t:p.t ?? p.time ?? p.validTime, ft, minFt:ft, maxFt:ft};
   }).filter(p => Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft) && Math.abs(p.ft)<100)
