@@ -5825,7 +5825,7 @@ function buildTsLineLegendLabels(chart){
       if(label !== "Observed" && label !== "Forecast") return null;
       const isForecast = label === "Forecast";
       return {
-        text: isForecast ? "Forecast (90% exceedance)" : label,
+        text: isForecast ? "Forecast" : label,
         datasetIndex,
         hidden: chart ? !chart.isDatasetVisible(datasetIndex) : !!ds?.hidden,
         fillStyle:"rgba(0,0,0,0)",
