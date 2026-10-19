@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <style>
+  <style id="dashboard-highlands-ui-20261019" data-ui-sha256="3e9cf4e50063bf5297dfaa377975856fea6db69cad5bb752ace6b08e34d374d5">
 
 :root{
   --bg:#0b1220;
@@ -2237,9 +2237,7 @@ a.brand *{
     }
     /* end shorely checkbox legends */
 
-  
-
-</style>
+  </style>
   <style id="dashboard-2-tutorial-style">
   .top .name{font-size:clamp(21px,2.35vw,28px);white-space:normal;overflow:visible;text-overflow:clip;line-height:1.03}
   .dashboardTutorialLaunchRow{display:flex;justify-content:flex-end;margin:7px 0 12px}
@@ -2435,7 +2433,7 @@ a.brand *{
 </style>
 </head>
 
-<body>
+<body data-highlands-dashboard="20261019">
 <div class="wrap">
 
   <div class="banner" id="alertBanner">
@@ -3821,6 +3819,43 @@ function fmtHistoricDate(r){
   return tKey ? fmtNiceDate(`${tKey}T12:00:00Z`) : "";
 }
 
+
+// Missing gauge observations must remain missing; a numeric zero is a valid reading.
+function dashboardGaugeNumber(value, noDataValue){
+  if(typeof value !== "number" && typeof value !== "string") return NaN;
+  if(typeof value === "string" && value.trim() === "") return NaN;
+  const number = Number(value);
+  if(!Number.isFinite(number)) return NaN;
+  if(noDataValue != null && String(noDataValue).trim() !== "" && number === Number(noDataValue)) return NaN;
+  return number;
+}
+
+function dashboardNoaaTimeIsValid(value){
+  if(typeof value !== "string" || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(value)) return false;
+  const iso = isoFromNOAAPoint(value), time = Date.parse(iso);
+  return Number.isFinite(time) && new Date(time).toISOString().slice(0,16) === value.replace(" ","T");
+}
+
+function renderLiveReadingStatus(){
+  if(!STATE.lastNavd) return;
+  const point = STATE.lastNavd, sourceLabel = liveFeedLabel();
+  if(STATE.lastObservationIsCachedHighTide){
+    const category = classifyByNavd(point.ft);
+    lastPill.textContent = `Live ${sourceLabel} feed unavailable; latest cached high tide: ${fmtESTFull(point.t)}`;
+    stageTextEl.textContent = `CACHED HIGH: ${category.short.toUpperCase()}`;
+    stageDotEl.style.background = category.color;
+    stageDotEl.style.boxShadow = `0 0 0 4px ${category.glow}`;
+  }else if(hoursSinceISO(point.t) > 6){
+    lastPill.textContent = `Last ${sourceLabel} reading: ${fmtESTFull(point.t)}`;
+    stageTextEl.textContent = "LIVE DATA STALE";
+    stageDotEl.style.background = "var(--minor)";
+    stageDotEl.style.boxShadow = "0 0 0 4px rgba(251,191,36,.18)";
+  }else{
+    lastPill.textContent = "Last updated: " + fmtESTFull(point.t);
+    setStage(point.ft);
+  }
+}
+
 function normalizePetssJsonToPoints(json){
   const rows = Array.isArray(json?.points) ? json.points : Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
   return rows.map(p => {
@@ -3960,8 +3995,8 @@ function extractWaterLevelSeries_NAVD88(json){
   for(const ts of candidates){
     const vals = ts?.values?.[0]?.value || [];
     const pts = vals
-      .map(v=>({t:v.dateTime, ft:Number(v.value)}))
-      .filter(p=>p.t && Number.isFinite(p.ft));
+      .map(v=>({t:v.dateTime, ft:dashboardGaugeNumber(v.value, ts?.variable?.noDataValue)}))
+      .filter(p=>Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft));
     if(pts.length > best.length) best = pts;
   }
   return best;
@@ -4032,8 +4067,8 @@ async function fetchNOAAObservedSeries({startISO=null,endISO=null,period=null}={
           if(j?.error?.message) throw new Error(j.error.message);
           const arr = Array.isArray(j?.data) ? j.data : [];
           for(const v of arr){
-            const raw = Number(v.v);
-            if(!Number.isFinite(raw) || !v.t) continue;
+            const raw = dashboardGaugeNumber(v.v);
+            if(!Number.isFinite(raw) || !dashboardNoaaTimeIsValid(v.t)) continue;
             const sourceDatum = datum === "NAVD" ? "NAVD88" : datum;
             out.push({ t: isoFromNOAAPoint(v.t), ft: datumToDatum(raw, sourceDatum, "NAVD88") });
           }
@@ -6656,7 +6691,7 @@ async function fetchUSGSDailySeaLevel(){
   const json = await res.json();
   const series = json?.value?.timeSeries?.[0]?.values?.[0]?.value || [];
   return series
-    .map(p => ({ t:p.dateTime, ft:Number(p.value) }))
+    .map(p => ({ t:p.dateTime, ft:dashboardGaugeNumber(p.value) }))
     .filter(p => p.t && Number.isFinite(p.ft) && Math.abs(p.ft) < 100);
 }
 
@@ -8499,6 +8534,7 @@ async function updateLiveAndAnnualCounts(){
   if(!recent.length) throw new Error("no recent water-level data returned");
 
   const usingCachedHighTides = !!recent.isCachedHighTideFallback;
+  STATE.lastObservationIsCachedHighTide = usingCachedHighTides;
   const sourceLabel = liveFeedLabel();
 
   STATE.lastNavd = recent[recent.length - 1];
@@ -8509,21 +8545,7 @@ async function updateLiveAndAnnualCounts(){
   curFtEl.textContent = toDisplayFtFromNavd(STATE.lastNavd.ft).toFixed(2);
   curMetaEl.textContent = (usingCachedHighTides ? "Cached high tide: " : "Updated: ") + fmtESTFull(STATE.lastNavd.t);
 
-  if(usingCachedHighTides){
-    const c = classifyByNavd(STATE.lastNavd.ft);
-    lastPill.textContent = `Live ${sourceLabel} feed unavailable; latest cached high tide: ${fmtESTFull(STATE.lastNavd.t)}`;
-    stageTextEl.textContent = `CACHED HIGH: ${c.short.toUpperCase()}`;
-    stageDotEl.style.background = c.color;
-    stageDotEl.style.boxShadow = `0 0 0 4px ${c.glow}`;
-  }else if(isStale){
-    lastPill.textContent = `Last ${sourceLabel} reading: ${fmtESTFull(STATE.lastNavd.t)}`;
-    stageTextEl.textContent = "LIVE DATA STALE";
-    stageDotEl.style.background = "var(--minor)";
-    stageDotEl.style.boxShadow = "0 0 0 4px rgba(251,191,36,.18)";
-  }else{
-    lastPill.textContent = "Last updated: " + fmtESTFull(STATE.lastNavd.t);
-    setStage(STATE.lastNavd.ft);
-  }
+  renderLiveReadingStatus();
 
   setCurrentNumberColorByNavd(STATE.lastNavd.ft);
 
@@ -9314,7 +9336,7 @@ refreshDOYFromHistory();
   
 if(STATE.lastNavd){
   curFtEl.textContent = toDisplayFtFromNavd(STATE.lastNavd.ft).toFixed(2);
-  setStage(STATE.lastNavd.ft);
+  renderLiveReadingStatus();
   setCurrentNumberColorByNavd(STATE.lastNavd.ft);
 }
 
@@ -9322,10 +9344,10 @@ if(STATE.lastNavd){
 if(STATE.todayNavd && STATE.todayNavd.length){
   const dmx = maxPoint(STATE.todayNavd), dmn = minPoint(STATE.todayNavd);
   dayMaxFtEl.textContent = toDisplayFtFromNavd(dmx.ft).toFixed(2);
-  dayMinFtEl.textContent = toDisplayFtFromNavd(dmn.ft).toFixed(2);
+  dayMinFtEl.textContent = STATE.lastObservationIsCachedHighTide ? "—" : toDisplayFtFromNavd(dmn.ft).toFixed(2);
 
   if(dayMaxWhenEl) dayMaxWhenEl.textContent = fmtESTTime(dmx.t);
-  if(dayMinWhenEl) dayMinWhenEl.textContent = fmtESTTime(dmn.t);
+  if(dayMinWhenEl) dayMinWhenEl.textContent = STATE.lastObservationIsCachedHighTide ? "—" : fmtESTTime(dmn.t);
 } else {
   dayMaxFtEl.textContent = "—";
   dayMinFtEl.textContent = "—";
