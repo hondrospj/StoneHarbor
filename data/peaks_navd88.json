@@ -395887,10 +395887,21 @@
       "localDate": "2026-10-18"
     },
     {
-      "t": "2026-10-19T06:42:00.000Z",
-      "ft": 1.62,
+      "t": "2026-10-19T06:54:00.000Z",
+      "ft": 1.66,
       "type": "Below",
       "crest": "2026-10-19T07:29:00.000Z",
+      "kind": "CrestHigh",
+      "historyAgency": "USGS",
+      "historySource": "USGS 01411360 primary continuous record",
+      "source": "primary-usgs-continuous",
+      "localDate": "2026-10-19"
+    },
+    {
+      "t": "2026-10-19T19:54:00.000Z",
+      "ft": 2.66,
+      "type": "Below",
+      "crest": "2026-10-19T19:53:00.000Z",
       "kind": "CrestHigh",
       "historyAgency": "USGS",
       "historySource": "USGS 01411360 primary continuous record",
@@ -395908,5 +395919,5 @@
     "moderateLow": 4.44,
     "majorLow": 5.44
   },
-  "lastProcessedISO": "2026-10-19T06:42:00.000Z"
+  "lastProcessedISO": "2026-10-20T06:24:00.000Z"
 }
