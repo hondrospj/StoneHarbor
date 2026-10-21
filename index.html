@@ -2431,6 +2431,18 @@ a.brand *{
   }
 }
 </style>
+<style id="dashboard-header-fit-20261021">
+/* Wrap status controls before they can squeeze the town title out of the header. */
+@media(min-width:1121px){
+  .top{flex-wrap:wrap}
+  .top .brand{flex:1 1 260px}
+  .top .topRight{flex:1 1 620px;flex-wrap:wrap}
+}
+.top .brandLogo,.top .dot{flex-shrink:0}
+.top #stagePill{white-space:normal;overflow-wrap:anywhere}
+</style>
+<!-- dashboard-input-guards-20261021 -->
+<!-- dashboard-forecast-coverage-20261021 -->
 </head>
 
 <body data-highlands-dashboard="20261019">
@@ -3586,6 +3598,7 @@ function splitIntervalByFloodThresholds(tA, tB, ftA, ftB){
 
 function buildExactFloodAccounting(rawPoints, t0, t1){
   const out = {
+    coveredMs:0,
     minorMs:0,
     moderateMs:0,
     majorMs:0,
@@ -3603,12 +3616,14 @@ function buildExactFloodAccounting(rawPoints, t0, t1){
     const a = pts[i];
     const b = pts[i+1];
 
-    if(b.ms <= t0 || a.ms >= t1) continue;
+    // Match the chart resampler: missing brackets over three hours are unknown.
+    if(b.ms <= a.ms || b.ms - a.ms > 3 * 3600 * 1000 || b.ms <= t0 || a.ms >= t1) continue;
 
     const st = Math.max(a.ms, t0);
     const en = Math.min(b.ms, t1);
     if(en <= st) continue;
 
+    out.coveredMs += en - st;
     const ftS = interpFtAtMs(a, b, st);
     const ftE = interpFtAtMs(a, b, en);
     const pieces = splitIntervalByFloodThresholds(st, en, ftS, ftE);
@@ -3635,7 +3650,8 @@ function buildExactFloodAccounting(rawPoints, t0, t1){
       continue;
     }
 
-    if(!cur){
+    if(!cur || p.startMs > cur.endMs){
+      if(cur) out.segments.push(cur);
       cur = {
         startMs:p.startMs,
         endMs:p.endMs,
@@ -3697,6 +3713,16 @@ function updateFloodOutlook48(){
 
   const accounting = buildExactFloodAccounting(rawPts, t0, t1);
   const msToHours = ms => (ms / 3600000);
+  if(accounting.coveredMs <= 0){
+    f48MinorHrsEl.textContent = "—";
+    f48ModerHrsEl.textContent = "—";
+    f48MajorHrsEl.textContent = "—";
+    f48ListEl.innerHTML = `<div class="event"><div class="eventLeft"><div class="eventWhen">Forecast unavailable</div><div class="eventSub">No valid forecast coverage in the selected forecast window</div></div><div class="eventBadge" style="color:var(--muted)">—</div></div>`;
+    f48MetaEl.textContent = "";
+    return;
+  }
+  const hasFullCoverage = accounting.coveredMs >= t1 - t0 - 1000;
+  const coverageNote = `Forecast covers ${msToHours(accounting.coveredMs).toFixed(1)} of ${msToHours(t1 - t0).toFixed(1)} forecast hours; remaining hours are unknown.`;
 
   f48MinorHrsEl.textContent = msToHours(accounting.minorMs).toFixed(1);
   f48ModerHrsEl.textContent = msToHours(accounting.moderateMs).toFixed(1);
@@ -3708,8 +3734,8 @@ function updateFloodOutlook48(){
     f48ListEl.innerHTML = `
       <div class="event">
         <div class="eventLeft">
-          <div class="eventWhen">No flood periods forecast</div>
-          <div class="eventSub">Next 72 hours stay flooding free</div>
+          <div class="eventWhen">${hasFullCoverage ? "No flood periods forecast" : "No flood periods in available forecast"}</div>
+          <div class="eventSub">${hasFullCoverage ? "Next 72 hours stay flooding free" : coverageNote}</div>
         </div>
         <div class="eventBadge" style="color:var(--ok)">Below</div>
       </div>`;
@@ -3751,6 +3777,9 @@ function updateFloodOutlook48(){
     }
   }
 
+  if(!hasFullCoverage && segs.length){
+    f48ListEl.innerHTML += `<div class="event"><div class="eventLeft"><div class="eventWhen">Partial forecast coverage</div><div class="eventSub">${coverageNote} Flood-hour totals include only available periods.</div></div></div>`;
+  }
   f48MetaEl.textContent =
     `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS`;
 }
@@ -3858,9 +3887,9 @@ function renderLiveReadingStatus(){
 
 function normalizePetssJsonToPoints(json){
   const rows = Array.isArray(json?.points) ? json.points : Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
-  return rows.map(p => {
+  return rows.filter(p => p && typeof p === "object" && !Array.isArray(p)).map(p => {
     const value = p.source_twl_mean ?? p.twl;
-    const ft = value == null || typeof value === "boolean" || String(value).trim() === "" ? NaN : Number(value);
+    const ft = dashboardGaugeNumber(value);
     return {t:p.t ?? p.time ?? p.validTime, ft, minFt:ft, maxFt:ft};
   }).filter(p => Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft) && Math.abs(p.ft)<100)
     .sort((a,b) => Date.parse(a.t)-Date.parse(b.t));
@@ -4910,10 +4939,10 @@ async function fetchNOAAHiloHighs({ station, beginYMD, endYMD, datum="MLLW" }){
 
   const preds = j?.predictions || [];
   return preds
-    .filter(p => String(p.type || "").toUpperCase() === "H")
+    .filter(p => p && String(p.type || "").toUpperCase() === "H" && dashboardNoaaTimeIsValid(p.t))
     .map(p => ({
       t: new Date(String(p.t).replace(" ", "T") + "Z").toISOString(), 
-      ft: Number(p.v)
+      ft: dashboardGaugeNumber(p.v)
     }))
     .filter(p => p.t && Number.isFinite(p.ft))
     .sort((a,b)=> new Date(a.t) - new Date(b.t));
@@ -6689,10 +6718,12 @@ async function fetchUSGSDailySeaLevel(){
   const res = await fetchWithTimeout(url.toString(), { cache:"no-store" }, 8000);
   if(!res.ok) throw new Error("USGS daily sea level failed " + res.status);
   const json = await res.json();
-  const series = json?.value?.timeSeries?.[0]?.values?.[0]?.value || [];
+  const ts = json?.value?.timeSeries?.[0];
+  const series = ts?.values?.[0]?.value || [];
   return series
-    .map(p => ({ t:p.dateTime, ft:dashboardGaugeNumber(p.value) }))
-    .filter(p => p.t && Number.isFinite(p.ft) && Math.abs(p.ft) < 100);
+    .filter(p => p && Number.isFinite(Date.parse(p.dateTime)))
+    .map(p => ({ t:p.dateTime, ft:dashboardGaugeNumber(p.value, ts?.variable?.noDataValue) }))
+    .filter(p => Number.isFinite(p.ft) && Math.abs(p.ft) < 100);
 }
 
 async function fetchNOAAMonthlySeaLevel(){
@@ -6716,9 +6747,11 @@ async function fetchNOAAMonthlySeaLevel(){
       const rows = Array.isArray(json?.data) ? json.data : [];
       const points = rows
         .map(r => {
-          const y = Number(r.year), m = Number(r.month), ft = Number(r.MSL);
-          if(!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(ft) || Math.abs(ft) >= 100) return null;
-          return { t:`${y}-${String(m).padStart(2,"0")}-15T00:00:00Z`, month:`${y}-${String(m).padStart(2,"0")}`, ft };
+          if(!r || typeof r !== "object") return null;
+          const y = dashboardGaugeNumber(r.year), m = dashboardGaugeNumber(r.month), ft = dashboardGaugeNumber(r.MSL);
+          if(!Number.isInteger(y) || y < 1 || y > 9999 || !Number.isInteger(m) || m < 1 || m > 12 || !Number.isFinite(ft) || Math.abs(ft) >= 100) return null;
+          const month = `${String(y).padStart(4,"0")}-${String(m).padStart(2,"0")}`;
+          return { t:`${month}-15T00:00:00Z`, month, ft };
         })
         .filter(Boolean);
       if(points.length) return points;
