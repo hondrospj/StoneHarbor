@@ -5,7 +5,9 @@ const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,fs.existsSync(path.join(root,'site/flooddashboard/index.html'))?'site/flooddashboard/index.html':'index.html'),'utf8');
 const normalizer=html.match(/function normalizePetssJsonToPoints\([^)]*\)\s*\{[\s\S]*?\n\}/);
 if(normalizer){
- const read=vm.runInNewContext('('+normalizer[0]+')');
+ const gaugeNumber=html.match(/function dashboardGaugeNumber\([^)]*\)\s*\{[\s\S]*?\n\}/);
+ if(normalizer[0].includes('dashboardGaugeNumber'))assert.ok(gaugeNumber,'Read the actual dashboard numeric helper');
+ const read=vm.runInNewContext((gaugeNumber?gaugeNumber[0]+'\n':'')+'('+normalizer[0]+')');
  const time='2026-10-17T12:00:00Z';
  test('the actual dashboard reader selects the issued mean when both percentiles disagree',()=>{
   for(const wrap of [r=>r,r=>({points:r}),r=>({data:r})]){
