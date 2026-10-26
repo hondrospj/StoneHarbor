@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: shorelysafe-selected-dashboard-petss-data
+  group: shorelysafe-selected-dashboard-data
   cancel-in-progress: false
 
 jobs:

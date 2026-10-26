@@ -1,0 +1,31 @@
+name: Refresh selected dashboard observation history
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "50 6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shorelysafe-selected-dashboard-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify incremental crest rules and history-only publication
+        run: node --test tests/usgs-observations.test.js tests/dashboard-history-refresh.test.cjs
+      - name: Refresh only the selected dashboard historical observations
+        env:
+          SHORELYSAFE_DASHBOARD_CONNECTION: ${{ secrets.SHORELYSAFE_DASHBOARD_CONNECTION }}
+        run: node tools/refresh_dashboard_history.js
