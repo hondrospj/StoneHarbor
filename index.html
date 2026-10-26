@@ -3891,7 +3891,7 @@ async function fetchFirstOkJson(urls){
   for(let attempt = 1; attempt <= attempts; attempt++){
     for(const u of urls){
       try{
-        const res = await fetch(`${u}?v=${Date.now()}`, { cache:"no-store" });
+        const res = await fetchWithTimeout(`${u}?v=${Date.now()}`, { cache:"no-store" }, 7000);
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
         const j = await res.json();
         return { url: u, json: j };

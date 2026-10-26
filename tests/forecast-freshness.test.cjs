@@ -1,0 +1,5 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');
+const html=fs.readFileSync('index.html','utf8');const source=html.match(/async function fetchPETSSForecast_MLLW\(\)\{[\s\S]*?\n\}/)[0];
+function reader(points,meta={run_dir:'petss.20261026',cycle:'t06z'}){const context={Date,AbortSignal,console:{warn(){}},fetchFirstOkJson:async()=>({url:'data/petss_forecast.json',json:points}),fetch:async()=>({ok:true,json:async()=>meta}),normalizePetssJsonToPoints:j=>j,PETSS_JSON_CANDIDATES:['data/petss_forecast.json']};vm.createContext(context);vm.runInContext(source,context);return context.fetchPETSSForecast_MLLW();}
+test('expired issued guidance is rejected instead of presented as a current forecast',async()=>{await assert.rejects(reader([{t:'2020-01-01T00:00:00Z',ft:4}]),/expired/);});
+test('fresh issued means retain their values and model issuance',async()=>{const points=[{t:new Date(Date.now()+86400000).toISOString(),ft:3.125}];const result=await reader(points);assert.equal(result.points,points);assert.equal(result.issuedTime,'2026-10-26T06:00:00Z');});

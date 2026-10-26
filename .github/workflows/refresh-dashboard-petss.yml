@@ -1,0 +1,31 @@
+name: Refresh selected dashboard PETSS data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "35 */3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shorelysafe-selected-dashboard-petss-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check exact mean, future coverage and manifest preservation
+        run: node --test tests/petss-exceedance.test.js tests/dashboard-petss-refresh.test.cjs
+      - name: Refresh only the selected dashboard forecast data
+        env:
+          SHORELYSAFE_DASHBOARD_CONNECTION: ${{ secrets.SHORELYSAFE_DASHBOARD_CONNECTION }}
+        run: node tools/refresh_dashboard_petss.js
