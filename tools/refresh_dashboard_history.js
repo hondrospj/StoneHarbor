@@ -9,7 +9,7 @@ const CONFIG=Object.freeze([
   {id:"flooddashboard--cape-may",agency:"NOAA",site:"8536110",clock:"8536110",navdMinusMllw:-3.02,thresholds:[4.18,5.18,6.18]},
   {id:"flooddashboard--avalon",agency:"USGS",site:"01411355",clock:"8535419",parameter:"72279",thresholds:[3.42,4.42,5.22]},
   {id:"flooddashboard--stone-harbor",agency:"USGS",site:"01411360",clock:"8557380",parameter:"72279",thresholds:[3.44,4.44,5.44]},
-  {id:"flooddashboard--sandy-hook",agency:"NOAA",site:"8531680",clock:"8531680",navdMinusMllw:-2.82,thresholds:[3.88,4.78,5.88]},
+  {id:"flooddashboard--sandy-hook",agency:"NOAA",site:"8531680",clock:"8531680",navdMinusMllw:-2.82,thresholds:[3.88,4.88,5.88]},
   {id:"flooddashboard--seaside-heights",agency:"USGS",site:"01408748",clock:"8534720",parameter:"72279",thresholds:[2.55,3.55,4.55]}
 ].map(c=>Object.freeze({...c,thresholds:Object.freeze(c.thresholds)})));
 const dateFormatter=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"});
@@ -134,7 +134,15 @@ async function refreshHistory(config,connection,{api=serviceJson,getCache=null,g
   const cacheBytes=getCache?await getCache(app):await request(`${SITE}/shorelysafe/flooddashboard/${app.town}/${HISTORY_PATH}?v=${now}`,{maxBytes:32*1024*1024});
   const dataBytes=Buffer.isBuffer(cacheBytes)?cacheBytes:Buffer.from(cacheBytes);
   if(!dryRun && sha256(dataBytes)!==state?.manifest?.files?.[HISTORY_PATH]?.sha256)throw new Error("Live cache differs from its captured manifest; retry after concurrent publication.");
-  const cache=JSON.parse(dataBytes),recent=await getRecent(config,cache,{now});
+  const cache=JSON.parse(dataBytes);
+  // Canonical tide archives must be refreshed with their matching updater and
+  // annual/model rebuild, never the legacy ±2h or date-wide crest merge.
+  if(cache.method==="individual_high_tides_v3"){
+    validateCache(cache,config);
+    if(cache.countUnit!=="individual-high-tide")throw new Error("Invalid canonical tide count unit");
+    return {application:app.id,changed:false,managedBy:"canonical-v3-updater-and-statistics",events:cache.events.length,lastProcessedISO:cache.lastProcessedISO};
+  }
+  const recent=await getRecent(config,cache,{now});
   const updated=updateCache(cache,recent.series,recent.highs,config,{now});
   const summary={application:app.id,added:updated.added,updated:updated.updated,lastProcessedISO:updated.cache.lastProcessedISO,events:updated.cache.events.length,changed:updated.changed};
   if(dryRun || !updated.changed)return summary;

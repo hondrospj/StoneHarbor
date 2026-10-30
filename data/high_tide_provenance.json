@@ -1,0 +1,1686 @@
+{
+  "bootstrapInputs": [
+    {
+      "name": "all-qualified-high-tide-cycles.csv",
+      "sha256": "84304a0be1bd0877f2025695461721652ba571f1c9ddd191a9df6623bd69d3d9"
+    },
+    {
+      "name": "stone_all_tide_cycles_rebased_bias_corrected.csv.gz",
+      "sha256": "7eef47c06d0bcb4d3aff2418dba0dd6c5c4463bedcb3cb7760df6a9daaccba71"
+    },
+    {
+      "name": "stone-harbor-high-tide-ranking.json",
+      "sha256": "050f1be5eda7e7265b9e716c78bd0b4ff30360a6de1eb366d1720fa1ddc0d6ae"
+    }
+  ],
+  "reference": {
+    "name": "Great Channel at Stone Harbor NJ",
+    "site": "01411360",
+    "correction_ft": 0
+  },
+  "backup": {
+    "name": "Lewes, Delaware",
+    "site": "8557380",
+    "correction_ft": 0.06400000000000006
+  },
+  "method": {
+    "count": "One maximum per separate astronomical high-tide cycle, bounded by midpoints of neighboring predicted highs; predictions establish timing only.",
+    "source_priority": [
+      "Accepted Stone Harbor measured high-tide maximum",
+      "Flooding-high-tide bias-corrected Lewes maximum"
+    ],
+    "thresholds_navd88_ft": {
+      "minor": 3.44,
+      "moderate": 4.44,
+      "major": 5.44
+    },
+    "thresholds_mllw_ft": {
+      "minor": 6.1,
+      "moderate": 7.1,
+      "major": 8.1
+    },
+    "navd88_to_mllw_add_ft": 2.66,
+    "threshold_source": "Stone Harbor dashboard THRESH and OFFSET_FROM_MLLW constants; 3.44ft NAVD88 = 6.10ft MLLW.",
+    "quality": "Existing cycle gates: >=90% occupied UTC hourly bins, all six central hourly bins, peak at least one hour from window edges. No fill or extrapolation inside invalid observed cycles.",
+    "official_crest_rule": "Stone Harbor official records have first priority on their reported date, followed by supported nearby gauges in the documented station-priority table. All nearby crest heights are calibrated to flooding Stone Harbor reference levels. Preserve every valid measured Stone Harbor target cycle and timestamp; otherwise a corrected official crest replaces one highest accepted Lewes cycle on that date. Keep the other tide. With no accepted cycle, retain one date-only crest without invented time. Unsupported transfers are excluded.",
+    "no_sea_level_rebasing": true
+  },
+  "calibration": {
+    "reference_source": "USGS Great Channel at Stone Harbor NJ",
+    "reference_site": "01411360",
+    "reference_correction_ft": 0,
+    "donor_source": "NOAA Lewes, Delaware",
+    "donor_site": "8557380",
+    "method": "Constant median(Stone Harbor original NAVD88 minus Lewes original NAVD88), fitted on paired accepted high-tide cycles in complete calendar years 2008\u20132025 where the Stone Harbor reference is at or above 3.44ft NAVD88. No donor threshold.",
+    "n_pairs": 556,
+    "lewes_offset_ft": 0.06400000000000006,
+    "donor_below_reference_threshold_pairs": 106,
+    "fit_median_residual_ft": 0.0,
+    "fit_mean_residual_ft": 0.0199946043165467,
+    "fit_mae_ft": 0.11075359712230219,
+    "fit_rmse_ft": 0.16014562280498684,
+    "leave_one_year_out": [
+      {
+        "year": 2008,
+        "paired_flooding_high_tides": 16,
+        "median_stone_minus_lewes_ft": 0.1595000000000002,
+        "heldout_training_offset_ft": 0.062000000000000055,
+        "heldout_median_bias_ft": 0.09750000000000014,
+        "heldout_mean_bias_ft": 0.14631249999999993,
+        "heldout_mae_ft": 0.15193749999999998,
+        "heldout_rmse_ft": 0.21877571277452154
+      },
+      {
+        "year": 2009,
+        "paired_flooding_high_tides": 28,
+        "median_stone_minus_lewes_ft": 0.123,
+        "heldout_training_offset_ft": 0.06300000000000017,
+        "heldout_median_bias_ft": 0.05999999999999983,
+        "heldout_mean_bias_ft": 0.08657142857142833,
+        "heldout_mae_ft": 0.14049999999999993,
+        "heldout_rmse_ft": 0.20267919760759145
+      },
+      {
+        "year": 2010,
+        "paired_flooding_high_tides": 30,
+        "median_stone_minus_lewes_ft": 0.18900000000000006,
+        "heldout_training_offset_ft": 0.06000000000000005,
+        "heldout_median_bias_ft": 0.129,
+        "heldout_mean_bias_ft": 0.1432666666666666,
+        "heldout_mae_ft": 0.17019999999999993,
+        "heldout_rmse_ft": 0.21012266258862536
+      },
+      {
+        "year": 2011,
+        "paired_flooding_high_tides": 24,
+        "median_stone_minus_lewes_ft": 0.02300000000000013,
+        "heldout_training_offset_ft": 0.06500000000000039,
+        "heldout_median_bias_ft": -0.04200000000000026,
+        "heldout_mean_bias_ft": -0.019250000000000378,
+        "heldout_mae_ft": 0.10133333333333348,
+        "heldout_rmse_ft": 0.15942762203165006
+      },
+      {
+        "year": 2012,
+        "paired_flooding_high_tides": 23,
+        "median_stone_minus_lewes_ft": 0.12300000000000022,
+        "heldout_training_offset_ft": 0.06200000000000028,
+        "heldout_median_bias_ft": 0.06099999999999994,
+        "heldout_mean_bias_ft": 0.172478260869565,
+        "heldout_mae_ft": 0.19760869565217376,
+        "heldout_rmse_ft": 0.31106514066852675
+      },
+      {
+        "year": 2013,
+        "paired_flooding_high_tides": 26,
+        "median_stone_minus_lewes_ft": 0.13500000000000023,
+        "heldout_training_offset_ft": 0.06149999999999989,
+        "heldout_median_bias_ft": 0.07350000000000034,
+        "heldout_mean_bias_ft": 0.08873076923076942,
+        "heldout_mae_ft": 0.0981153846153848,
+        "heldout_rmse_ft": 0.13528751434800473
+      },
+      {
+        "year": 2014,
+        "paired_flooding_high_tides": 28,
+        "median_stone_minus_lewes_ft": 0.1140000000000001,
+        "heldout_training_offset_ft": 0.06199999999999983,
+        "heldout_median_bias_ft": 0.05200000000000027,
+        "heldout_mean_bias_ft": 0.06378571428571446,
+        "heldout_mae_ft": 0.09442857142857156,
+        "heldout_rmse_ft": 0.12743345602425504
+      },
+      {
+        "year": 2015,
+        "paired_flooding_high_tides": 15,
+        "median_stone_minus_lewes_ft": 0.07299999999999995,
+        "heldout_training_offset_ft": 0.06400000000000006,
+        "heldout_median_bias_ft": 0.008999999999999897,
+        "heldout_mean_bias_ft": 0.03633333333333312,
+        "heldout_mae_ft": 0.08620000000000004,
+        "heldout_rmse_ft": 0.11712642741926345
+      },
+      {
+        "year": 2016,
+        "paired_flooding_high_tides": 27,
+        "median_stone_minus_lewes_ft": 0.04900000000000038,
+        "heldout_training_offset_ft": 0.06400000000000006,
+        "heldout_median_bias_ft": -0.01499999999999968,
+        "heldout_mean_bias_ft": 0.020629629629629578,
+        "heldout_mae_ft": 0.12974074074074082,
+        "heldout_rmse_ft": 0.18648413694824917
+      },
+      {
+        "year": 2017,
+        "paired_flooding_high_tides": 31,
+        "median_stone_minus_lewes_ft": 0.027000000000000135,
+        "heldout_training_offset_ft": 0.06500000000000039,
+        "heldout_median_bias_ft": -0.038000000000000256,
+        "heldout_mean_bias_ft": -0.03500000000000041,
+        "heldout_mae_ft": 0.0869354838709679,
+        "heldout_rmse_ft": 0.12640245505986555
+      },
+      {
+        "year": 2018,
+        "paired_flooding_high_tides": 40,
+        "median_stone_minus_lewes_ft": 0.05599999999999983,
+        "heldout_training_offset_ft": 0.06449999999999978,
+        "heldout_median_bias_ft": -0.008499999999999952,
+        "heldout_mean_bias_ft": -0.008199999999999753,
+        "heldout_mae_ft": 0.10729999999999999,
+        "heldout_rmse_ft": 0.13906724991887914
+      },
+      {
+        "year": 2019,
+        "paired_flooding_high_tides": 37,
+        "median_stone_minus_lewes_ft": 0.05799999999999983,
+        "heldout_training_offset_ft": 0.06400000000000006,
+        "heldout_median_bias_ft": -0.006000000000000227,
+        "heldout_mean_bias_ft": -0.03224324324324329,
+        "heldout_mae_ft": 0.09608108108108111,
+        "heldout_rmse_ft": 0.12232400484844405
+      },
+      {
+        "year": 2020,
+        "paired_flooding_high_tides": 33,
+        "median_stone_minus_lewes_ft": 0.06899999999999995,
+        "heldout_training_offset_ft": 0.06400000000000006,
+        "heldout_median_bias_ft": 0.004999999999999893,
+        "heldout_mean_bias_ft": 0.009060606060606005,
+        "heldout_mae_ft": 0.0870606060606061,
+        "heldout_rmse_ft": 0.12362394099800735
+      },
+      {
+        "year": 2021,
+        "paired_flooding_high_tides": 28,
+        "median_stone_minus_lewes_ft": 0.030999999999999694,
+        "heldout_training_offset_ft": 0.06500000000000017,
+        "heldout_median_bias_ft": -0.034000000000000474,
+        "heldout_mean_bias_ft": -0.01571428571428595,
+        "heldout_mae_ft": 0.08650000000000005,
+        "heldout_rmse_ft": 0.11229330217909578
+      },
+      {
+        "year": 2022,
+        "paired_flooding_high_tides": 32,
+        "median_stone_minus_lewes_ft": 0.03699999999999948,
+        "heldout_training_offset_ft": 0.06499999999999972,
+        "heldout_median_bias_ft": -0.028000000000000247,
+        "heldout_mean_bias_ft": 0.024937500000000196,
+        "heldout_mae_ft": 0.14937499999999998,
+        "heldout_rmse_ft": 0.22279587069782064
+      },
+      {
+        "year": 2023,
+        "paired_flooding_high_tides": 38,
+        "median_stone_minus_lewes_ft": -0.015000000000000124,
+        "heldout_training_offset_ft": 0.06550000000000011,
+        "heldout_median_bias_ft": -0.08050000000000024,
+        "heldout_mean_bias_ft": -0.050000000000000135,
+        "heldout_mae_ft": 0.10568421052631584,
+        "heldout_rmse_ft": 0.12630659231868263
+      },
+      {
+        "year": 2024,
+        "paired_flooding_high_tides": 62,
+        "median_stone_minus_lewes_ft": 0.010000000000000009,
+        "heldout_training_offset_ft": 0.07150000000000012,
+        "heldout_median_bias_ft": -0.06150000000000011,
+        "heldout_mean_bias_ft": -0.06401612903225816,
+        "heldout_mae_ft": 0.08482258064516138,
+        "heldout_rmse_ft": 0.1078666665005251
+      },
+      {
+        "year": 2025,
+        "paired_flooding_high_tides": 38,
+        "median_stone_minus_lewes_ft": 0.06950000000000034,
+        "heldout_training_offset_ft": 0.06400000000000006,
+        "heldout_median_bias_ft": 0.0055000000000002824,
+        "heldout_mean_bias_ft": 0.022684210526315723,
+        "heldout_mae_ft": 0.09857894736842111,
+        "heldout_rmse_ft": 0.13165005447057465
+      }
+    ],
+    "no_sea_level_rebasing": true,
+    "pair_csv_sha256": "22934e7d044625a3a9d84b2dd405d1e12020602a4175077ef23daf03313a4864"
+  },
+  "supportedNearbyCrestTransfers": {
+    "schema": "stone-reference-flooding-high-tide-nearby-crest-transfers-v1",
+    "reference_site": "01411360",
+    "reference_adjustment_ft": 0,
+    "reference_flood_threshold_navd88_ft": 3.44,
+    "no_sea_level_rebasing": true,
+    "policy": "Use direct accepted Stone Harbor high-tide daily maxima on the reported local crest date when overlapping. Otherwise use a supported same-date Stone Harbor official crest. Fit only flooding reference heights; never impose a donor threshold.",
+    "stations": {
+      "01411360": {
+        "offset_ft": 0,
+        "method": "Same physical reference gauge; no bias transfer.",
+        "n_pairs": 0
+      },
+      "01411350": {
+        "offset_ft": 0.08499999999999996,
+        "n_pairs": 6,
+        "method": "direct accepted Stone Harbor high-tide maxima on same local crest dates",
+        "reference_selection": "Stone Harbor reference >=3.44ft NAVD88; no donor cutoff",
+        "donor_below_reference_threshold_pairs": 0,
+        "fit_median_residual_ft": 0.0,
+        "fit_mae_ft": 0.08333333333333348,
+        "fit_rmse_ft": 0.09178779875342921,
+        "leave_one_year_out": [
+          {
+            "year": 2008,
+            "n_pairs": 1,
+            "training_offset_ft": 0.04999999999999982,
+            "heldout_median_bias_ft": 0.11000000000000032,
+            "heldout_mae_ft": 0.11000000000000032,
+            "heldout_rmse_ft": 0.11000000000000032
+          },
+          {
+            "year": 2009,
+            "n_pairs": 1,
+            "training_offset_ft": 0.1200000000000001,
+            "heldout_median_bias_ft": -0.07000000000000028,
+            "heldout_mae_ft": 0.07000000000000028,
+            "heldout_rmse_ft": 0.07000000000000028
+          },
+          {
+            "year": 2011,
+            "n_pairs": 2,
+            "training_offset_ft": 0.01499999999999968,
+            "heldout_median_bias_ft": 0.14500000000000046,
+            "heldout_mae_ft": 0.14500000000000046,
+            "heldout_rmse_ft": 0.1504160895649137
+          },
+          {
+            "year": 2014,
+            "n_pairs": 2,
+            "training_offset_ft": 0.14000000000000012,
+            "heldout_median_bias_ft": -0.17500000000000027,
+            "heldout_mae_ft": 0.17500000000000027,
+            "heldout_rmse_ft": 0.1756416807025032
+          }
+        ],
+        "pairs_csv": "crest-01411350-flood-calibration-pairs.csv",
+        "pairs_csv_sha256": "0c97936f74d6e761a44a96c0110cb364eecfd2df990ece8f2f90803f23ab6f12"
+      },
+      "01411355": {
+        "offset_ft": -0.2400000000000002,
+        "n_pairs": 3,
+        "method": "same-date Stone Harbor official flooding crests; reference correction is zero",
+        "reference_selection": "Stone Harbor reference >=3.44ft NAVD88; no donor cutoff",
+        "donor_below_reference_threshold_pairs": 0,
+        "fit_median_residual_ft": 0.0,
+        "fit_mae_ft": 0.11333333333333329,
+        "fit_rmse_ft": 0.17981471945681549,
+        "leave_one_year_out": [
+          {
+            "year": 1984,
+            "n_pairs": 1,
+            "training_offset_ft": -0.08500000000000041,
+            "heldout_median_bias_ft": -0.18500000000000005,
+            "heldout_mae_ft": 0.18500000000000005,
+            "heldout_rmse_ft": 0.18500000000000005
+          },
+          {
+            "year": 1992,
+            "n_pairs": 1,
+            "training_offset_ft": -0.10000000000000053,
+            "heldout_median_bias_ft": -0.13999999999999968,
+            "heldout_mae_ft": 0.13999999999999968,
+            "heldout_rmse_ft": 0.13999999999999968
+          },
+          {
+            "year": 2005,
+            "n_pairs": 1,
+            "training_offset_ft": -0.25500000000000034,
+            "heldout_median_bias_ft": 0.32499999999999973,
+            "heldout_mae_ft": 0.32499999999999973,
+            "heldout_rmse_ft": 0.32499999999999973
+          }
+        ],
+        "pairs_csv": "crest-01411355-flood-calibration-pairs.csv",
+        "pairs_csv_sha256": "0316b743e3721874972bb151efee399fa9be7e99add3c761d3b5c3aa3c90494e"
+      },
+      "01411370": {
+        "offset_ft": -0.21999999999999975,
+        "n_pairs": 16,
+        "method": "direct accepted Stone Harbor high-tide maxima on same local crest dates",
+        "reference_selection": "Stone Harbor reference >=3.44ft NAVD88; no donor cutoff",
+        "donor_below_reference_threshold_pairs": 0,
+        "fit_median_residual_ft": 0.0,
+        "fit_mae_ft": 0.25812500000000005,
+        "fit_rmse_ft": 0.4901721636323305,
+        "leave_one_year_out": [
+          {
+            "year": 2008,
+            "n_pairs": 2,
+            "training_offset_ft": -0.21999999999999975,
+            "heldout_median_bias_ft": -0.08500000000000041,
+            "heldout_mae_ft": 0.12499999999999956,
+            "heldout_rmse_ft": 0.1511621645783096
+          },
+          {
+            "year": 2011,
+            "n_pairs": 1,
+            "training_offset_ft": -0.20999999999999996,
+            "heldout_median_bias_ft": -0.39000000000000057,
+            "heldout_mae_ft": 0.39000000000000057,
+            "heldout_rmse_ft": 0.39000000000000057
+          },
+          {
+            "year": 2012,
+            "n_pairs": 1,
+            "training_offset_ft": -0.20999999999999996,
+            "heldout_median_bias_ft": -0.03000000000000025,
+            "heldout_mae_ft": 0.03000000000000025,
+            "heldout_rmse_ft": 0.03000000000000025
+          },
+          {
+            "year": 2014,
+            "n_pairs": 2,
+            "training_offset_ft": -0.23499999999999988,
+            "heldout_median_bias_ft": 0.05999999999999961,
+            "heldout_mae_ft": 0.05999999999999961,
+            "heldout_rmse_ft": 0.06946221994724854
+          },
+          {
+            "year": 2016,
+            "n_pairs": 1,
+            "training_offset_ft": -0.20999999999999996,
+            "heldout_median_bias_ft": -0.7400000000000002,
+            "heldout_mae_ft": 0.7400000000000002,
+            "heldout_rmse_ft": 0.7400000000000002
+          },
+          {
+            "year": 2017,
+            "n_pairs": 1,
+            "training_offset_ft": -0.20999999999999996,
+            "heldout_median_bias_ft": -1.7300000000000004,
+            "heldout_mae_ft": 1.7300000000000004,
+            "heldout_rmse_ft": 1.7300000000000004
+          },
+          {
+            "year": 2018,
+            "n_pairs": 2,
+            "training_offset_ft": -0.21999999999999975,
+            "heldout_median_bias_ft": -0.08000000000000052,
+            "heldout_mae_ft": 0.10000000000000009,
+            "heldout_rmse_ft": 0.12806248474865736
+          },
+          {
+            "year": 2019,
+            "n_pairs": 1,
+            "training_offset_ft": -0.22999999999999954,
+            "heldout_median_bias_ft": 0.13999999999999968,
+            "heldout_mae_ft": 0.13999999999999968,
+            "heldout_rmse_ft": 0.13999999999999968
+          },
+          {
+            "year": 2021,
+            "n_pairs": 1,
+            "training_offset_ft": -0.20999999999999996,
+            "heldout_median_bias_ft": -0.22000000000000064,
+            "heldout_mae_ft": 0.22000000000000064,
+            "heldout_rmse_ft": 0.22000000000000064
+          },
+          {
+            "year": 2022,
+            "n_pairs": 2,
+            "training_offset_ft": -0.2250000000000001,
+            "heldout_median_bias_ft": 0.025000000000000355,
+            "heldout_mae_ft": 0.029999999999999805,
+            "heldout_rmse_ft": 0.03905124837953335
+          },
+          {
+            "year": 2024,
+            "n_pairs": 1,
+            "training_offset_ft": -0.22999999999999954,
+            "heldout_median_bias_ft": 0.20999999999999996,
+            "heldout_mae_ft": 0.20999999999999996,
+            "heldout_rmse_ft": 0.20999999999999996
+          },
+          {
+            "year": 2025,
+            "n_pairs": 1,
+            "training_offset_ft": -0.22999999999999954,
+            "heldout_median_bias_ft": 0.14999999999999947,
+            "heldout_mae_ft": 0.14999999999999947,
+            "heldout_rmse_ft": 0.14999999999999947
+          }
+        ],
+        "pairs_csv": "crest-01411370-flood-calibration-pairs.csv",
+        "pairs_csv_sha256": "e3db5952e797359752f0e68bdfc1b28287c30bcc2152890e2529ed2703789bb8"
+      },
+      "01411380": {
+        "offset_ft": -0.08766404199475097,
+        "n_pairs": 11,
+        "method": "same-date Stone Harbor official flooding crests; reference correction is zero",
+        "reference_selection": "Stone Harbor reference >=3.44ft NAVD88; no donor cutoff",
+        "donor_below_reference_threshold_pairs": 0,
+        "fit_median_residual_ft": 0.0,
+        "fit_mae_ft": 0.5063636363636362,
+        "fit_rmse_ft": 0.7585812115689752,
+        "leave_one_year_out": [
+          {
+            "year": 1966,
+            "n_pairs": 1,
+            "training_offset_ft": -0.11266404199475066,
+            "heldout_median_bias_ft": 0.30499999999999994,
+            "heldout_mae_ft": 0.30499999999999994,
+            "heldout_rmse_ft": 0.30499999999999994
+          },
+          {
+            "year": 1967,
+            "n_pairs": 1,
+            "training_offset_ft": -0.07766404199475074,
+            "heldout_median_bias_ft": -0.27,
+            "heldout_mae_ft": 0.27,
+            "heldout_rmse_ft": 0.27
+          },
+          {
+            "year": 1968,
+            "n_pairs": 1,
+            "training_offset_ft": -0.11266404199475066,
+            "heldout_median_bias_ft": 0.29500000000000015,
+            "heldout_mae_ft": 0.29500000000000015,
+            "heldout_rmse_ft": 0.29500000000000015
+          },
+          {
+            "year": 1972,
+            "n_pairs": 2,
+            "training_offset_ft": -0.06766404199475051,
+            "heldout_median_bias_ft": -0.0900000000000003,
+            "heldout_mae_ft": 0.0900000000000003,
+            "heldout_rmse_ft": 0.11401754250991394
+          },
+          {
+            "year": 1974,
+            "n_pairs": 1,
+            "training_offset_ft": -0.07766404199475074,
+            "heldout_median_bias_ft": -1.3699999999999997,
+            "heldout_mae_ft": 1.3699999999999997,
+            "heldout_rmse_ft": 1.3699999999999997
+          },
+          {
+            "year": 1976,
+            "n_pairs": 1,
+            "training_offset_ft": -0.11266404199475066,
+            "heldout_median_bias_ft": 1.3649999999999995,
+            "heldout_mae_ft": 1.3649999999999995,
+            "heldout_rmse_ft": 1.3649999999999995
+          },
+          {
+            "year": 1977,
+            "n_pairs": 2,
+            "training_offset_ft": -0.08766404199475097,
+            "heldout_median_bias_ft": -0.6049999999999995,
+            "heldout_mae_ft": 0.9249999999999998,
+            "heldout_rmse_ft": 1.1052827692495704
+          },
+          {
+            "year": 1979,
+            "n_pairs": 1,
+            "training_offset_ft": -0.11266404199475066,
+            "heldout_median_bias_ft": 0.04500000000000015,
+            "heldout_mae_ft": 0.04500000000000015,
+            "heldout_rmse_ft": 0.04500000000000015
+          },
+          {
+            "year": 1980,
+            "n_pairs": 1,
+            "training_offset_ft": -0.07766404199475074,
+            "heldout_median_bias_ft": -0.05999999999999961,
+            "heldout_mae_ft": 0.05999999999999961,
+            "heldout_rmse_ft": 0.05999999999999961
+          }
+        ],
+        "pairs_csv": "crest-01411380-flood-calibration-pairs.csv",
+        "pairs_csv_sha256": "4c0d7f3584592aab959e9111f0957eb1feabd72f2c9df3b5340b9681c0933e54"
+      },
+      "01411382": {
+        "offset_ft": 0.03000000000000025,
+        "n_pairs": 7,
+        "method": "direct accepted Stone Harbor high-tide maxima on same local crest dates",
+        "reference_selection": "Stone Harbor reference >=3.44ft NAVD88; no donor cutoff",
+        "donor_below_reference_threshold_pairs": 0,
+        "fit_median_residual_ft": 0.0,
+        "fit_mae_ft": 0.2199999999999999,
+        "fit_rmse_ft": 0.30761757334159456,
+        "leave_one_year_out": [
+          {
+            "year": 2008,
+            "n_pairs": 1,
+            "training_offset_ft": -0.004999999999999893,
+            "heldout_median_bias_ft": 0.40500000000000025,
+            "heldout_mae_ft": 0.40500000000000025,
+            "heldout_rmse_ft": 0.40500000000000025
+          },
+          {
+            "year": 2009,
+            "n_pairs": 1,
+            "training_offset_ft": 0.04499999999999993,
+            "heldout_median_bias_ft": -0.22499999999999964,
+            "heldout_mae_ft": 0.22499999999999964,
+            "heldout_rmse_ft": 0.22499999999999964
+          },
+          {
+            "year": 2011,
+            "n_pairs": 1,
+            "training_offset_ft": -0.004999999999999893,
+            "heldout_median_bias_ft": 0.0649999999999995,
+            "heldout_mae_ft": 0.0649999999999995,
+            "heldout_rmse_ft": 0.0649999999999995
+          },
+          {
+            "year": 2012,
+            "n_pairs": 1,
+            "training_offset_ft": 0.04499999999999993,
+            "heldout_median_bias_ft": -0.21499999999999986,
+            "heldout_mae_ft": 0.21499999999999986,
+            "heldout_rmse_ft": 0.21499999999999986
+          },
+          {
+            "year": 2014,
+            "n_pairs": 2,
+            "training_offset_ft": 0.05999999999999961,
+            "heldout_median_bias_ft": -0.0649999999999995,
+            "heldout_mae_ft": 0.0649999999999995,
+            "heldout_rmse_ft": 0.07382411530116663
+          },
+          {
+            "year": 2016,
+            "n_pairs": 1,
+            "training_offset_ft": -0.004999999999999893,
+            "heldout_median_bias_ft": 0.6949999999999994,
+            "heldout_mae_ft": 0.6949999999999994,
+            "heldout_rmse_ft": 0.6949999999999994
+          }
+        ],
+        "pairs_csv": "crest-01411382-flood-calibration-pairs.csv",
+        "pairs_csv_sha256": "d883d6175b96a1cd41499d5f11b1938167a7e3a07252dc3b98f1355282ba68b6"
+      }
+    },
+    "unsupported_stations": [],
+    "inputs": [
+      {
+        "path": "stone_all_tide_cycles_rebased_bias_corrected.csv.gz",
+        "sha256": "7eef47c06d0bcb4d3aff2418dba0dd6c5c4463bedcb3cb7760df6a9daaccba71"
+      },
+      {
+        "path": "official-crest-source-registry.csv",
+        "sha256": "f75fb1ae93bce5831815b9c3007a0ce223b30c04e1bfb77fa1314707e2ba7f4d"
+      }
+    ]
+  },
+  "crestAudit": [
+    {
+      "date": "1962-03-06",
+      "site": "01411382",
+      "crest_id": "USGS_01411382_1962-03-06_001",
+      "raw_navd88_ft": 7.5,
+      "reference_correction_ft": 0.03000000000000025,
+      "stone_reference_navd88_ft": 7.53,
+      "station_priority": 4,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 36825,
+      "previous_height_ft": 6.655,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1965-06-30",
+      "site": "01411380",
+      "crest_id": "USGS_01411380_1965-06-30_001",
+      "raw_navd88_ft": 3.047664041994751,
+      "reference_correction_ft": -0.08766404199475097,
+      "stone_reference_navd88_ft": 2.96,
+      "station_priority": 5,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 39167,
+      "previous_height_ft": 2.954,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1965-07-29",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1965-07-29_001",
+      "raw_navd88_ft": 3.15,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.15,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 39223,
+      "previous_height_ft": 2.954,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1966-01-23",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1966-01-23_002",
+      "raw_navd88_ft": 4.95,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.95,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 39566,
+      "previous_height_ft": 3.873,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1967-02-07",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1967-02-07_003",
+      "raw_navd88_ft": 4.43,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.43,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 40300,
+      "previous_height_ft": 4.2540000000000004,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1967-12-03",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1967-12-03_004",
+      "raw_navd88_ft": 3.68,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.68,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 40878,
+      "previous_height_ft": 3.355,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1968-05-29",
+      "site": "01411380",
+      "crest_id": "USGS_01411380_1968-05-29_004",
+      "raw_navd88_ft": 4.137664041994751,
+      "reference_correction_ft": -0.08766404199475097,
+      "stone_reference_navd88_ft": 4.05,
+      "station_priority": 5,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 41223,
+      "previous_height_ft": 2.2520000000000002,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1968-11-12",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1968-11-12_005",
+      "raw_navd88_ft": 4.63,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.63,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 41545,
+      "previous_height_ft": 3.853,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1969-11-10",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1969-11-10_006",
+      "raw_navd88_ft": 4.38,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.38,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 42246,
+      "previous_height_ft": 4.556,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1969-12-26",
+      "site": "01411380",
+      "crest_id": "USGS_01411380_1969-12-26_006",
+      "raw_navd88_ft": 5.227664041994751,
+      "reference_correction_ft": -0.08766404199475097,
+      "stone_reference_navd88_ft": 5.14,
+      "station_priority": 5,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 42335,
+      "previous_height_ft": 3.355,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1970-11-15",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1970-11-15_007",
+      "raw_navd88_ft": 3.92,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.92,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 42961,
+      "previous_height_ft": 3.853,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1971-03-27",
+      "site": "01411380",
+      "crest_id": "USGS_01411380_1971-03-27_007",
+      "raw_navd88_ft": 4.627664041994751,
+      "reference_correction_ft": -0.08766404199475097,
+      "stone_reference_navd88_ft": 4.54,
+      "station_priority": 5,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 43217,
+      "previous_height_ft": 3.955,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1972-02-19",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1972-02-19_008",
+      "raw_navd88_ft": 4.09,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.09,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 43851,
+      "previous_height_ft": 3.853,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1972-12-22",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1972-12-22_009",
+      "raw_navd88_ft": 4.69,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.69,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 44445,
+      "previous_height_ft": 4.752,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1973-12-09",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1973-12-09_010",
+      "raw_navd88_ft": 4.79,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.79,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 45125,
+      "previous_height_ft": 4.654,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1974-12-02",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1974-12-02_011",
+      "raw_navd88_ft": 3.91,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.91,
+      "station_priority": 1,
+      "action": "date_only_crest_no_invented_cycle"
+    },
+    {
+      "date": "1976-08-09",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1976-08-09_012",
+      "raw_navd88_ft": 5.13,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.13,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 47008,
+      "previous_height_ft": 3.735,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1977-09-25",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1977-09-25_013",
+      "raw_navd88_ft": 3.74,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.74,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 47804,
+      "previous_height_ft": 3.745,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1977-10-14",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1977-10-14_014",
+      "raw_navd88_ft": 5.11,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.11,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 47840,
+      "previous_height_ft": 5.0440000000000005,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1978-04-28",
+      "site": "01411350",
+      "crest_id": "USGS_01411350_1978-04-28_002",
+      "raw_navd88_ft": 4.05,
+      "reference_correction_ft": 0.08499999999999996,
+      "stone_reference_navd88_ft": 4.135,
+      "station_priority": 6,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 48218,
+      "previous_height_ft": 3.975,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1979-02-26",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1979-02-26_015",
+      "raw_navd88_ft": 4.49,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.49,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 48806,
+      "previous_height_ft": 4.3950000000000005,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1980-01-17",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1980-01-17_016",
+      "raw_navd88_ft": 3.86,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.86,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 49434,
+      "previous_height_ft": 3.903,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1980-10-25",
+      "site": "01411380",
+      "crest_id": "USGS_01411380_1980-10-25_016",
+      "raw_navd88_ft": 5.5676640419947505,
+      "reference_correction_ft": -0.08766404199475097,
+      "stone_reference_navd88_ft": 5.4799999999999995,
+      "station_priority": 5,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 49979,
+      "previous_height_ft": 5.103,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1981-11-15",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1981-11-15_017",
+      "raw_navd88_ft": 3.53,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.53,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 50725,
+      "previous_height_ft": 4.444,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1983-02-11",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1983-02-11_018",
+      "raw_navd88_ft": 4.3,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.3,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 51601,
+      "previous_height_ft": 3.965,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1983-02-26",
+      "site": "01411350",
+      "crest_id": "USGS_01411350_1983-02-26_007",
+      "raw_navd88_ft": 4.64,
+      "reference_correction_ft": 0.08499999999999996,
+      "stone_reference_navd88_ft": 4.725,
+      "station_priority": 6,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 51629,
+      "previous_height_ft": 3.463,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1984-03-29",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1984-03-29_019",
+      "raw_navd88_ft": 6.02,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 6.02,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 52396,
+      "previous_height_ft": 5.343,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1985-09-27",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1985-09-27_020",
+      "raw_navd88_ft": 3.11,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.11,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 53453,
+      "previous_height_ft": 5.425,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1986-08-18",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1986-08-18_021",
+      "raw_navd88_ft": 3.86,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.86,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 54082,
+      "previous_height_ft": 3.863,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1987-01-02",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1987-01-02_022",
+      "raw_navd88_ft": 4.87,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.87,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 54346,
+      "previous_height_ft": 4.434,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1987-11-11",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1987-11-11_023",
+      "raw_navd88_ft": 3.94,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.94,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 54951,
+      "previous_height_ft": 3.935,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1989-03-07",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1989-03-07_024",
+      "raw_navd88_ft": 3.78,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.78,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 55882,
+      "previous_height_ft": 3.584,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1989-10-19",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1989-10-19_025",
+      "raw_navd88_ft": 4.5,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.5,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 56319,
+      "previous_height_ft": 4.444,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1990-12-04",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1990-12-04_026",
+      "raw_navd88_ft": 3.57,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.57,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 57113,
+      "previous_height_ft": 3.853,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1992-01-04",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1992-01-04_027",
+      "raw_navd88_ft": 5.92,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.92,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 57878,
+      "previous_height_ft": 6.025,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1992-12-11",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1992-12-11_028",
+      "raw_navd88_ft": 5.81,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.81,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 58539,
+      "previous_height_ft": 5.123,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1994-03-03",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1994-03-03_029",
+      "raw_navd88_ft": 5.96,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.96,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 59402,
+      "previous_height_ft": 5.405,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1994-12-24",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1994-12-24_030",
+      "raw_navd88_ft": 3.99,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.99,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 59975,
+      "previous_height_ft": 3.834,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1996-01-07",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1996-01-07_031",
+      "raw_navd88_ft": 5.06,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.06,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 60708,
+      "previous_height_ft": 5.346,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1996-12-13",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1996-12-13_032",
+      "raw_navd88_ft": 5.05,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.05,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 61366,
+      "previous_height_ft": 4.267,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1998-02-05",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1998-02-05_033",
+      "raw_navd88_ft": 6.28,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 6.28,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 62175,
+      "previous_height_ft": 5.933,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "1999-03-15",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_1999-03-15_034",
+      "raw_navd88_ft": 4.76,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.76,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 62954,
+      "previous_height_ft": 4.063000000000001,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2000-01-25",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2000-01-25_007",
+      "raw_navd88_ft": 5.68,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 5.46,
+      "station_priority": 2,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 63565,
+      "previous_height_ft": 4.766,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2000-09-26",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2000-09-26_035",
+      "raw_navd88_ft": 4.74,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.74,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 64038,
+      "previous_height_ft": 4.132,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2001-03-07",
+      "site": "01411382",
+      "crest_id": "USGS_01411382_2001-03-07_002",
+      "raw_navd88_ft": 4.26,
+      "reference_correction_ft": 0.03000000000000025,
+      "stone_reference_navd88_ft": 4.29,
+      "station_priority": 4,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 64351,
+      "previous_height_ft": 3.975,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2001-09-30",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2001-09-30_036",
+      "raw_navd88_ft": 4.14,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.14,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 64752,
+      "previous_height_ft": 4.021,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2001-10-01",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2001-10-01_037",
+      "raw_navd88_ft": 3.59,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 3.59,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 64753,
+      "previous_height_ft": 3.407,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2002-01-31",
+      "site": "01411382",
+      "crest_id": "USGS_01411382_2002-01-31_003",
+      "raw_navd88_ft": 3.64,
+      "reference_correction_ft": 0.03000000000000025,
+      "stone_reference_navd88_ft": 3.6700000000000004,
+      "station_priority": 4,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 64989,
+      "previous_height_ft": 3.453,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2003-01-03",
+      "site": "01411382",
+      "crest_id": "USGS_01411382_2003-01-03_004",
+      "raw_navd88_ft": 4.58,
+      "reference_correction_ft": 0.03000000000000025,
+      "stone_reference_navd88_ft": 4.61,
+      "station_priority": 4,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 65640,
+      "previous_height_ft": 4.431,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2003-02-17",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2003-02-17_038",
+      "raw_navd88_ft": 5.37,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.37,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 65727,
+      "previous_height_ft": 4.936,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2003-12-06",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2003-12-06_039",
+      "raw_navd88_ft": 4.45,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.45,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 66291,
+      "previous_height_ft": 4.067,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2005-05-25",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2005-05-25_040",
+      "raw_navd88_ft": 4.56,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.56,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 67328,
+      "previous_height_ft": 4.575,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2006-02-12",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2006-02-12_041",
+      "raw_navd88_ft": 4.62,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.62,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 67835,
+      "previous_height_ft": 4.388,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2006-10-07",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2006-10-07_042",
+      "raw_navd88_ft": 4.92,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.92,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 68293,
+      "previous_height_ft": 4.769,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2008-05-12",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2008-05-12_043",
+      "raw_navd88_ft": 5.21,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.21,
+      "station_priority": 1,
+      "action": "preserve_primary_stone",
+      "cycle_id": 69419,
+      "previous_height_ft": 5.21,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2008-05-12 08:00:00+00:00"
+    },
+    {
+      "date": "2008-10-19",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2008-10-19_044",
+      "raw_navd88_ft": 4.3,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.3,
+      "station_priority": 1,
+      "action": "preserve_primary_stone",
+      "cycle_id": 69729,
+      "previous_height_ft": 4.3,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2008-10-19 17:06:00+00:00"
+    },
+    {
+      "date": "2009-06-22",
+      "site": "01411382",
+      "crest_id": "USGS_01411382_2009-06-22_010",
+      "raw_navd88_ft": 4.33,
+      "reference_correction_ft": 0.03000000000000025,
+      "stone_reference_navd88_ft": 4.36,
+      "station_priority": 4,
+      "action": "preserve_primary_stone",
+      "cycle_id": 70205,
+      "previous_height_ft": 4.15,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2009-06-23 01:18:00+00:00"
+    },
+    {
+      "date": "2009-09-11",
+      "site": "01411350",
+      "crest_id": "USGS_01411350_2009-09-11_019",
+      "raw_navd88_ft": 4.24,
+      "reference_correction_ft": 0.08499999999999996,
+      "stone_reference_navd88_ft": 4.325,
+      "station_priority": 6,
+      "action": "preserve_primary_stone",
+      "cycle_id": 70360,
+      "previous_height_ft": 4.29,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2009-09-11 06:06:00+00:00"
+    },
+    {
+      "date": "2009-11-13",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2009-11-13_045",
+      "raw_navd88_ft": 5.44,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.44,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 70482,
+      "previous_height_ft": 5.202,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2011-08-27",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2011-08-27_046",
+      "raw_navd88_ft": 5.3,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 5.3,
+      "station_priority": 1,
+      "action": "preserve_primary_stone",
+      "cycle_id": 71743,
+      "previous_height_ft": 5.3,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2011-08-28 00:36:00+00:00"
+    },
+    {
+      "date": "2011-10-29",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2011-10-29_047",
+      "raw_navd88_ft": 4.92,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.92,
+      "station_priority": 1,
+      "action": "preserve_primary_stone",
+      "cycle_id": 71864,
+      "previous_height_ft": 4.92,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2011-10-29 15:42:00+00:00"
+    },
+    {
+      "date": "2012-06-04",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2012-06-04_019",
+      "raw_navd88_ft": 4.96,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 4.74,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 72288,
+      "previous_height_ft": 4.72,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2012-06-05 01:54:00+00:00"
+    },
+    {
+      "date": "2012-10-29",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2012-10-29_048",
+      "raw_navd88_ft": 6.73,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 6.73,
+      "station_priority": 1,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 72571,
+      "previous_height_ft": 6.143,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2014-04-29",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2014-04-29_049",
+      "raw_navd88_ft": 4.4,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.4,
+      "station_priority": 1,
+      "action": "preserve_primary_stone",
+      "cycle_id": 73629,
+      "previous_height_ft": 4.4,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2014-04-30 02:06:00+00:00"
+    },
+    {
+      "date": "2014-12-09",
+      "site": "01411360",
+      "crest_id": "USGS_01411360_2014-12-09_050",
+      "raw_navd88_ft": 4.77,
+      "reference_correction_ft": 0.0,
+      "stone_reference_navd88_ft": 4.77,
+      "station_priority": 1,
+      "action": "preserve_primary_stone",
+      "cycle_id": 74061,
+      "previous_height_ft": 4.77,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2014-12-09 15:18:00+00:00"
+    },
+    {
+      "date": "2016-01-23",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2016-01-23_023",
+      "raw_navd88_ft": 7.17,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 6.95,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 74853,
+      "previous_height_ft": 6.22,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2016-01-23 13:54:00+00:00"
+    },
+    {
+      "date": "2017-01-23",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2017-01-23_024",
+      "raw_navd88_ft": 5.61,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 5.390000000000001,
+      "station_priority": 2,
+      "action": "replace_one_donor_cycle",
+      "cycle_id": 75561,
+      "previous_height_ft": 4.451,
+      "previous_source": "lewes"
+    },
+    {
+      "date": "2018-09-09",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2018-09-09_025",
+      "raw_navd88_ft": 5.44,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 5.220000000000001,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 76709,
+      "previous_height_ft": 5.04,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2018-09-10 01:54:00+00:00"
+    },
+    {
+      "date": "2018-10-27",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2018-10-27_026",
+      "raw_navd88_ft": 5.47,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 5.25,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 76801,
+      "previous_height_ft": 5.27,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2018-10-27 15:00:00+00:00"
+    },
+    {
+      "date": "2019-10-11",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2019-10-11_027",
+      "raw_navd88_ft": 4.85,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 4.63,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 77476,
+      "previous_height_ft": 4.76,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2019-10-12 00:42:00+00:00"
+    },
+    {
+      "date": "2021-02-01",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2021-02-01_028",
+      "raw_navd88_ft": 5.19,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 4.970000000000001,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 78401,
+      "previous_height_ft": 4.76,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2021-02-01 16:30:00+00:00"
+    },
+    {
+      "date": "2022-04-18",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2022-04-18_029",
+      "raw_navd88_ft": 5.13,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 4.91,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 79254,
+      "previous_height_ft": 4.9,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2022-04-19 03:54:00+00:00"
+    },
+    {
+      "date": "2022-10-03",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2022-10-03_030",
+      "raw_navd88_ft": 5.05,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 4.83,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 79578,
+      "previous_height_ft": 4.88,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2022-10-03 20:00:00+00:00"
+    },
+    {
+      "date": "2024-01-13",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2024-01-13_031",
+      "raw_navd88_ft": 4.46,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 4.24,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 80480,
+      "previous_height_ft": 4.44,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2024-01-13 15:06:00+00:00"
+    },
+    {
+      "date": "2025-08-21",
+      "site": "01411370",
+      "crest_id": "USGS_01411370_2025-08-21_032",
+      "raw_navd88_ft": 5.38,
+      "reference_correction_ft": -0.21999999999999975,
+      "stone_reference_navd88_ft": 5.16,
+      "station_priority": 2,
+      "action": "preserve_primary_stone",
+      "cycle_id": 81613,
+      "previous_height_ft": 5.3,
+      "previous_source": "stone",
+      "retained_stone_peak_time": "2025-08-22 00:30:00+00:00"
+    }
+  ],
+  "primaryIntegrity": {
+    "accepted_stone_cycles": 13040,
+    "all_measured_heights_preserved": true,
+    "all_measured_peak_times_preserved": true
+  },
+  "sources": [
+    {
+      "source": "stone",
+      "path": "stone_all_tide_cycles_rebased_bias_corrected.csv.gz",
+      "sha256": "7eef47c06d0bcb4d3aff2418dba0dd6c5c4463bedcb3cb7760df6a9daaccba71",
+      "level_field_used": "observed_ft",
+      "rebase_fields_used": false
+    },
+    {
+      "source": "lewes",
+      "path": "lewes_all_tide_cycles_rebased_bias_corrected.csv.gz",
+      "sha256": "2f8e3c0a6679ecf3f50bd66772882783f9249805de18903404ba55561c114ca8",
+      "level_field_used": "observed_ft",
+      "rebase_fields_used": false
+    },
+    {
+      "source": "stone_2026_current_raw_extension",
+      "path": "stone-2026-raw-cycles.csv",
+      "sha256": "3dd109cdabbcca19fc052004bc54ec1bea2584ef7a054813cdc7950b7e6a2ab8",
+      "completed_cycles": 583,
+      "valid_completed_cycles": 583
+    },
+    {
+      "source": "lewes_2026_current_raw_extension",
+      "path": "lewes-2026-raw-cycles.csv",
+      "sha256": "38a82390b2e135e911f5f5b920706c0430df7253b00407321ac002f61b1c309f",
+      "completed_cycles": 583,
+      "valid_completed_cycles": 583
+    },
+    {
+      "source": "nearby-station inventory and explicit exclusions",
+      "path": "nearby-station-inventory.json",
+      "sha256": "cd6cf2f633257762dd5e03821dce198a5691ce41b27c21cf5e3ea840b8cb2d4b"
+    },
+    {
+      "source": "supported nearby official crest flooding transfers",
+      "path": "nearby-crest-flood-transfers.json",
+      "sha256": "b1dcb90feb1c119fbaa121b4d153d866e073092e62ac13a7db1222701a255d75"
+    },
+    {
+      "source": "reference-first official crest priority",
+      "path": "station-priority.json",
+      "sha256": "a6cd7ce0c4569d2d8f1f72b60b79fb172abd385d09c1fca740172ebd230c346c"
+    },
+    {
+      "source": "Stone Harbor and supported nearby official crests",
+      "included_sites": [
+        "01411360",
+        "01411370",
+        "01411355",
+        "01411382",
+        "01411380",
+        "01411350"
+      ],
+      "path": "official-crest-source-registry.csv",
+      "sha256": "f75fb1ae93bce5831815b9c3007a0ce223b30c04e1bfb77fa1314707e2ba7f4d",
+      "raw_source_record_count": 143,
+      "retained_crest_dates": 75,
+      "crest_offsets_ft": {
+        "01411360": 0,
+        "01411350": 0.08499999999999996,
+        "01411355": -0.2400000000000002,
+        "01411370": -0.21999999999999975,
+        "01411380": -0.08766404199475097,
+        "01411382": 0.03000000000000025
+      }
+    }
+  ],
+  "limitations": [
+    "Backup heights are reconstructed estimates from the flooding-high-tide fit, not direct measurements at the reference gauge.",
+    "The current year is YTD through completed tide windows on October 29, not an annualized count.",
+    "Unavailable historical cycles remain missing; all annual coverage is supplied.",
+    "The nearby-station inventory records the historical Avalon subset explicitly. Townsends Inlet 01411353 is excluded because its historical datum conversion to NAVD88 is not confirmed."
+  ]
+}

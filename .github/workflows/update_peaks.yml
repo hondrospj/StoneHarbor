@@ -42,7 +42,7 @@ jobs:
           node-version: "20"
 
       - name: Verify USGS observation retrieval
-        run: node --test tests/usgs-observations.test.js
+        run: node --test tests/usgs-observations.test.js tests/tide-cycle-events.test.cjs
 
       - name: Run updater
         shell: bash
@@ -56,13 +56,18 @@ jobs:
             node tools/update_peaks_navd88.js
           fi
 
+      - name: Verify tide-derived counts and planning models
+        run: |
+          python3 -m unittest discover -s tests -p 'test_tide_statistics.py'
+          node --test tests/individual-high-tides.test.cjs tests/dashboard-coverage.test.cjs
+
       - name: Commit and push if changed
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add data/peaks_navd88.json
+          git add data/peaks_navd88.json data/annual_flood_counts.json data/future_flood_counts.json index.html
 
           if git diff --cached --quiet; then
             echo "No changes."

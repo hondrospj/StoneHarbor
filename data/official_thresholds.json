@@ -1,0 +1,15 @@
+{
+  "gauge": "SHBN4",
+  "source": "https://api.water.noaa.gov/nwps/v1/gauges/shbn4",
+  "thresholdsMLLW": {
+    "minor": 6.1,
+    "moderate": 7.1,
+    "major": 8.1
+  },
+  "navdMinusMllwFt": -2.66,
+  "thresholdsNAVD88": {
+    "minorLow": 3.44,
+    "moderateLow": 4.44,
+    "majorLow": 5.44
+  }
+}

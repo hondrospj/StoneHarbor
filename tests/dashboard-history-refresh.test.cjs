@@ -95,3 +95,10 @@ test("public cache must match its captured manifest and unknown apps are rejecte
   assert.equal(mock.calls.some(c=>c.url.endsWith("/plan")),false);
   await assert.rejects(refreshHistory({...usgs,id:"floodmapper--stone-harbor"},connection()),/scope/);
 });
+
+ test("legacy publisher leaves canonical v3 history to its statistics-aware updater",async()=>{
+  const mock=service();const original=JSON.parse(mock.bytes);original.method="individual_high_tides_v3";original.countUnit="individual-high-tide";
+  const bytes=Buffer.from(JSON.stringify(original));mock.original.manifest.files[HISTORY_PATH]={sha256:sha256(bytes),size:bytes.length};
+  let fetched=false;const result=await refreshHistory(usgs,connection(),{api:mock.api,getCache:async()=>bytes,getRecent:async()=>{fetched=true;throw new Error("must not fetch legacy data");},now});
+  assert.equal(result.changed,false);assert.equal(fetched,false);assert.equal(mock.calls.some(c=>c.url.endsWith("/plan")),false);
+ });

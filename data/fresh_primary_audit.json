@@ -1,0 +1,3164 @@
+{
+  "provenance": {
+    "auditAsOf": "2026-10-30T02:30:08.803Z",
+    "sourceStation": "01411360",
+    "parameterCd": "72279",
+    "datum": "NAVD88",
+    "rawArchiveYears": [
+      2007,
+      2026
+    ],
+    "rawManifestFile": "raw-manifest.json",
+    "rawManifestSha256": "dc0097fd1c1bf3c7091eaec88336592b0a56ecb8d7bb82acfa82399c6dde2a69",
+    "freshPrimaryCsvSha256": "66b91b1e7c9d71e4ff1de402ef667578f5ab131310eccbf84f30c46c09aa1caa",
+    "originalStoneCycleArchiveSha256": "7eef47c06d0bcb4d3aff2418dba0dd6c5c4463bedcb3cb7760df6a9daaccba71",
+    "originalLewesCycleArchiveSha256": "2f8e3c0a6679ecf3f50bd66772882783f9249805de18903404ba55561c114ca8",
+    "inputCacheSha256": "c55fb858cebfd795fb62f7b735bf0b58a18f0959a60c394aea64d8c8e46e7381",
+    "qualification": "completed disjoint predicted-high midpoint windows; at least 90% UTC hourly occupancy; all six central hourly bins; observed maximum at least one hour from each edge",
+    "sourcePriority": "fresh qualified Stone Harbor primary, existing supported official crests and qualified calibrated Lewes gap fills; no sea-level rebasing",
+    "changedPrimarySlots": 2,
+    "explicitUnknownCyclesAdded": 0,
+    "calibrationPairs": 556,
+    "calibrationOffsetFt": 0.06400000000000006,
+    "freshCalibrationFitSha256": "fd0e494d75bafee18b8e224d26e844e9d101a0df4d1e96da92e190642f8dc57d"
+  },
+  "outputFile": "fresh-reconciled-cache.json",
+  "outputSha256": "b1a4688dbc31a2b8b85ff7b00158badf0dab959e58ab5759101a60f0f1b01285",
+  "beforeEventCount": 58651,
+  "afterEventCount": 58651,
+  "beforeRoleCounts": {
+    "backup": 45554,
+    "official-crest": 57,
+    "primary": 13040
+  },
+  "afterRoleCounts": {
+    "backup": 45556,
+    "official-crest": 57,
+    "primary": 13038
+  },
+  "changes": [
+    {
+      "cycleId": "8557380@2011-08-07T07:18:00Z",
+      "reason": "hourly-coverage-below-90-percent",
+      "before": {
+        "cycleId": "8557380@2011-08-07T07:18:00Z",
+        "t": "2011-08-07T06:48:00Z",
+        "ft": 1.65,
+        "crest": "2011-08-07T07:18:00Z",
+        "kind": "HighTide",
+        "sourceRole": "primary",
+        "historyAgency": "USGS",
+        "source": "USGS 01411360",
+        "localDate": "2011-08-07",
+        "y": 2011,
+        "m": 8,
+        "d": 7,
+        "modelEligible": true,
+        "windowStart": "2011-08-07T01:07:00Z",
+        "windowEnd": "2011-08-07T13:40:30Z"
+      },
+      "after": {
+        "cycleId": "8557380@2011-08-07T07:18:00Z",
+        "t": "2011-08-07T07:00:00Z",
+        "ft": 1.475,
+        "crest": "2011-08-07T07:18:00Z",
+        "kind": "HighTide",
+        "sourceRole": "backup",
+        "historyAgency": "NOAA",
+        "source": "NOAA 8557380 calibrated gap fill",
+        "localDate": "2011-08-07",
+        "y": 2011,
+        "m": 8,
+        "d": 7,
+        "modelEligible": false,
+        "windowStart": "2011-08-07T01:07:00Z",
+        "windowEnd": "2011-08-07T13:40:30Z"
+      },
+      "primaryQuality": {
+        "readings": "105",
+        "expected_hours": "12",
+        "observed_hours": "10",
+        "hour_coverage": "0.8333333333333334",
+        "central_hours_expected": "6",
+        "central_hours_observed": "6"
+      }
+    },
+    {
+      "cycleId": "8557380@2017-04-10T13:07:00Z",
+      "reason": "hourly-coverage-below-90-percent",
+      "before": {
+        "cycleId": "8557380@2017-04-10T13:07:00Z",
+        "t": "2017-04-10T12:54:00Z",
+        "ft": 1.74,
+        "crest": "2017-04-10T13:07:00Z",
+        "kind": "HighTide",
+        "sourceRole": "primary",
+        "historyAgency": "USGS",
+        "source": "USGS 01411360",
+        "localDate": "2017-04-10",
+        "y": 2017,
+        "m": 4,
+        "d": 10,
+        "modelEligible": true,
+        "windowStart": "2017-04-10T06:57:00Z",
+        "windowEnd": "2017-04-10T19:16:00Z"
+      },
+      "after": {
+        "cycleId": "8557380@2017-04-10T13:07:00Z",
+        "t": "2017-04-10T13:00:00Z",
+        "ft": 1.652,
+        "crest": "2017-04-10T13:07:00Z",
+        "kind": "HighTide",
+        "sourceRole": "backup",
+        "historyAgency": "NOAA",
+        "source": "NOAA 8557380 calibrated gap fill",
+        "localDate": "2017-04-10",
+        "y": 2017,
+        "m": 4,
+        "d": 10,
+        "modelEligible": false,
+        "windowStart": "2017-04-10T06:57:00Z",
+        "windowEnd": "2017-04-10T19:16:00Z"
+      },
+      "primaryQuality": {
+        "readings": "109",
+        "expected_hours": "13",
+        "observed_hours": "11",
+        "hour_coverage": "0.8461538461538461",
+        "central_hours_expected": "6",
+        "central_hours_observed": "6"
+      }
+    }
+  ],
+  "unknownCycles": [],
+  "annualCounts": [
+    {
+      "year": 1919,
+      "before": {
+        "year": 1919,
+        "accepted": 645,
+        "primary": 0,
+        "backup": 645,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1919,
+        "accepted": 645,
+        "primary": 0,
+        "backup": 645,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1920,
+      "before": {
+        "year": 1920,
+        "accepted": 9,
+        "primary": 0,
+        "backup": 9,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1920,
+        "accepted": 9,
+        "primary": 0,
+        "backup": 9,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1921,
+      "before": {
+        "year": 1921,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1921,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1922,
+      "before": {
+        "year": 1922,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1922,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1923,
+      "before": {
+        "year": 1923,
+        "accepted": 173,
+        "primary": 0,
+        "backup": 173,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1923,
+        "accepted": 173,
+        "primary": 0,
+        "backup": 173,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1924,
+      "before": {
+        "year": 1924,
+        "accepted": 241,
+        "primary": 0,
+        "backup": 241,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1924,
+        "accepted": 241,
+        "primary": 0,
+        "backup": 241,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1925,
+      "before": {
+        "year": 1925,
+        "accepted": 115,
+        "primary": 0,
+        "backup": 115,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1925,
+        "accepted": 115,
+        "primary": 0,
+        "backup": 115,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1928,
+      "before": {
+        "year": 1928,
+        "accepted": 141,
+        "primary": 0,
+        "backup": 141,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1928,
+        "accepted": 141,
+        "primary": 0,
+        "backup": 141,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1929,
+      "before": {
+        "year": 1929,
+        "accepted": 133,
+        "primary": 0,
+        "backup": 133,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1929,
+        "accepted": 133,
+        "primary": 0,
+        "backup": 133,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1936,
+      "before": {
+        "year": 1936,
+        "accepted": 474,
+        "primary": 0,
+        "backup": 474,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1936,
+        "accepted": 474,
+        "primary": 0,
+        "backup": 474,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1937,
+      "before": {
+        "year": 1937,
+        "accepted": 689,
+        "primary": 0,
+        "backup": 689,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1937,
+        "accepted": 689,
+        "primary": 0,
+        "backup": 689,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1938,
+      "before": {
+        "year": 1938,
+        "accepted": 598,
+        "primary": 0,
+        "backup": 598,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1938,
+        "accepted": 598,
+        "primary": 0,
+        "backup": 598,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1939,
+      "before": {
+        "year": 1939,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1939,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1940,
+      "before": {
+        "year": 1940,
+        "accepted": 45,
+        "primary": 0,
+        "backup": 45,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1940,
+        "accepted": 45,
+        "primary": 0,
+        "backup": 45,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1947,
+      "before": {
+        "year": 1947,
+        "accepted": 475,
+        "primary": 0,
+        "backup": 475,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1947,
+        "accepted": 475,
+        "primary": 0,
+        "backup": 475,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1948,
+      "before": {
+        "year": 1948,
+        "accepted": 708,
+        "primary": 0,
+        "backup": 708,
+        "official": 0,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1948,
+        "accepted": 708,
+        "primary": 0,
+        "backup": 708,
+        "official": 0,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1949,
+      "before": {
+        "year": 1949,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1949,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1950,
+      "before": {
+        "year": 1950,
+        "accepted": 156,
+        "primary": 0,
+        "backup": 156,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1950,
+        "accepted": 156,
+        "primary": 0,
+        "backup": 156,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1952,
+      "before": {
+        "year": 1952,
+        "accepted": 451,
+        "primary": 0,
+        "backup": 451,
+        "official": 0,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1952,
+        "accepted": 451,
+        "primary": 0,
+        "backup": 451,
+        "official": 0,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1953,
+      "before": {
+        "year": 1953,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 6,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1953,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 6,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1954,
+      "before": {
+        "year": 1954,
+        "accepted": 635,
+        "primary": 0,
+        "backup": 635,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1954,
+        "accepted": 635,
+        "primary": 0,
+        "backup": 635,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1955,
+      "before": {
+        "year": 1955,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1955,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1956,
+      "before": {
+        "year": 1956,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 707,
+        "official": 0,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1956,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 707,
+        "official": 0,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1957,
+      "before": {
+        "year": 1957,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1957,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1958,
+      "before": {
+        "year": 1958,
+        "accepted": 688,
+        "primary": 0,
+        "backup": 688,
+        "official": 0,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1958,
+        "accepted": 688,
+        "primary": 0,
+        "backup": 688,
+        "official": 0,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1959,
+      "before": {
+        "year": 1959,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1959,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1960,
+      "before": {
+        "year": 1960,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 707,
+        "official": 0,
+        "minorOrHigher": 9,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1960,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 707,
+        "official": 0,
+        "minorOrHigher": 9,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1961,
+      "before": {
+        "year": 1961,
+        "accepted": 692,
+        "primary": 0,
+        "backup": 692,
+        "official": 0,
+        "minorOrHigher": 12,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "after": {
+        "year": 1961,
+        "accepted": 692,
+        "primary": 0,
+        "backup": 692,
+        "official": 0,
+        "minorOrHigher": 12,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1962,
+      "before": {
+        "year": 1962,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 5,
+        "major": 4
+      },
+      "after": {
+        "year": 1962,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 5,
+        "major": 4
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1963,
+      "before": {
+        "year": 1963,
+        "accepted": 621,
+        "primary": 0,
+        "backup": 621,
+        "official": 0,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1963,
+        "accepted": 621,
+        "primary": 0,
+        "backup": 621,
+        "official": 0,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1964,
+      "before": {
+        "year": 1964,
+        "accepted": 311,
+        "primary": 0,
+        "backup": 311,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1964,
+        "accepted": 311,
+        "primary": 0,
+        "backup": 311,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1965,
+      "before": {
+        "year": 1965,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1965,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1966,
+      "before": {
+        "year": 1966,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1966,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1967,
+      "before": {
+        "year": 1967,
+        "accepted": 692,
+        "primary": 0,
+        "backup": 690,
+        "official": 2,
+        "minorOrHigher": 11,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1967,
+        "accepted": 692,
+        "primary": 0,
+        "backup": 690,
+        "official": 2,
+        "minorOrHigher": 11,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1968,
+      "before": {
+        "year": 1968,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 704,
+        "official": 2,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1968,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 704,
+        "official": 2,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1969,
+      "before": {
+        "year": 1969,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 9,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1969,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 9,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1970,
+      "before": {
+        "year": 1970,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1970,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1971,
+      "before": {
+        "year": 1971,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 705,
+        "official": 1,
+        "minorOrHigher": 8,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1971,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 705,
+        "official": 1,
+        "minorOrHigher": 8,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1972,
+      "before": {
+        "year": 1972,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 705,
+        "official": 2,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1972,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 705,
+        "official": 2,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1973,
+      "before": {
+        "year": 1973,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1973,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1974,
+      "before": {
+        "year": 1974,
+        "accepted": 351,
+        "primary": 0,
+        "backup": 350,
+        "official": 1,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1974,
+        "accepted": 351,
+        "primary": 0,
+        "backup": 350,
+        "official": 1,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1975,
+      "before": {
+        "year": 1975,
+        "accepted": 539,
+        "primary": 0,
+        "backup": 539,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1975,
+        "accepted": 539,
+        "primary": 0,
+        "backup": 539,
+        "official": 0,
+        "minorOrHigher": 1,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1976,
+      "before": {
+        "year": 1976,
+        "accepted": 701,
+        "primary": 0,
+        "backup": 700,
+        "official": 1,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1976,
+        "accepted": 701,
+        "primary": 0,
+        "backup": 700,
+        "official": 1,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1977,
+      "before": {
+        "year": 1977,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1977,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1978,
+      "before": {
+        "year": 1978,
+        "accepted": 674,
+        "primary": 0,
+        "backup": 673,
+        "official": 1,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1978,
+        "accepted": 674,
+        "primary": 0,
+        "backup": 673,
+        "official": 1,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1979,
+      "before": {
+        "year": 1979,
+        "accepted": 614,
+        "primary": 0,
+        "backup": 613,
+        "official": 1,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1979,
+        "accepted": 614,
+        "primary": 0,
+        "backup": 613,
+        "official": 1,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1980,
+      "before": {
+        "year": 1980,
+        "accepted": 674,
+        "primary": 0,
+        "backup": 672,
+        "official": 2,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 1,
+        "major": 1
+      },
+      "after": {
+        "year": 1980,
+        "accepted": 674,
+        "primary": 0,
+        "backup": 672,
+        "official": 2,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 1,
+        "major": 1
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1981,
+      "before": {
+        "year": 1981,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1981,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1982,
+      "before": {
+        "year": 1982,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1982,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 2,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1983,
+      "before": {
+        "year": 1983,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 12,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1983,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 12,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1984,
+      "before": {
+        "year": 1984,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 706,
+        "official": 1,
+        "minorOrHigher": 6,
+        "moderateOrHigher": 1,
+        "major": 1
+      },
+      "after": {
+        "year": 1984,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 706,
+        "official": 1,
+        "minorOrHigher": 6,
+        "moderateOrHigher": 1,
+        "major": 1
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1985,
+      "before": {
+        "year": 1985,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 705,
+        "official": 1,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1985,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 705,
+        "official": 1,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1986,
+      "before": {
+        "year": 1986,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1986,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1987,
+      "before": {
+        "year": 1987,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1987,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1988,
+      "before": {
+        "year": 1988,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 707,
+        "official": 0,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1988,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 707,
+        "official": 0,
+        "minorOrHigher": 3,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1989,
+      "before": {
+        "year": 1989,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 704,
+        "official": 2,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1989,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 704,
+        "official": 2,
+        "minorOrHigher": 4,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1990,
+      "before": {
+        "year": 1990,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1990,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1991,
+      "before": {
+        "year": 1991,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 6,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "after": {
+        "year": 1991,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 6,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1992,
+      "before": {
+        "year": 1992,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 705,
+        "official": 2,
+        "minorOrHigher": 14,
+        "moderateOrHigher": 5,
+        "major": 2
+      },
+      "after": {
+        "year": 1992,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 705,
+        "official": 2,
+        "minorOrHigher": 14,
+        "moderateOrHigher": 5,
+        "major": 2
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1993,
+      "before": {
+        "year": 1993,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 15,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1993,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 15,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1994,
+      "before": {
+        "year": 1994,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 1,
+        "major": 1
+      },
+      "after": {
+        "year": 1994,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 1,
+        "major": 1
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1995,
+      "before": {
+        "year": 1995,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 1995,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 705,
+        "official": 0,
+        "minorOrHigher": 5,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1996,
+      "before": {
+        "year": 1996,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 705,
+        "official": 2,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "after": {
+        "year": 1996,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 705,
+        "official": 2,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1997,
+      "before": {
+        "year": 1997,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 18,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1997,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 706,
+        "official": 0,
+        "minorOrHigher": 18,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1998,
+      "before": {
+        "year": 1998,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 19,
+        "moderateOrHigher": 4,
+        "major": 2
+      },
+      "after": {
+        "year": 1998,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 19,
+        "moderateOrHigher": 4,
+        "major": 2
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 1999,
+      "before": {
+        "year": 1999,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 8,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 1999,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 8,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2000,
+      "before": {
+        "year": 2000,
+        "accepted": 661,
+        "primary": 0,
+        "backup": 659,
+        "official": 2,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 2,
+        "major": 1
+      },
+      "after": {
+        "year": 2000,
+        "accepted": 661,
+        "primary": 0,
+        "backup": 659,
+        "official": 2,
+        "minorOrHigher": 10,
+        "moderateOrHigher": 2,
+        "major": 1
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2001,
+      "before": {
+        "year": 2001,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 703,
+        "official": 3,
+        "minorOrHigher": 11,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 2001,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 703,
+        "official": 3,
+        "minorOrHigher": 11,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2002,
+      "before": {
+        "year": 2002,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 2002,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 704,
+        "official": 1,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2003,
+      "before": {
+        "year": 2003,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 702,
+        "official": 3,
+        "minorOrHigher": 17,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "after": {
+        "year": 2003,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 702,
+        "official": 3,
+        "minorOrHigher": 17,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2004,
+      "before": {
+        "year": 2004,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 707,
+        "official": 0,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 2004,
+        "accepted": 707,
+        "primary": 0,
+        "backup": 707,
+        "official": 0,
+        "minorOrHigher": 7,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2005,
+      "before": {
+        "year": 2005,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 705,
+        "official": 1,
+        "minorOrHigher": 19,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "after": {
+        "year": 2005,
+        "accepted": 706,
+        "primary": 0,
+        "backup": 705,
+        "official": 1,
+        "minorOrHigher": 19,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2006,
+      "before": {
+        "year": 2006,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 17,
+        "moderateOrHigher": 4,
+        "major": 0
+      },
+      "after": {
+        "year": 2006,
+        "accepted": 705,
+        "primary": 0,
+        "backup": 703,
+        "official": 2,
+        "minorOrHigher": 17,
+        "moderateOrHigher": 4,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2007,
+      "before": {
+        "year": 2007,
+        "accepted": 705,
+        "primary": 176,
+        "backup": 529,
+        "official": 0,
+        "minorOrHigher": 17,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 2007,
+        "accepted": 705,
+        "primary": 176,
+        "backup": 529,
+        "official": 0,
+        "minorOrHigher": 17,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2008,
+      "before": {
+        "year": 2008,
+        "accepted": 708,
+        "primary": 697,
+        "backup": 11,
+        "official": 0,
+        "minorOrHigher": 16,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "after": {
+        "year": 2008,
+        "accepted": 708,
+        "primary": 697,
+        "backup": 11,
+        "official": 0,
+        "minorOrHigher": 16,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2009,
+      "before": {
+        "year": 2009,
+        "accepted": 705,
+        "primary": 631,
+        "backup": 73,
+        "official": 1,
+        "minorOrHigher": 38,
+        "moderateOrHigher": 6,
+        "major": 1
+      },
+      "after": {
+        "year": 2009,
+        "accepted": 705,
+        "primary": 631,
+        "backup": 73,
+        "official": 1,
+        "minorOrHigher": 38,
+        "moderateOrHigher": 6,
+        "major": 1
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2010,
+      "before": {
+        "year": 2010,
+        "accepted": 705,
+        "primary": 678,
+        "backup": 27,
+        "official": 0,
+        "minorOrHigher": 32,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "after": {
+        "year": 2010,
+        "accepted": 705,
+        "primary": 678,
+        "backup": 27,
+        "official": 0,
+        "minorOrHigher": 32,
+        "moderateOrHigher": 0,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2011,
+      "before": {
+        "year": 2011,
+        "accepted": 705,
+        "primary": 662,
+        "backup": 43,
+        "official": 0,
+        "minorOrHigher": 24,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "after": {
+        "year": 2011,
+        "accepted": 705,
+        "primary": 661,
+        "backup": 44,
+        "official": 0,
+        "minorOrHigher": 24,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": -1,
+        "backup": 1,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2012,
+      "before": {
+        "year": 2012,
+        "accepted": 708,
+        "primary": 685,
+        "backup": 22,
+        "official": 1,
+        "minorOrHigher": 26,
+        "moderateOrHigher": 5,
+        "major": 1
+      },
+      "after": {
+        "year": 2012,
+        "accepted": 708,
+        "primary": 685,
+        "backup": 22,
+        "official": 1,
+        "minorOrHigher": 26,
+        "moderateOrHigher": 5,
+        "major": 1
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2013,
+      "before": {
+        "year": 2013,
+        "accepted": 705,
+        "primary": 545,
+        "backup": 160,
+        "official": 0,
+        "minorOrHigher": 26,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "after": {
+        "year": 2013,
+        "accepted": 705,
+        "primary": 545,
+        "backup": 160,
+        "official": 0,
+        "minorOrHigher": 26,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2014,
+      "before": {
+        "year": 2014,
+        "accepted": 705,
+        "primary": 677,
+        "backup": 28,
+        "official": 0,
+        "minorOrHigher": 30,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 2014,
+        "accepted": 705,
+        "primary": 677,
+        "backup": 28,
+        "official": 0,
+        "minorOrHigher": 30,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2015,
+      "before": {
+        "year": 2015,
+        "accepted": 705,
+        "primary": 658,
+        "backup": 47,
+        "official": 0,
+        "minorOrHigher": 15,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "after": {
+        "year": 2015,
+        "accepted": 705,
+        "primary": 658,
+        "backup": 47,
+        "official": 0,
+        "minorOrHigher": 15,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2016,
+      "before": {
+        "year": 2016,
+        "accepted": 708,
+        "primary": 702,
+        "backup": 6,
+        "official": 0,
+        "minorOrHigher": 27,
+        "moderateOrHigher": 5,
+        "major": 1
+      },
+      "after": {
+        "year": 2016,
+        "accepted": 708,
+        "primary": 702,
+        "backup": 6,
+        "official": 0,
+        "minorOrHigher": 27,
+        "moderateOrHigher": 5,
+        "major": 1
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2017,
+      "before": {
+        "year": 2017,
+        "accepted": 705,
+        "primary": 702,
+        "backup": 2,
+        "official": 1,
+        "minorOrHigher": 32,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "after": {
+        "year": 2017,
+        "accepted": 705,
+        "primary": 701,
+        "backup": 3,
+        "official": 1,
+        "minorOrHigher": 32,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": -1,
+        "backup": 1,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2018,
+      "before": {
+        "year": 2018,
+        "accepted": 705,
+        "primary": 705,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 40,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "after": {
+        "year": 2018,
+        "accepted": 705,
+        "primary": 705,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 40,
+        "moderateOrHigher": 2,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2019,
+      "before": {
+        "year": 2019,
+        "accepted": 706,
+        "primary": 706,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 37,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "after": {
+        "year": 2019,
+        "accepted": 706,
+        "primary": 706,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 37,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2020,
+      "before": {
+        "year": 2020,
+        "accepted": 707,
+        "primary": 707,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 33,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 2020,
+        "accepted": 707,
+        "primary": 707,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 33,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2021,
+      "before": {
+        "year": 2021,
+        "accepted": 705,
+        "primary": 705,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 28,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "after": {
+        "year": 2021,
+        "accepted": 705,
+        "primary": 705,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 28,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2022,
+      "before": {
+        "year": 2022,
+        "accepted": 705,
+        "primary": 705,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 32,
+        "moderateOrHigher": 5,
+        "major": 0
+      },
+      "after": {
+        "year": 2022,
+        "accepted": 705,
+        "primary": 705,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 32,
+        "moderateOrHigher": 5,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2023,
+      "before": {
+        "year": 2023,
+        "accepted": 706,
+        "primary": 706,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 38,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "after": {
+        "year": 2023,
+        "accepted": 706,
+        "primary": 706,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 38,
+        "moderateOrHigher": 3,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2024,
+      "before": {
+        "year": 2024,
+        "accepted": 707,
+        "primary": 707,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 62,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "after": {
+        "year": 2024,
+        "accepted": 707,
+        "primary": 707,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 62,
+        "moderateOrHigher": 1,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2025,
+      "before": {
+        "year": 2025,
+        "accepted": 705,
+        "primary": 703,
+        "backup": 2,
+        "official": 0,
+        "minorOrHigher": 38,
+        "moderateOrHigher": 4,
+        "major": 0
+      },
+      "after": {
+        "year": 2025,
+        "accepted": 705,
+        "primary": 703,
+        "backup": 2,
+        "official": 0,
+        "minorOrHigher": 38,
+        "moderateOrHigher": 4,
+        "major": 0
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    },
+    {
+      "year": 2026,
+      "before": {
+        "year": 2026,
+        "accepted": 583,
+        "primary": 583,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 36,
+        "moderateOrHigher": 5,
+        "major": 1
+      },
+      "after": {
+        "year": 2026,
+        "accepted": 583,
+        "primary": 583,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 36,
+        "moderateOrHigher": 5,
+        "major": 1
+      },
+      "delta": {
+        "accepted": 0,
+        "primary": 0,
+        "backup": 0,
+        "official": 0,
+        "minorOrHigher": 0,
+        "moderateOrHigher": 0,
+        "major": 0
+      }
+    }
+  ],
+  "coverageChanges": [
+    {
+      "year": 2011,
+      "before": {
+        "year": 2011,
+        "expectedCycles": 705,
+        "acceptedCycles": 705,
+        "primaryCycles": 662,
+        "backupCycles": 43,
+        "missingCycles": 0,
+        "fullYearExpectedCycles": 705,
+        "status": "complete"
+      },
+      "after": {
+        "year": 2011,
+        "expectedCycles": 705,
+        "acceptedCycles": 705,
+        "primaryCycles": 661,
+        "backupCycles": 44,
+        "missingCycles": 0,
+        "fullYearExpectedCycles": 705,
+        "status": "complete",
+        "officialCycles": 0
+      }
+    },
+    {
+      "year": 2017,
+      "before": {
+        "year": 2017,
+        "expectedCycles": 705,
+        "acceptedCycles": 705,
+        "primaryCycles": 702,
+        "officialCycles": 1,
+        "backupCycles": 2,
+        "missingCycles": 0,
+        "fullYearExpectedCycles": 705,
+        "status": "complete"
+      },
+      "after": {
+        "year": 2017,
+        "expectedCycles": 705,
+        "acceptedCycles": 705,
+        "primaryCycles": 701,
+        "officialCycles": 1,
+        "backupCycles": 3,
+        "missingCycles": 0,
+        "fullYearExpectedCycles": 705,
+        "status": "complete"
+      }
+    }
+  ],
+  "auditStage": "Initial full-primary reconciliation before subsequent canonical incremental refreshes."
+}
