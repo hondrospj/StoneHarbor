@@ -1,0 +1,34 @@
+name: Refresh selected individual high tides
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shorelysafe-selected-high-tides
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify individual tides and publication scope
+        run: node --test tests/tide-cycle-events.test.cjs tests/selected-tide-refresh.test.cjs
+      - name: Refresh selected count datasets, embedded future models and existing tide receipt fingerprints
+        env:
+          SHORELYSAFE_HIGH_TIDE_CONNECTION: ${{ secrets.SHORELYSAFE_HIGH_TIDE_CONNECTION }}
+        run: node tools/refresh_selected_high_tides.js

@@ -14,6 +14,7 @@ const SITE = "https://cupajoe.live";
 const NOMADS = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/";
 const APPS = Object.freeze([
   {id:"flooddashboard--cape-may", station:"8536110", town:"cape-may", datum:"MLLW"},
+  {id:"flooddashboard--cape-may-harbor", station:"8535901", town:"cape-may-harbor", datum:"MLLW"},
   {id:"flooddashboard--avalon", station:"8535419", town:"avalon", datum:"MLLW"},
   {id:"flooddashboard--stone-harbor", station:"8535581", town:"stone-harbor", datum:"MLLW"},
   {id:"flooddashboard--sandy-hook", station:"8531680", town:"sandy-hook", datum:"MLLW"},
@@ -31,7 +32,7 @@ function validateConnection(connection){
   const tokens=connection.tokens;
   const expected=APPS.map(a=>a.id).sort();
   if(!tokens || JSON.stringify(Object.keys(tokens).sort())!==JSON.stringify(expected))
-    throw new Error("Dashboard connection must contain exactly the five allowed application credentials.");
+    throw new Error("Dashboard connection must contain exactly the six allowed application credentials.");
   if(expected.some(id=>!/^[-_A-Za-z0-9]{43}$/.test(tokens[id])))
     throw new Error("Invalid dashboard publisher credential format.");
   return connection;
@@ -215,7 +216,7 @@ async function main(){
   const arg=name=>{const i=args.indexOf(name);return i<0 ? null : args[i+1];};
   if(arg("--archive") && !dry)throw new Error("A local archive may be used only for a dry run.");
   let connection=null;
-  if(!dry){try{connection=validateConnection(JSON.parse(process.env.SHORELYSAFE_DASHBOARD_CONNECTION||""));}catch{throw new Error("SHORELYSAFE_DASHBOARD_CONNECTION must contain the approved five-app connection.");}}
+  if(!dry){try{connection=validateConnection(JSON.parse(process.env.SHORELYSAFE_DASHBOARD_CONNECTION||""));}catch{throw new Error("SHORELYSAFE_DASHBOARD_CONNECTION must contain the approved six-app connection.");}}
   const source=await loadSource({archive:arg("--archive"),runDir:arg("--run-dir"),cycle:arg("--cycle")});
   const results=[];
   for(const app of APPS){

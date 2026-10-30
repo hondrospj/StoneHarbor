@@ -44,6 +44,12 @@ jobs:
       - name: Verify USGS observation retrieval
         run: node --test tests/usgs-observations.test.js tests/tide-cycle-events.test.cjs
 
+      - name: Verify published canonical tide synchronization
+        run: python3 -m unittest discover -s tests -p 'test_tide_sync.py'
+
+      - name: Preserve newer published canonical tide history
+        run: python3 tools/sync_canonical_tide_history.py --app flooddashboard--stone-harbor
+
       - name: Run updater
         shell: bash
         run: |

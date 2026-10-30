@@ -165,7 +165,7 @@ async function refreshHistory(config,connection,{api=serviceJson,getCache=null,g
 }
 async function main(){
   const dryRun=process.argv.includes("--dry-run");let connection=null;
-  if(!dryRun){try{connection=validateConnection(JSON.parse(process.env.SHORELYSAFE_DASHBOARD_CONNECTION||""));}catch{throw new Error("The approved five-dashboard publisher connection is required.");}}
+  if(!dryRun){try{connection=validateConnection(JSON.parse(process.env.SHORELYSAFE_DASHBOARD_CONNECTION||""));}catch{throw new Error("The approved selected-dashboard publisher connection is required.");}}
   const results=[];
   for(const config of CONFIG){try{results.push(await refreshHistory(config,connection,{dryRun}));}catch(error){results.push({application:config.id,error:error.message});}}
   console.log(JSON.stringify({dryRun,results},null,2));if(results.some(r=>r.error))process.exitCode=1;

@@ -29,10 +29,21 @@ test("never replace a missing mean with a percentile; preserve NOAA zero and neg
   assert.doesNotThrow(()=>validateForecast(rows,{...source,now}));
   rows[122].twl=4;assert.throws(()=>validateForecast(rows,{...source,now}),/adjusted/);
 });
-test("connection has exactly five app tokens and cannot target another site",()=>{
+test("connection has exactly six app tokens and cannot target another site",()=>{
   assert.equal(validateConnection(connection()).site,"https://cupajoe.live");
+  assert.equal(APPS.length,6);
+  const old=connection();delete old.tokens["flooddashboard--cape-may-harbor"];assert.throws(()=>validateConnection(old),/exactly/);
   const extra=connection();extra.tokens["floodmapper--avalon"]="A".repeat(43);assert.throws(()=>validateConnection(extra),/exactly/);
   const other=connection();other.site="https://example.com";assert.throws(()=>validateConnection(other),/HTTPS site/);
+});
+test("Harbor retains its issued 8535901 MLLW mean forecast, distinct from Cape May observation station",()=>{
+  const harbor=APPS.find(a=>a.id==="flooddashboard--cape-may-harbor");
+  assert.equal(harbor.station,"8535901");assert.equal(harbor.datum,"MLLW");
+  const payloads=buildPayloads(harbor,csv(),source,{now});
+  const meta=JSON.parse(payloads.get("data/petss_meta.json")),rows=JSON.parse(payloads.get("data/petss_forecast.json"));
+  assert.equal(meta.stid,"8535901");assert.equal(meta.custom_bias_correction,false);assert.equal(meta.forecast_adjustment_ft,0);
+  assert(rows.every(r=>r.twl===r.source_twl_mean && r.twl===3));
+  assert.throws(()=>buildPayloads({...harbor,station:"8536110"},csv(),source,{now}),/scope/);
 });
 test("publisher credentials never reach an off-origin destination or a redirect",async()=>{
   await assert.rejects(request("https://example.com/collect",{token:"A".repeat(43)}),/destination/);

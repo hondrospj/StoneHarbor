@@ -3,10 +3,16 @@
 // Individual measured high tides, keyed by the predicted high that owns their
 // disjoint midpoint window. Dates are never deduplication keys.
 const HOUR = 3600000;
-const CLOCK_STATION = "8557380";
+const DEFAULT_CONFIG = Object.freeze({primarySite:"01411360", primaryAgency:"USGS", parameter:"72279", clockStation:"8557380", backupSite:"8557380", isoMilliseconds:false,
+  thresholds:Object.freeze({minorLow:3.44, moderateLow:4.44, majorLow:5.44})});
+function createEngine(options = {}) {
+const config = Object.freeze({...DEFAULT_CONFIG, ...options, thresholds:Object.freeze({...DEFAULT_CONFIG.thresholds, ...options.thresholds})});
+if (!/^\d+$/.test(config.primarySite) || !/^\d+$/.test(config.clockStation) || !["USGS","NOAA"].includes(config.primaryAgency) ||
+    !Object.values(config.thresholds).every(Number.isFinite) || !(config.thresholds.minorLow < config.thresholds.moderateLow && config.thresholds.moderateLow < config.thresholds.majorLow)) throw new Error("Invalid tide engine configuration");
+const CLOCK_STATION = config.clockStation;
 const METHOD = "individual_high_tides_v3";
 const COUNT_UNIT = "individual-high-tide";
-const THRESHOLDS = {minorLow: 3.44, moderateLow: 4.44, majorLow: 5.44};
+const THRESHOLDS = config.thresholds;
 const localFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
 });
@@ -14,7 +20,7 @@ const localFormatter = new Intl.DateTimeFormat("en-CA", {
 function secondsISO(time) {
   const ms = typeof time === "number" ? time : Date.parse(time);
   if (!Number.isFinite(ms)) throw new Error(`Invalid tide time: ${time}`);
-  return new Date(ms).toISOString().replace(/\.000Z$/, "Z");
+  return config.isoMilliseconds ? new Date(ms).toISOString() : new Date(ms).toISOString().replace(/\.000Z$/, "Z");
 }
 function localParts(time) {
   const p = Object.fromEntries(localFormatter.formatToParts(new Date(time)).map(p => [p.type, p.value]));
@@ -22,7 +28,7 @@ function localParts(time) {
 }
 function cycleId(crest) { return `${CLOCK_STATION}@${secondsISO(crest)}`; }
 function eventId(event) {
-  if (event?.crest && String(event.cycleId || "").startsWith(`${CLOCK_STATION}@`)) return cycleId(event.crest);
+  if (event?.crest && (!event.cycleId || String(event.cycleId).startsWith(`${CLOCK_STATION}@`))) return cycleId(event.crest);
   return String(event?.cycleId || "");
 }
 function role(event) {
@@ -33,13 +39,13 @@ function classify(ft, thresholds = THRESHOLDS) {
   return ft >= thresholds.majorLow ? "Major" : ft >= thresholds.moderateLow ? "Moderate" : ft >= thresholds.minorLow ? "Minor" : "Below";
 }
 function validateCache(cache) {
-  const good = cache?.countUnit === COUNT_UNIT && cache?.method === METHOD && cache?.site === "01411360" &&
-    cache?.parameterCd === "72279" && cache?.datum === "NAVD88" && cache?.clockStation === CLOCK_STATION &&
+  const good = cache?.countUnit === COUNT_UNIT && cache?.method === METHOD && cache?.site === config.primarySite &&
+    (config.primaryAgency !== "USGS" || cache?.parameterCd === config.parameter) && cache?.datum === "NAVD88" && (cache?.clockStation == null && config.primaryAgency === "NOAA" || cache?.clockStation === CLOCK_STATION) &&
     Object.entries(THRESHOLDS).every(([key, value]) => cache?.thresholdsNAVD88?.[key] === value) &&
     Array.isArray(cache.events) && Array.isArray(cache.coverage) && Array.isArray(cache.monthlyCoverage) &&
     Number.isFinite(Date.parse(cache.lastProcessedISO));
   if (!good || cache.events.some(e => !["HighTide", "OfficialCrest"].includes(e?.kind) || e?.legacyDailyPeak || !e?.cycleId || typeof e.ft !== "number" || !Number.isFinite(e.ft) || Math.abs(e.ft) >= 100)) {
-    throw new Error("Updater requires the approved Stone Harbor individual-high-tide v3 cache, station 01411360/72279, NOAA clock 8557380, NAVD88 thresholds 3.44/4.44/5.44. Perform a reviewed full historical rebuild; legacy caches cannot be incrementally migrated.");
+    throw new Error(`Updater requires the approved individual-high-tide v3 cache, station ${config.primarySite}, NOAA clock ${CLOCK_STATION}, and configured NAVD88 thresholds. Legacy caches cannot be incrementally migrated.`);
   }
 }
 
@@ -93,7 +99,7 @@ function buildEvents({series, windows, sourceRole = "primary", biasCorrectionFt 
     const primary = sourceRole === "primary", p = localParts(result.best.ms);
     const ft = primary ? result.best.ft : Math.round((result.best.ft + biasCorrectionFt) * 1e6) / 1e6;
     events.push({...window, t: result.best.t, ft, type: classify(ft, thresholds), kind: "HighTide", sourceRole,
-      historyAgency: primary ? "USGS" : "NOAA", source: primary ? "USGS 01411360" : "NOAA 8557380 calibrated gap fill",
+      historyAgency: primary ? config.primaryAgency : "NOAA", source: primary ? `${config.primaryAgency} ${config.primarySite}` : `NOAA ${config.backupSite} calibrated gap fill`, sourceStation: primary ? config.primarySite : config.backupSite,
       localDate: p.localDate, y: p.year, m: p.month, d: p.day, modelEligible: primary, quality: result.quality});
   }
   return {events, rejected};
@@ -120,32 +126,36 @@ function mergeEvents(existing, primaryEvents, backupEvents) {
   return [...byId.values()].sort((a, b) => Date.parse(a.crest || a.t) - Date.parse(b.crest || b.t));
 }
 
-// Subtract/re-add only reprocessed clocks. Unknown cycles remain denominators.
+// Retain historical expected exposure, add newly completed clocks once, and
+// reconstruct accepted source-role counts from authoritative cycle anchors.
 function reconcileCoverage(cache, windows, mergedEvents, latestObservedISO, fullYearExpected = {}) {
   const oldCursor = Date.parse(cache.lastProcessedISO), end = Date.parse(latestObservedISO);
-  const oldEvents = new Map(cache.events.map(e => [eventId(e), e]));
-  const finalEvents = new Map(mergedEvents.map(e => [eventId(e), e]));
-  const annual = new Map(cache.coverage.map(r => [r.year, {...r}]));
+  const annual = new Map(cache.coverage.map(r => [Number(r.year), {...r}]));
   const monthly = new Map(cache.monthlyCoverage.map(r => [`${r.year}-${r.month}`, {...r}]));
   const counters = ["expectedCycles", "acceptedCycles", "primaryCycles", "backupCycles", "officialCycles"];
   const rowFor = (map, key, initial) => {
     if (!map.has(key)) map.set(key, {...initial, ...Object.fromEntries(counters.map(k => [k, 0]))});
     return map.get(key);
   };
-  function adjust(row, expected, event, sign) {
-    for (const k of counters) row[k] = Number(row[k] || 0);
-    if (expected) row.expectedCycles += sign;
-    if (event) { row.acceptedCycles += sign; row[`${role(event)}Cycles`] += sign; }
+  // Older approved archives omit role counters. Reconstruct all accepted counts
+  // by their astronomical anchor, never the observation date. Date-only official
+  // supplements without a clock remain events but do not claim clock coverage.
+  for (const row of [...annual.values(), ...monthly.values()]) {
+    row.expectedCycles = Number(row.expectedCycles || 0);
+    for (const key of counters.slice(1)) row[key] = 0;
+  }
+  for (const event of mergedEvents) {
+    const anchor = Date.parse(event.crest);
+    if (!Number.isFinite(anchor)) continue;
+    const p = localParts(anchor);
+    for (const row of [rowFor(annual, p.year, {year:p.year}), rowFor(monthly, `${p.year}-${p.month}`, {year:p.year, month:p.month})]) {
+      row.acceptedCycles++; row[`${role(event)}Cycles`]++;
+    }
   }
   for (const window of windows) {
-    if (Date.parse(window.windowEnd) > end) continue;
-    const p = localParts(window.crest), id = eventId(window);
-    const rows = [rowFor(annual, p.year, {year: p.year}), rowFor(monthly, `${p.year}-${p.month}`, {year: p.year, month: p.month})];
-    const wasExpected = Date.parse(window.windowEnd) <= oldCursor;
-    for (const row of rows) {
-      if (wasExpected) adjust(row, true, oldEvents.get(id), -1);
-      adjust(row, true, finalEvents.get(id), 1);
-    }
+    if (Date.parse(window.windowEnd) > end || Date.parse(window.windowEnd) <= oldCursor) continue;
+    const p = localParts(window.crest);
+    for (const row of [rowFor(annual, p.year, {year:p.year}), rowFor(monthly, `${p.year}-${p.month}`, {year:p.year, month:p.month})]) row.expectedCycles++;
   }
   const nowYear = localParts(latestObservedISO).year;
   function finish(row, isAnnual) {
@@ -167,5 +177,7 @@ function reconcileCoverage(cache, windows, mergedEvents, latestObservedISO, full
     monthlyCoverage: [...monthly.values()].map(r => finish(r, false)).sort((a, b) => a.year - b.year || a.month - b.month)};
 }
 
-module.exports = {HOUR, CLOCK_STATION, METHOD, COUNT_UNIT, THRESHOLDS, secondsISO, localParts, cycleId, eventId,
-  classify, validateCache, buildWindows, prepareSeries, qualifyWindow, buildEvents, mergeEvents, reconcileCoverage};
+return Object.freeze({config, HOUR, CLOCK_STATION, METHOD, COUNT_UNIT, THRESHOLDS, secondsISO, localParts, cycleId, eventId,
+  classify, validateCache, buildWindows, prepareSeries, qualifyWindow, buildEvents, mergeEvents, reconcileCoverage});
+}
+module.exports = {...createEngine(), createEngine};

@@ -1,4 +1,4 @@
-name: Refresh selected dashboard PETSS data
+name: Refresh six selected dashboard PETSS datasets
 
 on:
   workflow_dispatch:
@@ -25,7 +25,7 @@ jobs:
           node-version: "20"
       - name: Check exact mean, future coverage and manifest preservation
         run: node --test tests/petss-exceedance.test.js tests/dashboard-petss-refresh.test.cjs
-      - name: Refresh only the selected dashboard forecast data
+      - name: Refresh only the six selected dashboard forecast datasets
         env:
           SHORELYSAFE_DASHBOARD_CONNECTION: ${{ secrets.SHORELYSAFE_DASHBOARD_CONNECTION }}
         run: node tools/refresh_dashboard_petss.js
