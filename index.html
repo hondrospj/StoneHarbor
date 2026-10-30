@@ -5246,14 +5246,6 @@ function annualTooltipFooter(items, total){
   return lines;
 }
 
-function doyCoverageMeta(){
-  const currentYear=getESTParts(new Date()).y, row=annualCoverageByYear.get(currentYear);
-  const complete=DOY_CACHE?.completeYears?.length>0;
-  let text=`Partial-year lines show recorded tides only; ${complete?"average uses complete years":"no complete-year average"}`;
-  const missing=Number(row?.missingCycles);
-  if(missing>0) text+=`; ${missing} ${missing===1?"cycle":"cycles"} missing in ${currentYear}`;
-  return text;
-}
 
 function ensureAnnual(){
   if(annualChart) return;
@@ -7226,7 +7218,7 @@ function renderDOYYearTable(years, curYear, selected){
     const isCurrent = y === curYear;
     const visible = selectedSet.has(y);
     const total = formatFloodStat(doyYearTotalForControl(y, curYear)) || "0";
-    const totalLabel = `${total} ${total === "1" ? "flood" : "flooding high tides"}`;
+    const totalLabel = `${total} ${total === "1" ? "flood" : "floods"}`;
     const color = isPast ? "rgba(251,191,36,.98)" : (isCurrent ? "rgba(239,68,68,1)" : doyYearColor(y, minYear, maxYear, .84));
     const actionLabel = isPast ? `Select ${y} forecast` : `${visible ? "Hide" : "Show"} ${y}`;
     return `
@@ -7525,7 +7517,7 @@ function renderDOYCumPanel(){
   renderDOYYearControls(controlYears, CUR_Y);
 
   if(meta){
-    meta.textContent = `${years[0]}–${years[years.length - 1]} · ${stageLabel} · ${doyCoverageMeta()}`;
+    meta.textContent = `${years[0]}–${years[years.length - 1]} · ${stageLabel}`;
   }
 
   const labels  = Array.from({length:365}, (_,i)=> i+1);

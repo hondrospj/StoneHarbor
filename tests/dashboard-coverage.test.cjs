@@ -13,7 +13,7 @@ function context(coverage){
   const ctx=vm.createContext({IndividualHighTides:tides,THRESH:{NAVD88:threshold},getESTParts:()=>({y:2026,m:10,d:29}),doyStageLabel:()=>"≥ 4 ft",console});
   ctx.coverage=coverage;
   vm.runInContext("let annualCoverageByYear=new Map(coverage.map(row=>[row.year,row])),DOY_CACHE=null;",ctx);
-  for(const name of ["doyCompleteHistoricalYear","annualCoverageNote","annualTooltipFooter","doyCoverageMeta","buildDOYYearDailyCountsFromEvents","computeDOYStatsFromEvents","buildDoyAverageSeriesFromYearSeries","seasonalHistoricForecastInfo"]){vm.runInContext(extract(name),ctx);}
+  for(const name of ["doyCompleteHistoricalYear","annualCoverageNote","annualTooltipFooter","buildDOYYearDailyCountsFromEvents","computeDOYStatsFromEvents","buildDoyAverageSeriesFromYearSeries","seasonalHistoricForecastInfo"]){vm.runInContext(extract(name),ctx);}
   return ctx;
 }
 const coverage=[
@@ -34,14 +34,12 @@ test("cumulative observed lines preserve every count while complete zero-flood y
   for(const row of actual.seriesByYear){
     assert.equal(row.cum[364],events.filter(e=>Number(e.localDate.slice(0,4))===row.y&&e.ft>=4).length);
   }
-  assert.match(vm.runInContext("doyCoverageMeta()",ctx),/1 cycle missing in 2026/);
 });
 test("no complete calendar year yields unknown historical statistics and no fabricated zero forecast",()=>{
   const ctx=context(coverage.filter(row=>![2021,2022].includes(row.year)));ctx.events=events.filter(e=>![2021,2022].includes(Number(e.localDate.slice(0,4))));
   const actual=JSON.parse(vm.runInContext("DOY_CACHE=computeDOYStatsFromEvents(events);JSON.stringify(DOY_CACHE)",ctx));
   for(const field of ["avg","min","max"])assert(actual[field].every(value=>value===null));
   assert.equal(vm.runInContext("seasonalHistoricForecastInfo(2026,DOY_CACHE.avg,DOY_CACHE.min,DOY_CACHE.max)",ctx),null);
-  assert.match(vm.runInContext("doyCoverageMeta()",ctx),/no complete-year average/);
 });
 test("seasonal anchoring excludes partial years and retains an eligible zero-flood year",()=>{
   const ctx=context(coverage);ctx.events=events;
@@ -60,7 +58,7 @@ test("annual coverage footer distinguishes missing historical cycles, first part
   const footer=JSON.parse(vm.runInContext("JSON.stringify(annualTooltipFooter([{label:'2026'}],27))",ctx));
   assert.equal(footer[0],"Total: 27 flooding high tides");assert.equal(footer.length,2);
   assert(html.includes("return annualTooltipFooter(items,total)"),"annual tooltip must call coverage footer");
-  assert(html.includes("${stageLabel} · ${doyCoverageMeta()}"),"cumulative meta must show coverage");
+  assert(!html.includes("${doyCoverageMeta()}"),"cumulative meta must retain its compact caption");
 });
 test("patched inline browser JavaScript parses",()=>{
   for(const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)){
