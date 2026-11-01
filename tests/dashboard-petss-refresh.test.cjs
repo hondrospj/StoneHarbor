@@ -29,9 +29,9 @@ test("never replace a missing mean with a percentile; preserve NOAA zero and neg
   assert.doesNotThrow(()=>validateForecast(rows,{...source,now}));
   rows[122].twl=4;assert.throws(()=>validateForecast(rows,{...source,now}),/adjusted/);
 });
-test("connection has exactly six app tokens and cannot target another site",()=>{
+test("connection has exactly five selected app tokens and cannot target another site",()=>{
   assert.equal(validateConnection(connection()).site,"https://cupajoe.live");
-  assert.equal(APPS.length,6);
+  assert.equal(APPS.length,5);
   const old=connection();delete old.tokens["flooddashboard--cape-may-harbor"];assert.throws(()=>validateConnection(old),/exactly/);
   const extra=connection();extra.tokens["floodmapper--avalon"]="A".repeat(43);assert.throws(()=>validateConnection(extra),/exactly/);
   const other=connection();other.site="https://example.com";assert.throws(()=>validateConnection(other),/HTTPS site/);
@@ -105,4 +105,18 @@ test("unknown apps are rejected before any service access",async()=>{
   let called=false;
   await assert.rejects(publishData({...APPS[0],id:"floodmapper--cape-may"},source,connection(),{api:()=>{called=true;},now}),/scope/);
   assert.equal(called,false);
+});
+
+test("retired Seaside credential is projected out and never authorises forecast publication",async()=>{
+  const expected=["flooddashboard--avalon","flooddashboard--cape-may","flooddashboard--cape-may-harbor","flooddashboard--sandy-hook","flooddashboard--stone-harbor"];
+  assert.deepEqual(APPS.map(a=>a.id).sort(),expected);
+  const legacy=connection();legacy.tokens["flooddashboard--seaside-heights"]="B".repeat(43);
+  const scoped=validateConnection(legacy);
+  assert.deepEqual(Object.keys(scoped.tokens).sort(),expected);
+  assert.equal(legacy.tokens["flooddashboard--seaside-heights"],"B".repeat(43));
+  const retired={id:"flooddashboard--seaside-heights",station:"est0006",town:"seaside-heights",datum:"MLLW"};
+  assert.throws(()=>buildPayloads(retired,csv(),source,{now}),/scope/);
+  let calls=0;
+  await assert.rejects(publishData(retired,source,legacy,{api:async()=>{calls++;},now}),/scope/);
+  assert.equal(calls,0);
 });

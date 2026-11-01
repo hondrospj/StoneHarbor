@@ -9,8 +9,7 @@ const CONFIG=Object.freeze([
   {id:"flooddashboard--cape-may",agency:"NOAA",site:"8536110",clock:"8536110",navdMinusMllw:-3.02,thresholds:[4.18,5.18,6.18]},
   {id:"flooddashboard--avalon",agency:"USGS",site:"01411355",clock:"8535419",parameter:"72279",thresholds:[3.42,4.42,5.22]},
   {id:"flooddashboard--stone-harbor",agency:"USGS",site:"01411360",clock:"8557380",parameter:"72279",thresholds:[3.44,4.44,5.44]},
-  {id:"flooddashboard--sandy-hook",agency:"NOAA",site:"8531680",clock:"8531680",navdMinusMllw:-2.82,thresholds:[3.88,4.88,5.88]},
-  {id:"flooddashboard--seaside-heights",agency:"USGS",site:"01408748",clock:"8534720",parameter:"72279",thresholds:[2.55,3.55,4.55]}
+  {id:"flooddashboard--sandy-hook",agency:"NOAA",site:"8531680",clock:"8531680",navdMinusMllw:-2.82,thresholds:[3.88,4.88,5.88]}
 ].map(c=>Object.freeze({...c,thresholds:Object.freeze(c.thresholds)})));
 const dateFormatter=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"});
 const iso=t=>new Date(t).toISOString(),roundFt=n=>Math.round(n*1000)/1000;

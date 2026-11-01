@@ -17,8 +17,7 @@ const APPS = Object.freeze([
   {id:"flooddashboard--cape-may-harbor", station:"8535901", town:"cape-may-harbor", datum:"MLLW"},
   {id:"flooddashboard--avalon", station:"8535419", town:"avalon", datum:"MLLW"},
   {id:"flooddashboard--stone-harbor", station:"8535581", town:"stone-harbor", datum:"MLLW"},
-  {id:"flooddashboard--sandy-hook", station:"8531680", town:"sandy-hook", datum:"MLLW"},
-  {id:"flooddashboard--seaside-heights", station:"est0006", town:"seaside-heights", datum:"MLLW"}
+  {id:"flooddashboard--sandy-hook", station:"8531680", town:"sandy-hook", datum:"MLLW"}
 ].map(Object.freeze));
 const DATA_PATHS = Object.freeze([
   "data/petss_forecast.json", "data/petss_forecast.csv",
@@ -31,11 +30,15 @@ function validateConnection(connection){
     throw new Error("Dashboard connection must target the configured HTTPS site.");
   const tokens=connection.tokens;
   const expected=APPS.map(a=>a.id).sort();
-  if(!tokens || JSON.stringify(Object.keys(tokens).sort())!==JSON.stringify(expected))
-    throw new Error("Dashboard connection must contain exactly the six allowed application credentials.");
-  if(expected.some(id=>!/^[-_A-Za-z0-9]{43}$/.test(tokens[id])))
+  // Existing deployments can retain this unused credential until it is rotated.
+  // It never authorises a target: APPS and the returned connection exclude it.
+  const retired="flooddashboard--seaside-heights";
+  const supplied=tokens && typeof tokens==="object" ? Object.keys(tokens) : [];
+  if(!tokens || JSON.stringify(supplied.filter(id=>id!==retired).sort())!==JSON.stringify(expected))
+    throw new Error("Dashboard connection must contain exactly the five selected application credentials.");
+  if(supplied.some(id=>!/^[-_A-Za-z0-9]{43}$/.test(tokens[id])))
     throw new Error("Invalid dashboard publisher credential format.");
-  return connection;
+  return {...connection,tokens:Object.fromEntries(expected.map(id=>[id,tokens[id]]))};
 }
 
 function request(url,{method="GET",body,token,maxBytes=64*1024*1024,redirects=0}={}){

@@ -102,3 +102,13 @@ test("public cache must match its captured manifest and unknown apps are rejecte
   let fetched=false;const result=await refreshHistory(usgs,connection(),{api:mock.api,getCache:async()=>bytes,getRecent:async()=>{fetched=true;throw new Error("must not fetch legacy data");},now});
   assert.equal(result.changed,false);assert.equal(fetched,false);assert.equal(mock.calls.some(c=>c.url.endsWith("/plan")),false);
  });
+
+test("history targets stay inside selected forecast scope and reject retired towns before requests",async()=>{
+  assert.deepEqual(CONFIG.map(c=>c.id).sort(),["flooddashboard--avalon","flooddashboard--cape-may","flooddashboard--sandy-hook","flooddashboard--stone-harbor"]);
+  assert(CONFIG.every(c=>APPS.some(a=>a.id===c.id)));
+  assert(!CONFIG.some(c=>c.id==="flooddashboard--seaside-heights"));
+  const retired={...usgs,id:"flooddashboard--seaside-heights",site:"01408748"};
+  let calls=0;
+  await assert.rejects(refreshHistory(retired,connection(),{api:async()=>{calls++;},now}),/scope/);
+  assert.equal(calls,0);
+});
