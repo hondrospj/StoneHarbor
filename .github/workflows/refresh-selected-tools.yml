@@ -1,0 +1,23 @@
+name: Refresh selected dashboard tools four times daily
+
+on:
+  schedule:
+    # Four refresh cycles daily, after the 00/06/12/18Z PETSS runs.
+    - cron: "35 2,8,14,20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: selected-dashboard-six-hour-chain-v1
+  cancel-in-progress: false
+
+jobs:
+  refresh-forecast:
+    uses: ./.github/workflows/refresh-dashboard-petss.yml
+    secrets: inherit
+  refresh-individual-high-tides:
+    needs: refresh-forecast
+    uses: ./.github/workflows/refresh-selected-high-tides.yml
+    secrets: inherit

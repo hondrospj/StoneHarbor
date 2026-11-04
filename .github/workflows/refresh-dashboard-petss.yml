@@ -1,9 +1,8 @@
-name: Refresh selected dashboard PETSS datasets
+name: Refresh centrally managed dashboard PETSS datasets
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "35 */3 * * *"
+  workflow_call:
 
 permissions:
   contents: read
@@ -25,7 +24,7 @@ jobs:
           node-version: "20"
       - name: Check exact mean, future coverage and manifest preservation
         run: node --test tests/petss-exceedance.test.js tests/dashboard-petss-refresh.test.cjs
-      - name: Refresh only the five selected dashboard forecast datasets
+      - name: Refresh the Stone Harbor, Cape May Harbor and Highlands dashboard forecasts
         env:
           SHORELYSAFE_DASHBOARD_CONNECTION: ${{ secrets.SHORELYSAFE_DASHBOARD_CONNECTION }}
-        run: node tools/refresh_dashboard_petss.js
+        run: node tools/refresh_dashboard_petss.js --apps flooddashboard--stone-harbor,flooddashboard--cape-may-harbor,flooddashboard--sandy-hook

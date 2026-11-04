@@ -23,6 +23,17 @@ const DATA_PATHS = Object.freeze([
   "data/petss_forecast.json", "data/petss_forecast.csv",
   "data/petss_meta.json", "data/petss_station_debug.txt"
 ]);
+
+// Avalon and Cape May own their four-daily refresh chains. The central workflow
+// explicitly selects its three owners, while existing manual use remains valid.
+function selectApps(value){
+  if(value==null)return APPS;
+  const ids=String(value).split(",").map(id=>id.trim());
+  if(ids.some(id=>!id) || new Set(ids).size!==ids.length || ids.some(id=>!APPS.some(app=>app.id===id)))
+    throw new Error("Dashboard selection must contain unique approved application IDs.");
+  return APPS.filter(app=>ids.includes(app.id));
+}
+
 const sha256 = data => crypto.createHash("sha256").update(data).digest("hex");
 
 function validateConnection(connection){
@@ -220,9 +231,11 @@ async function main(){
   if(arg("--archive") && !dry)throw new Error("A local archive may be used only for a dry run.");
   let connection=null;
   if(!dry){try{connection=validateConnection(JSON.parse(process.env.SHORELYSAFE_DASHBOARD_CONNECTION||""));}catch{throw new Error("SHORELYSAFE_DASHBOARD_CONNECTION must contain the approved six-app connection.");}}
+  if(args.includes("--apps") && !arg("--apps"))throw new Error("--apps requires a comma-separated application list.");
+  const selectedApps=selectApps(arg("--apps"));
   const source=await loadSource({archive:arg("--archive"),runDir:arg("--run-dir"),cycle:arg("--cycle")});
   const results=[];
-  for(const app of APPS){
+  for(const app of selectedApps){
     if(dry){const payloads=buildPayloads(app,source.stations.get(app.station),source);results.push({application:app.id,...validateForecast(JSON.parse(payloads.get(DATA_PATHS[0])),{...source,datum:app.datum})});}
     else{try{results.push(await publishData(app,source,connection));}catch(error){results.push({application:app.id,error:error.message});}}
   }
@@ -230,5 +243,6 @@ async function main(){
   if(results.some(r=>r.error))process.exitCode=1;
 }
 
-module.exports={APPS,DATA_PATHS,SITE,NOMADS,validateConnection,request,chooseRun,chooseCycle,runTime,validateForecast,buildPayloads,mergeManifest,loadSource,publishData,sha256};
+module.exports={APPS,selectApps,DATA_PATHS,SITE,NOMADS,validateConnection,request,chooseRun,chooseCycle,runTime,validateForecast,buildPayloads,mergeManifest,loadSource,publishData,sha256};
 if(require.main===module)main().catch(error=>{console.error(error.message);process.exitCode=1;});
+

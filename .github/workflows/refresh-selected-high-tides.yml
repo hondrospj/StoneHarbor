@@ -2,8 +2,7 @@ name: Refresh selected individual high tides
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "23 * * * *"
+  workflow_call:
 
 permissions:
   contents: read
