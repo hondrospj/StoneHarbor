@@ -8,6 +8,7 @@ for(const file of files){
  const node=()=>({textContent:'',innerHTML:'',querySelector:()=>null});
  const ctx={console,Date:FixedDate,THRESH:{MLLW:{minorLow:6,moderateLow:7,majorLow:8}},DISPLAY_DATUM:'MLLW',STATE:{},f48MinorHrsEl:node(),f48ModerHrsEl:node(),f48MajorHrsEl:node(),f48ListEl:node(),f48MetaEl:node(),toDisplayFtFromMllw:x=>x,unitText:()=> 'ft MLLW',fmtNiceDate:x=>x,fmtESTTime:x=>x};vm.createContext(ctx);
  if(source.includes('function petssForecastEndMs('))vm.runInContext(extract('petssForecastEndMs'),ctx);
+ if(source.includes('function compareFeet('))vm.runInContext(extract('compareFeet'),ctx);
  for(const f of ['stageNameFromDisplayFt','stageColorVar','interpFtAtMs','isoFromMs','stageRank','splitIntervalByFloodThresholds','buildExactFloodAccounting','updateFloodOutlook48'])vm.runInContext(extract(f),ctx);
  let n=0;const check=(label,f)=>{f();checks++;n++;};
  const pts=rows=>rows.map(([h,ftDisplay])=>({ms:base+h*H,ftDisplay}));

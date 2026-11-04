@@ -2915,8 +2915,17 @@ function datumToMllw(ft, datum){
   return ft - (OFFSET_FROM_MLLW[datum] ?? 0);
 }
 function datumToDatum(ft, fromDatum, toDatum){
-  const mllw = datumToMllw(ft, fromDatum);
-  return mllwToDatum(mllw, toDatum);
+  if(!Number.isFinite(ft)) return NaN;
+  if(fromDatum === toDatum) return ft;
+  return ft + ((OFFSET_FROM_MLLW[toDatum] ?? 0) - (OFFSET_FROM_MLLW[fromDatum] ?? 0));
+}
+
+function compareFeet(value, reference){
+  if(!Number.isFinite(value) || !Number.isFinite(reference)) return NaN;
+  // Cover floating-point conversion error, preserving measured precision.
+  const tolerance = 8 * Number.EPSILON * Math.max(1, Math.abs(value), Math.abs(reference));
+  const difference = value - reference;
+  return Math.abs(difference) <= tolerance ? 0 : difference < 0 ? -1 : 1;
 }
     
 function mllwToNavd(mllwFt){
@@ -3414,9 +3423,9 @@ function fetchWithTimeout(resource, options={}, timeoutMs=8000){
 
 function classifyByNavd(navdFt){
   const T = THRESH.NAVD88;
-  if(navdFt>=T.majorLow) return {label:"MAJOR FLOODING", color:"var(--major)", glow:"rgba(167,139,250,.22)", short:"Major"};
-  if(navdFt>=T.moderateLow) return {label:"MODERATE FLOODING", color:"var(--moderate)", glow:"rgba(251,113,133,.22)", short:"Moderate"};
-  if(navdFt>=T.minorLow) return {label:"MINOR FLOODING", color:"var(--minor)", glow:"rgba(251,191,36,.22)", short:"Minor"};
+  if(compareFeet(navdFt,T.majorLow)>=0) return {label:"MAJOR FLOODING", color:"var(--major)", glow:"rgba(167,139,250,.22)", short:"Major"};
+  if(compareFeet(navdFt,T.moderateLow)>=0) return {label:"MODERATE FLOODING", color:"var(--moderate)", glow:"rgba(251,113,133,.22)", short:"Moderate"};
+  if(compareFeet(navdFt,T.minorLow)>=0) return {label:"MINOR FLOODING", color:"var(--minor)", glow:"rgba(251,191,36,.22)", short:"Minor"};
   return {label:"NO FLOODING", color:"var(--ok)", glow:"rgba(45,212,191,.18)", short:"Below"};
 }
 function stageTagByNavd(navdFt){
@@ -3515,9 +3524,9 @@ function nearbyThresholdsForRange(thresholds, dataMin, dataMax){
 
 function stageNameFromDisplayFt(ft){
   const T = THRESH[DISPLAY_DATUM];
-  if(ft >= T.majorLow) return "Major";
-  if(ft >= T.moderateLow) return "Moderate";
-  if(ft >= T.minorLow) return "Minor";
+  if(compareFeet(ft,T.majorLow) >= 0) return "Major";
+  if(compareFeet(ft,T.moderateLow) >= 0) return "Moderate";
+  if(compareFeet(ft,T.minorLow) >= 0) return "Minor";
   return "Below";
 }
 
@@ -3552,8 +3561,8 @@ function splitIntervalByFloodThresholds(tA, tB, ftA, ftB){
   const cuts = [tA, tB];
 
   for(const th of thresholds){
-    const dA = ftA - th;
-    const dB = ftB - th;
+    const dA = compareFeet(ftA, th);
+    const dB = compareFeet(ftB, th);
 
     if((dA < 0 && dB > 0) || (dA > 0 && dB < 0)){
       const ratio = (th - ftA) / (ftB - ftA);
@@ -3647,7 +3656,7 @@ function buildExactFloodAccounting(rawPoints, t0, t1){
         startMs:p.startMs,
         endMs:p.endMs,
         peakFt:p.peakFt,
-        peakStage:p.stage
+        peakStage:stageNameFromDisplayFt(p.peakFt)
       };
     }else{
       cur.endMs = p.endMs;
@@ -3656,9 +3665,7 @@ function buildExactFloodAccounting(rawPoints, t0, t1){
         cur.peakFt = p.peakFt;
       }
 
-      if(stageRank(p.stage) > stageRank(cur.peakStage)){
-        cur.peakStage = p.stage;
-      }
+      cur.peakStage = stageNameFromDisplayFt(cur.peakFt);
     }
   }
 
@@ -3947,7 +3954,7 @@ async function fetchIV({startISO=null,endISO=null,period=null}={}){
         const p = feature?.properties || {};
         if(p.monitoring_location_id !== `USGS-${USGS_SITE}` || p.parameter_code !== USGS_PARAM_PRIMARY) continue;
         if(String(p.unit_of_measure || "").toLowerCase() !== "ft") continue;
-        const ft = Number(p.value);
+        const ft = dashboardGaugeNumber(p.value);
         if(!p.time || !Number.isFinite(ft)) continue;
         readings.set(p.time, {dateTime:p.time, value:String(ft)});
       }
@@ -4211,12 +4218,16 @@ function filterSpikes15Min(values, maxDeltaFt=TS_MAX_DELTA_FT){
   let lastGood = null;
   for(let i=0;i<out.length;i++){
     const v = out[i];
-    if(v===null || v===undefined || Number.isNaN(v)) continue;
+    if(!Number.isFinite(v)){
+      out[i] = null;
+      lastGood = null;
+      continue;
+    }
     if(lastGood===null){
       lastGood = v;
       continue;
     }
-    if(Math.abs(v - lastGood) > maxDeltaFt){
+    if(compareFeet(Math.abs(v - lastGood), maxDeltaFt) > 0){
       out[i] = null; 
     }else{
       lastGood = v;
@@ -4867,9 +4878,9 @@ function sliceAfter(series, startISO){
 
 function colorForFtDisplay(ftDisplay){
   const T = THRESH[DISPLAY_DATUM];
-  if(ftDisplay>=T.majorLow) return "rgba(167,139,250,.95)";
-  if(ftDisplay>=T.moderateLow) return "rgba(251,113,133,.95)";
-  if(ftDisplay>=T.minorLow) return "rgba(251,191,36,.95)";
+  if(compareFeet(ftDisplay,T.majorLow)>=0) return "rgba(167,139,250,.95)";
+  if(compareFeet(ftDisplay,T.moderateLow)>=0) return "rgba(251,113,133,.95)";
+  if(compareFeet(ftDisplay,T.minorLow)>=0) return "rgba(251,191,36,.95)";
   return "rgba(45,212,191,.90)";
 }
 
@@ -5048,9 +5059,9 @@ function annualFloodCategoryForFt(ft){
   const value = Number(ft);
   const T = THRESH.NAVD88;
   if(!Number.isFinite(value)) return "";
-  if(value >= T.majorLow) return "major";
-  if(value >= T.moderateLow) return "moderate";
-  if(value >= T.minorLow) return "minor";
+  if(compareFeet(value,T.majorLow) >= 0) return "major";
+  if(compareFeet(value,T.moderateLow) >= 0) return "moderate";
+  if(compareFeet(value,T.minorLow) >= 0) return "minor";
   return "";
 }
 
@@ -7213,6 +7224,8 @@ function renderDOYYearTable(years, curYear, selected){
     return;
   }
 
+  const focusedYear = doyYearTable.contains(document.activeElement)
+    ? document.activeElement.closest("[data-doy-year]")?.dataset.doyYear : null;
   doyYearTable.innerHTML = selectable.map(year=>{
     const y = Number(year);
     const isCurrent = y === curYear;
@@ -7229,6 +7242,10 @@ function renderDOYYearTable(years, curYear, selected){
       </button>
     `;
   }).join("");
+  if(focusedYear != null && document.activeElement === document.body){
+    Array.from(doyYearTable.querySelectorAll("[data-doy-year]"))
+      .find(button => button.dataset.doyYear === focusedYear)?.focus({preventScroll:true});
+  }
 }
 
 function renderDOYVisibleSummary(years, curYear){
@@ -7958,7 +7975,9 @@ function applyFilter(){
   const mode = sortModeEl.value;
 
   let rows = combinedHistoricRowsNavd().filter(r=>{
-    if(r.ft < minNavd || r.ft > maxNavd) return false;
+    if(!Number.isFinite(r.ft)
+      || (Number.isFinite(minNavd) && compareFeet(r.ft,minNavd) < 0)
+      || (Number.isFinite(maxNavd) && compareFeet(r.ft,maxNavd) > 0)) return false;
 
     const tMs = IndividualHighTides.sortTime(r);
     if(!Number.isFinite(tMs)) return false;
@@ -8793,7 +8812,7 @@ function setDatum(newDatum){
   const newMax = (navdMax === null) ? null : datumToDatum(navdMax, "NAVD88", DISPLAY_DATUM);
 
   minElevEl.value = (newMin === null)
-    ? THRESH[DISPLAY_DATUM].minorLow.toFixed(2)
+    ? ""
     : newMin.toFixed(2);
 
   maxElevEl.value = (newMax === null) ? "" : newMax.toFixed(2);
@@ -9141,6 +9160,9 @@ setInterval(async ()=>{
         wrap.insertAdjacentElement("afterend", legend);
       }
     }
+    // Inspect focus when the queued redraw runs, respecting any newer input.
+    const focusedKey = legend.contains(document.activeElement)
+      ? document.activeElement.closest("button")?.dataset.shorelyLegendKey : null;
     legend.innerHTML = "";
 
     for(const item of chartLegendItems(chart)){
@@ -9152,6 +9174,7 @@ setInterval(async ()=>{
       const button = document.createElement("button");
       button.type = "button";
       button.className = "shorelyLegendItem" + (visible ? "" : " isOff");
+      button.dataset.shorelyLegendKey = String(item.text);
       button.setAttribute("aria-pressed", visible ? "true" : "false");
       button.title = (visible ? "Hide " : "Show ") + item.text;
 
@@ -9174,6 +9197,10 @@ setInterval(async ()=>{
         applyLegendClick(chart, item);
       });
       legend.appendChild(button);
+    }
+    if(focusedKey != null && document.activeElement === document.body){
+      Array.from(legend.querySelectorAll("button"))
+        .find(button => button.dataset.shorelyLegendKey === focusedKey)?.focus({preventScroll:true});
     }
   }
 
@@ -9226,7 +9253,6 @@ setInterval(async ()=>{
     polishChartLegends();
     [120, 450, 1000, 2200].forEach(ms => setTimeout(() => {
       installHelp();
-      prefillMobileHistoricDates();
       removeMonthlyZoomHint();
       polishChartLegends();
     }, ms));
@@ -9238,7 +9264,6 @@ setInterval(async ()=>{
     boot();
   }
   window.addEventListener("resize", () => {
-    prefillMobileHistoricDates();
     removeMonthlyZoomHint();
   }, {passive:true});
   document.addEventListener("keydown", event => {

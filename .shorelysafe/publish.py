@@ -2,8 +2,11 @@
 """Publish static GitHub app files to the ShorelySafe WordPress plugin."""
 import argparse
 import base64
+import csv
 import hashlib
+import io
 import json
+import math
 import os
 import re
 import subprocess
@@ -23,6 +26,9 @@ TIDE_APPS = {'flooddashboard--stone-harbor', 'flooddashboard--sandy-hook',
              'flooddashboard--cape-may-harbor'}
 TIDE_PATHS = ('data/peaks_navd88.json', 'data/annual_flood_counts.json',
               'data/future_flood_counts.json')
+FORECAST_APP = 'flooddashboard--stone-harbor'
+FORECAST_PATHS = ('data/petss_forecast.json', 'data/petss_forecast.csv',
+                  'data/petss_meta.json', 'data/petss_station_debug.txt')
 
 def _tide_json(data, entry, name):
     if (not isinstance(entry, dict) or entry.get('size') != len(data)
@@ -181,6 +187,205 @@ def preserve_live_tide_data(app, source, manifest, payloads, site, token):
     summary.update(preservedLiveTideData=True, tideSourceSHA256=live_sha)
     return summary, state
 
+def _forecast_bytes(data, entry, name):
+    if (not isinstance(entry, dict) or type(entry.get('size')) is not int
+            or entry['size'] != len(data) or len(data) > 16 * 1024 * 1024
+            or entry.get('sha256') != hashlib.sha256(data).hexdigest()):
+        raise ValueError('Forecast file differs from its manifest: ' + name)
+    return data
+
+def public_forecast_file(site, app, name, entry):
+    """Capture public forecast bytes without credentials, pinned to live state."""
+    if not isinstance(entry, dict):
+        raise ValueError('Invalid live forecast manifest entry: ' + name)
+    sha, size = entry.get('sha256'), entry.get('size')
+    if (name not in FORECAST_PATHS or not isinstance(sha, str)
+            or not re.fullmatch(r'[a-f0-9]{64}', sha)
+            or type(size) is not int or not 0 <= size <= 16 * 1024 * 1024):
+        raise ValueError('Invalid live forecast manifest entry: ' + name)
+    url = site.rstrip('/') + '/' + app['path'].strip('/') + '/' + name
+    request = urllib.request.Request(url + '?forecast_sha256=' + sha,
+                                     headers={'Cache-Control': 'no-cache'})
+    with urllib.request.urlopen(request, timeout=120) as response:
+        return _forecast_bytes(response.read(size + 1), entry, name)
+
+def _forecast_issue(meta):
+    if (not isinstance(meta, dict) or meta.get('stid') != '8535581'
+            or meta.get('datum') != 'MLLW'):
+        raise ValueError('Forecast station or datum does not match Stone Harbor')
+    date = re.fullmatch(r'petss\.(\d{4})(\d{2})(\d{2})', str(meta.get('run_dir', '')))
+    hour = re.fullmatch(r't(00|06|12|18)z', str(meta.get('cycle', '')))
+    if not date or not hour:
+        raise ValueError('Forecast model issuance is invalid')
+    try:
+        issued = datetime(*map(int, date.groups()), int(hour[1]), tzinfo=timezone.utc)
+    except ValueError as error:
+        raise ValueError('Forecast model issuance is invalid') from error
+    if 'model_time_utc' in meta and _tide_time(meta['model_time_utc']) != issued:
+        raise ValueError('Forecast model timestamp disagrees with its issued cycle')
+    if (meta.get('forecast_product', 'TWL') != 'TWL'
+            or meta.get('forecast_statistic', 'ensemble_mean') != 'ensemble_mean'
+            or meta.get('custom_bias_correction', False) is not False
+            or meta.get('forecast_adjustment_ft', 0) != 0):
+        raise ValueError('Forecast must retain the issued NOAA ensemble mean')
+    return issued
+
+def _forecast_number(value):
+    if value is None or isinstance(value, bool) or isinstance(value, str) and not value.strip():
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) and abs(number) < 100 else None
+
+def _forecast_bundle(bodies):
+    meta = json.loads(bodies[FORECAST_PATHS[2]])
+    issued = _forecast_issue(meta)
+    rows = json.loads(bodies[FORECAST_PATHS[0]])
+    if (not isinstance(rows, list) or not rows or type(meta.get('n_points')) is not int
+            or meta['n_points'] != len(rows)):
+        raise ValueError('Forecast point count is invalid')
+    points, previous = {}, None
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError('Forecast row is invalid')
+        time = _tide_time(row.get('t'))
+        mean = row.get('source_twl_mean', row.get('twl'))
+        if (time is None or previous is not None and time <= previous
+                or isinstance(mean, bool) or not isinstance(mean, (int, float))
+                or _forecast_number(mean) is None or _forecast_number(row.get('twl')) != mean):
+            raise ValueError('Forecast rows must contain ordered, unadjusted issued means')
+        for field in ('twl', 'source_twl_mean', 'tide', 'surge', 'source_twl90p', 'source_twl10p'):
+            value = row.get(field)
+            if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))
+                                      or _forecast_number(value) is None):
+                raise ValueError('Forecast JSON contains an invalid numeric value')
+        previous = time
+        points[time] = row
+    if previous <= issued or ('forecast_valid_until_utc' in meta
+                              and _tide_time(meta['forecast_valid_until_utc']) != previous):
+        raise ValueError('Forecast valid-until timestamp is invalid')
+    columns = {'twl_ft_mllw': 'twl', 'source_mean_ft_mllw': 'source_twl_mean',
+               'tide_ft_mllw': 'tide', 'surge_ft': 'surge',
+               'source_twl90p_ft_mllw': 'source_twl90p', 'source_twl10p_ft_mllw': 'source_twl10p'}
+    reader = csv.DictReader(io.StringIO(bodies[FORECAST_PATHS[1]].decode('utf-8-sig')))
+    if (not {'time_utc_iso', 'twl_ft_mllw'} <= set(reader.fieldnames or [])
+            or len(set(reader.fieldnames)) != len(reader.fieldnames)):
+        raise ValueError('Forecast CSV header is invalid')
+    csv_rows = list(reader)
+    if len(csv_rows) != len(rows):
+        raise ValueError('Forecast CSV point count disagrees with JSON')
+    for raw, row in zip(csv_rows, rows):
+        if None in raw:
+            raise ValueError('Forecast CSV row has unexpected columns')
+        if _tide_time(raw.get('time_utc_iso')) != _tide_time(row.get('t')):
+            raise ValueError('Forecast CSV timestamps disagree with JSON')
+        for key, field in columns.items():
+            if key not in raw:
+                continue
+            expected = row.get(field, row.get('twl') if field == 'source_twl_mean' else None)
+            value = raw[key]
+            if (expected is None and value is not None and value.strip()
+                    or expected is not None and _forecast_number(value) != expected):
+                raise ValueError('Forecast CSV values disagree with issued means')
+        if 'src_time' in raw and raw['src_time'] != row.get('src_time'):
+            raise ValueError('Forecast CSV source timestamps disagree with JSON')
+    debug = list(csv.reader(io.StringIO(bodies[FORECAST_PATHS[3]].decode('utf-8-sig'))))
+    header = next((i for i, row in enumerate(debug)
+                   if {'TIME', 'TWL'} <= {v.strip().upper() for v in row}), None)
+    if header is None:
+        raise ValueError('Forecast debug snapshot lacks the issued mean header')
+    names = [v.strip().upper() for v in debug[header]]
+    for values in debug[header + 1:]:
+        raw = dict(zip(names, (v.strip() for v in values)))
+        mean = _forecast_number(raw.get('TWL'))
+        if not re.fullmatch(r'\d{12}', raw.get('TIME', '')) or mean is None:
+            continue
+        try:
+            time = datetime.strptime(raw['TIME'], '%Y%m%d%H%M').replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        row = points.get(time)
+        if row is None or abs(mean - row.get('source_twl_mean', row['twl'])) > 1e-9:
+            raise ValueError('Forecast debug snapshot disagrees with issued means')
+        for key, field in (('TIDE', 'tide'), ('SURGE', 'surge'),
+                           ('TWL90P', 'source_twl90p'), ('TWL10P', 'source_twl10p')):
+            if key in raw and _forecast_number(raw[key]) != row.get(field):
+                raise ValueError('Forecast debug fields disagree with JSON')
+    return issued
+
+def preserve_live_forecast_data(app, source, manifest, payloads, site, token, state=None):
+    """Source/UI publishes keep the current coherent live forecast at equal
+    or newer issuance. Explicit forecast rebuilds use their data-only updater.
+    Retrieval timestamps and expiry never turn an older issuance into a newer
+    one. An expired retained forecast keeps its original bytes and timestamps.
+    """
+    if app['id'] != FORECAST_APP:
+        return {}, None
+    entries = {f['path']: f for f in manifest['files']}
+    local_names = set(FORECAST_PATHS) & entries.keys()
+    if local_names and len(local_names) != len(FORECAST_PATHS):
+        raise ValueError('Source forecast bundle is incomplete')
+    local_bytes = {}
+    for name in local_names:
+        entry, data = _prepared_tide_bytes(manifest, payloads, name)
+        local_bytes[name] = _forecast_bytes(data, entry, name)
+    local_issue = _forecast_bundle(local_bytes) if local_names else None
+    state = state if state is not None else api(site, app['id'], token, 'state?manifest=1')
+    summary = {'preservedLiveForecastData': False}
+    if not isinstance(state, dict):
+        raise ValueError('Published forecast state is invalid')
+    if not state.get('published'):
+        return summary, state
+    live_manifest = state.get('manifest')
+    live_files = live_manifest.get('files') if isinstance(live_manifest, dict) else None
+    if not state.get('deployment') or not isinstance(live_files, dict):
+        raise ValueError('Published forecast deployment identity or manifest is missing')
+    live_names = set(FORECAST_PATHS) & live_files.keys()
+    if live_names and len(live_names) != len(FORECAST_PATHS):
+        raise ValueError('Live forecast bundle is incomplete')
+    if live_names and not local_names:
+        raise ValueError('Source publication would remove the existing live forecast')
+    if not live_names:
+        return summary, state
+    meta_name = FORECAST_PATHS[2]
+    live_bytes = {meta_name: _forecast_bytes(public_forecast_file(site, app, meta_name, live_files[meta_name]), live_files[meta_name], meta_name)}
+    live_issue = _forecast_issue(json.loads(live_bytes[meta_name]))
+    if live_issue < local_issue:
+        return summary, state
+    for name in FORECAST_PATHS:
+        if name not in live_bytes:
+            live_bytes[name] = _forecast_bytes(public_forecast_file(site, app, name, live_files[name]), live_files[name], name)
+    _forecast_bundle(live_bytes)
+    if all(live_bytes[name] == local_bytes[name] for name in FORECAST_PATHS):
+        return summary, state
+    receipt_name = 'data/refresh_status.json'
+    if receipt_name in entries:
+        entry, raw = _prepared_tide_bytes(manifest, payloads, receipt_name)
+        receipt = _tide_json(raw, entry, receipt_name)
+        for field in ('files', 'payloads'):
+            fingerprints = receipt.get(field)
+            if not isinstance(fingerprints, dict):
+                continue
+            for name in FORECAST_PATHS:
+                if name not in fingerprints:
+                    continue
+                fingerprint = fingerprints[name]
+                if not isinstance(fingerprint, dict):
+                    raise ValueError('Invalid existing forecast receipt fingerprint: ' + name)
+                fingerprint['sha256'] = hashlib.sha256(live_bytes[name]).hexdigest()
+                for size_key in ('size', 'bytes'):
+                    if size_key in fingerprint:
+                        fingerprint[size_key] = len(live_bytes[name])
+        live_bytes[receipt_name] = (json.dumps(receipt, indent=2, allow_nan=False) + '\n').encode('utf-8')
+    for name, data in live_bytes.items():
+        sha = hashlib.sha256(data).hexdigest()
+        entries[name].update(sha256=sha, size=len(data))
+        payloads[sha] = (source / name, data)
+    summary.update(preservedLiveForecastData=True, forecastModelTimeUtc=live_issue.isoformat().replace('+00:00', 'Z'))
+    return summary, state
+
 def prepare(app, source, apps):
     names = subprocess.check_output(['git','ls-files','-z'], cwd=source).decode().split('\0')
     replacements = [('https://hondrospj.github.io/' + a['repository'].split('/')[1] + '/', a['path']) for a in apps]
@@ -233,6 +438,9 @@ def publish(app, source, apps, connection, dry_run=False):
     if parsed.scheme!='https' and parsed.hostname not in {'localhost','127.0.0.1'}: raise ValueError('HTTPS is required')
     tide_summary, tide_base = preserve_live_tide_data(app, source, manifest, payloads, site, token)
     summary.update(tide_summary)
+    forecast_summary, forecast_base = preserve_live_forecast_data(app, source, manifest, payloads, site, token, tide_base)
+    summary.update(forecast_summary)
+    publication_base = tide_base if tide_base is not None else forecast_base
     summary['bytes'] = sum(f['size'] for f in manifest['files'])
     plan = api(site,app['id'],token,'plan','POST',manifest)
     batch_supported=True
@@ -275,9 +483,9 @@ def publish(app, source, apps, connection, dry_run=False):
                 upload_batch(entries);entries=[];batch_bytes=0
             entries.append((sha,data));batch_bytes+=len(data)
     upload_batch(entries)
-    if tide_base is not None:
+    if publication_base is not None:
         latest = api(site, app['id'], token, 'state')
-        if latest.get('deployment') != tide_base.get('deployment'):
+        if latest.get('deployment') != publication_base.get('deployment'):
             raise RuntimeError('Live deployment changed during publication; refresh state and retry')
     result = api(site,app['id'],token,'commit','POST',{'deployment':plan['deployment']})
     summary.update(result); summary['uploaded_blobs']=len(plan['missing'])
