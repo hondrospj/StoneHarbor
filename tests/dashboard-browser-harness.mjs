@@ -17,7 +17,7 @@ const vendorFiles={
   'leaflet.css':['a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6','text/css']
 };
 const mime=name=>name.endsWith('.html')?'text/html':name.endsWith('.js')?'text/javascript':name.endsWith('.json')?'application/json':name.endsWith('.css')?'text/css':'application/octet-stream';
-export async function createHarness({viewport={width:1440,height:1000},now='2026-11-03T22:00:00Z',localDelays={},responseForRequest,externalResponse}={}){
+export async function createHarness({viewport={width:1440,height:1000},now='2026-11-03T22:00:00Z',localDelays={},responseForRequest,externalResponse,clock=false}={}){
   assert(process.env.DASHBOARD_VENDOR_DIR,'Set DASHBOARD_VENDOR_DIR to the prepared Chart4.4.1/Leaflet1.9.4 directory');
   const vendors={};
   for(const [name,[expected,type]]of Object.entries(vendorFiles)){
@@ -75,6 +75,7 @@ export async function createHarness({viewport={width:1440,height:1000},now='2026
     const page=await context.newPage();
     page.on('pageerror',e=>errors.push(e.message));
     page.on('console',message=>{if(message.type()==='warning')warnings.push(message.text());});
+    if(clock)await page.clock.install({time:new Date(now)});
     await page.goto(origin,{waitUntil:'domcontentloaded'});
     return {page,context,browser,origin,engineName,errors,warnings,externalRequests,
       async ready({settleMs=2500}={}){

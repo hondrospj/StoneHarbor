@@ -4272,6 +4272,11 @@ function resampleTo15Min_MLLW(predSeries, startISO, endISO){
 
     while(i < pts.length && pts[i].t < t) i++;
 
+    if(i < pts.length && pts[i].t === t){
+      values.push(pts[i].ft);
+      continue;
+    }
+
     if(i === 0){
       values.push(Math.abs(pts[0].t - t) <= TS_STEP_MS ? pts[0].ft : null);
       continue;
@@ -5569,6 +5574,9 @@ function ensureTsChart(){
   });
 
   attachChartZoom(tsChart);
+  if(window.shorelyInstallChartLegend){
+    window.shorelyInstallChartLegend(tsChart);
+  }
 }
 
 
@@ -5936,16 +5944,24 @@ function tsObservedDataset(data, {cachedHighs=false}={}){
 }
 
 function tsPredictedDataset(data, label="Forecast", color="rgba(45,212,191,.9)", width=3){
+  const isolatedPoint = context => {
+    const values = context.dataset.data || [];
+    const index = context.dataIndex;
+    return Number.isFinite(values[index]) && !Number.isFinite(values[index-1]) && !Number.isFinite(values[index+1]);
+  };
   return {
     label,
     data:data || [],
     borderWidth:width,
-    pointRadius:0,
-    pointHoverRadius:0,
+    pointRadius:context=>isolatedPoint(context) ? 3 : 0,
+    pointHoverRadius:context=>isolatedPoint(context) ? 4 : 0,
     pointHitRadius:0,
     tension:0.25,
-    spanGaps:true,
-    pointStyle:"line",
+    spanGaps:false,
+    pointStyle:"circle",
+    pointBackgroundColor:color,
+    pointBorderColor:color,
+    pointBorderWidth:1,
     borderDash:[9,5],
     borderDashOffset:0,
     borderColor:color
@@ -6203,6 +6219,7 @@ function updateTsChartFromState(){
 
 let seaLevelChart = null;
 let SEA_LEVEL_STATE = null;
+const SEA_LEVEL_SERIES_VISIBILITY = new Map();
 
 function renderSeaLevelProjectionControls(){
   if(seaLevelProjectionToggle){
@@ -6562,7 +6579,18 @@ function renderSeaLevelChart(){
 
   const canvas = $("seaLevelChart");
   if(!canvas) return;
-  if(seaLevelChart) seaLevelChart.destroy();
+  if(seaLevelChart){
+    // Labels identify the observed, trend and scenario series across rebuilds.
+    seaLevelChart.data.datasets.forEach((dataset,index)=>{
+      SEA_LEVEL_SERIES_VISIBILITY.set(dataset.label,seaLevelChart.isDatasetVisible(index));
+    });
+    seaLevelChart.destroy();
+  }
+  datasets.forEach(dataset=>{
+    if(SEA_LEVEL_SERIES_VISIBILITY.has(dataset.label)){
+      dataset.hidden = !SEA_LEVEL_SERIES_VISIBILITY.get(dataset.label);
+    }
+  });
   seaLevelChart = new Chart(canvas.getContext("2d"), { type:"line", data, options });
   if(window.shorelyInstallChartLegend){
     window.shorelyInstallChartLegend(seaLevelChart);
@@ -6642,13 +6670,22 @@ async function fetchNOAAMonthlySeaLevel(){
   throw new Error("NOAA monthly sea-level means unavailable. " + errors.join(" | "));
 }
 
+async function fetchSeaLevelFallback(){
+  if(GAUGE_TYPE !== "NOAA"){
+    try{
+      const daily = await fetchUSGSDailySeaLevel();
+      if(daily.length) return {resolution:"daily", source:"USGS daily values", daily, monthly:[], updated:null};
+    }catch(e){}
+  }
+  const monthly = (await fetchNOAAMonthlySeaLevel()).slice()
+    .sort((a,b)=>a.month.localeCompare(b.month));
+  return {resolution:"monthly", source:"NOAA monthly means", daily:[], monthly, updated:null};
+}
+
 async function fetchDailySeaLevel(){
-  if(GAUGE_TYPE === "NOAA") return fetchNOAAMonthlySeaLevel();
-  try{
-    const daily = await fetchUSGSDailySeaLevel();
-    if(daily.length) return daily;
-  }catch(e){}
-  return fetchNOAAMonthlySeaLevel();
+  // Preserve the existing array contract for callers outside trend rendering.
+  const result = await fetchSeaLevelFallback();
+  return result.resolution === "monthly" ? result.monthly : result.daily;
 }
 
 async function updateSeaLevelTrends(){
@@ -6661,9 +6698,8 @@ async function updateSeaLevelTrends(){
       normalized = normalizeSeaLevelJson(fetched.json);
       source = fetched.url;
     }catch(cacheErr){
-      const daily = await fetchDailySeaLevel();
-      normalized = { daily, monthly:[], updated:null };
-      source = "USGS daily values";
+      normalized = await fetchSeaLevelFallback();
+      source = normalized.source;
     }
 
     const monthlyRaw = normalized.monthly.length ? normalized.monthly : computeMonthlySeaLevel(normalized.daily);

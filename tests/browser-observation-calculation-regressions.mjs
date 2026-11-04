@@ -9,6 +9,7 @@ function modern(rows){return {body:{type:'FeatureCollection',features:rows.map(r
 function legacy(rows){return {body:{value:{timeSeries:[{sourceInfo:{siteCode:[{value:'01411360'}]},variable:{variableCode:[{value:'72279'}],unit:{unitCode:'ft'}},values:[{value:rows.map(row=>({dateTime:row.time,value:row.value}))}]}]}}};}
 function feeds(rows,{legacyRows}={}){return ({url})=>url.startsWith('https://api.waterdata.usgs.gov/')?modern(rows):url.startsWith('https://waterservices.usgs.gov/')&&legacyRows?legacy(legacyRows):undefined;}
 async function run(name,options,fn){
+  if(process.env.DASHBOARD_OBSERVATION_TEST_FILTER&&!new RegExp(process.env.DASHBOARD_OBSERVATION_TEST_FILTER).test(name))return;
   let h;const row={name};
   try{
     h=await createHarness(options);await h.ready();row.observations=await fn(h);
@@ -92,5 +93,56 @@ for(const [name,height,target]of [['Minor',6.1,'f48MinorHrs'],['Moderate',7.1,'f
     return results;
   });
 }
+
+const forecastStart=Date.parse('2026-11-03T22:00:00Z');
+const partialForecast=Array.from({length:97},(_,i)=>i>1&&i<10?null:{
+  t:new Date(forecastStart+i*3600000).toISOString(),source_twl_mean:i===10?8.5:5,twl:i===10?8.5:5
+}).filter(Boolean);
+await run('a supplied forecast peak survives a long gap in every datum',{
+  responseForRequest:({url})=>new URL(url).pathname.endsWith('/data/petss_forecast.json')?{body:partialForecast}:undefined,
+  externalResponse:feeds([valid])
+},async({page:p})=>{
+  await p.waitForFunction(n=>STATE.pred72Mllw?.length===n&&tsChart?.data.datasets.some(d=>d.label==='Forecast'),partialForecast.length);
+  const results=[];
+  for(const [datum,offset]of Object.entries({MLLW:0,NAVD88:-2.66,MSL:-2.31,MHHW:-4.74})){
+    await p.locator('#datumSelect').selectOption(datum);
+    const result=await p.evaluate(time=>{
+      const series=tsChart.data.datasets.find(d=>d.label==='Forecast');
+      const i=tsChart.data.labels.findIndex(t=>Date.parse(t)===time);
+      return {peak:series.data[i],before:series.data[i-1],after:series.data[i+1],maximum:Math.max(...series.data.filter(Number.isFinite)),spanGaps:series.spanGaps,majorHours:document.getElementById('f48MajorHrs').textContent,details:document.getElementById('f48List').textContent};
+    },forecastStart+10*3600000);
+    assert.ok(Math.abs(result.peak-(8.5+offset))<1e-10);
+    assert.ok(Math.abs(result.maximum-(8.5+offset))<1e-10);
+    assert.equal(result.before,null);assert.ok(Math.abs(result.after-(7.625+offset))<1e-10);
+    assert.equal(result.spanGaps,false);
+    assert.equal(result.majorHours,'0.1');assert.match(result.details,/Major/);
+    results.push({datum,...result});
+  }
+  return results;
+});
+const isolatedForecast=Array.from({length:97},(_,i)=>(i>1&&i<10)||(i>10&&i<20)?null:{
+  t:new Date(forecastStart+i*3600000).toISOString(),source_twl_mean:i===10?8.5:5,twl:i===10?8.5:5
+}).filter(Boolean);
+await run('a known forecast peak between two gaps is visibly marked and can be inspected',{
+  responseForRequest:({url})=>new URL(url).pathname.endsWith('/data/petss_forecast.json')?{body:isolatedForecast}:undefined,
+  externalResponse:feeds([valid])
+},async({page:p})=>{
+  await p.waitForFunction(n=>STATE.pred72Mllw?.length===n&&tsChart?.data.datasets.some(d=>d.label==='Forecast'),isolatedForecast.length);
+  const result=await p.evaluate(time=>{
+    const index=tsChart.data.labels.findIndex(t=>Date.parse(t)===time),dataset=tsChart.data.datasets.findIndex(d=>d.label==='Forecast');
+    const series=tsChart.data.datasets[dataset],point=tsChart.getDatasetMeta(dataset).data[index];
+    return{value:series.data[index],before:series.data[index-1],after:series.data[index+1],radius:point.options.radius,skip:point.skip,spanGaps:series.spanGaps,index};
+  },forecastStart+10*3600000);
+  assert.equal(result.value,8.5);assert.equal(result.before,null);assert.equal(result.after,null);
+  assert.ok(result.radius>0);assert.equal(result.skip,false);assert.equal(result.spanGaps,false);
+  await p.locator('#tsChart').scrollIntoViewIfNeeded();
+  const location=await p.evaluate(index=>{
+    const dataset=tsChart.data.datasets.findIndex(d=>d.label==='Forecast'),point=tsChart.getDatasetMeta(dataset).data[index],rect=tsChart.canvas.getBoundingClientRect();
+    return{x:rect.left+point.x,y:rect.top+point.y};
+  },result.index);
+  await p.mouse.move(location.x,location.y);
+  await p.waitForFunction(()=>tsChart.tooltip?.dataPoints?.some(p=>p.dataset.label==='Forecast'&&p.parsed.y===8.5));
+  return{...result,inspectable:true};
+});
 writeReport(record);
 if(record.errors.length||record.checks.some(c=>!c.passed))process.exitCode=1;

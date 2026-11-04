@@ -22,10 +22,14 @@ export DASHBOARD_BROWSER_ENGINE=chromium
 export DASHBOARD_BROWSER_EXECUTABLE=/absolute/path/to/chromium
 node tests/browser-ui-state-regressions.mjs
 node tests/browser-observation-calculation-regressions.mjs
+node tests/browser-sea-level-fallback-regressions.mjs
+node tests/browser-loading-visibility-regressions.mjs
 ```
 
 `DASHBOARD_BROWSER_ENGINE` also accepts `firefox` and `webkit` with a compatible installed Playwright driver/browser. Unset `DASHBOARD_BROWSER_EXECUTABLE` to use that driver's installed browser. `DASHBOARD_BROWSER_REPORT` saves a JSON receipt; `DASHBOARD_SOURCE_HTML` selects an older HTML snapshot for failure-first comparison. `cache-dashboard-vendors.py --offline` verifies an existing cache without downloading anything.
 
 The regressions cover missing observations without rejecting genuine zero levels; recovery after observation gaps; threshold classifications, inclusive filters and flood hours across all four datums; blank and finite filter bounds; mobile startup and Reset; and keyboard focus during year/legend redraws.
+
+Follow-up checks retain known forecast samples at long-gap endpoints while keeping unknown intervals disconnected, preserve monthly provider resolution during sea-level fallback, retain sea-level visibility choices during real five-minute refreshes, and install keyboard legend controls for charts created after slow successful requests. Only the refresh tests opt into the harness's advancing Playwright clock; its default behavior is unchanged.
 
 Full Stone Harbor source/UI publication retains a coherent live PETSS bundle when its model issuance is equal to or newer than the source checkout. The live forecast is authoritative for same-cycle revisions. Explicit forecast rebuilds use the data-only refresher. Ordering uses the issued cycle, and retained forecasts keep their original bytes and timestamps, including when expired. Missing, partial or inconsistent bundles fail before publication. Forecast-publication tests use a fake API and perform no external writes.
