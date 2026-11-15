@@ -4,17 +4,19 @@ const path = require('node:path');
 const vm = require('node:vm');
 const {test} = require('node:test');
 const html = fs.readFileSync(process.env.DASHBOARD_SOURCE_HTML || path.join(__dirname, '../index.html'), 'utf8');
-const start = html.indexOf('function resampleTo15Min_MLLW(');
+const start = html.indexOf('function interpolateForecastLevels(');
 assert.ok(start >= 0);
 const code = html.slice(start, html.indexOf('\n}', start) + 2);
-const context = vm.createContext({Date, TS_STEP_MS:900000});
+const context = vm.createContext({Date});
 vm.runInContext(code, context);
 const H = 3600000, base = Date.parse('2026-11-03T22:00:00Z');
 const points = rows => rows.map(([hour, ft]) => ({t:new Date(base + hour * H).toISOString(), ft}));
 function sample(rows, begin=0, end=12) {
-  return JSON.parse(JSON.stringify(context.resampleTo15Min_MLLW(points(rows), new Date(base + begin * H).toISOString(), new Date(base + end * H).toISOString())));
+  const labels = [];
+  for(let hour=begin; hour<=end; hour+=.25) labels.push(base+hour*H);
+  return {labels, values:Array.from(context.interpolateForecastLevels(points(rows), labels))};
 }
-const at = (result, hour) => result.values[result.labels.indexOf(new Date(base + hour * H).toISOString())];
+const at = (result, hour) => result.values[result.labels.indexOf(base + hour * H)];
 
 test('a known forecast peak survives a long gap while the unsupported interval stays missing', () => {
   const result = sample([[0,5],[1,5],[10,8.5],[11,5]],0,11);
@@ -54,9 +56,9 @@ test('empty forecasts return missing samples', () => {
 });
 test('resampling sorts a copy and preserves the input observations', () => {
   const input = points([[10,8.5],[0,5],[11,5]]),before=JSON.stringify(input);
-  const result = context.resampleTo15Min_MLLW(input,new Date(base).toISOString(),new Date(base+11*H).toISOString());
+  const result = context.interpolateForecastLevels(input,[base, base+10*H, base+11*H]);
   assert.equal(JSON.stringify(input),before);
-  assert.equal(result.values[result.labels.indexOf(new Date(base+10*H).toISOString())],8.5);
+  assert.equal(result[1],8.5);
 });
 test('forecast rendering leaves unsupported gaps disconnected', () => {
   const begin=html.indexOf('function tsPredictedDataset(');

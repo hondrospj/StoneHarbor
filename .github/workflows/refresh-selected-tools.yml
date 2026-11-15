@@ -18,6 +18,8 @@ jobs:
     uses: ./.github/workflows/refresh-dashboard-petss.yml
     secrets: inherit
   refresh-individual-high-tides:
+    # Both jobs publish to the same apps. Keep them serial, even if PETSS fails.
     needs: refresh-forecast
+    if: ${{ !cancelled() }}
     uses: ./.github/workflows/refresh-selected-high-tides.yml
     secrets: inherit

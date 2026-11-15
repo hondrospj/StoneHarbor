@@ -66,23 +66,20 @@ test("the 0.75-foot limit is inclusive without accepting real excess change or m
 });
 test("actual chart sampling preserves flooding observations after a 75-minute gap",()=>{
   const ctx=harness();
-  for(const name of ["build15MinLabels","floorToHourMs","nearbyThresholdsForRange","resampleTo15Min_MLLW",
+  for(const name of ["nearbyThresholdsForRange","interpolateForecastLevels","buildTimeseriesSamples",
     "tsObservedDataset","tsPredictedDataset","updateTsChartFromState"])vm.runInContext(source(name),ctx);
   const readings=[["16:00",3.2],["17:15",4],["17:30",4.1],["17:45",4.2],["18:00",4.3],["18:15",4.4],["18:30",4.5]]
     .map(([time,ft])=>({t:`2026-11-03T${time}:00Z`,ft}));
-  ctx.nowISO=()=>"2026-11-03T19:00:00Z";
   ctx.STATE={obs24Navd:readings,pred72Mllw:[],obs24CachedHighs:false};
   ctx.tsChart={data:{},options:{scales:{x:{title:{}},y:{title:{},ticks:{}}}},update(){}};
   for(const name of ["ensureTsChart","styleTsLegendAsLines","applyTsDateAxis","syncChartZoomToData","stabilizeTsChartLayout"])ctx[name]=()=>{};
   ctx.unitText=()=>"ft NAVD88";ctx.thresholdsDisplay=()=>({minor:3.44,moderate:4.44,major:5.44});
-  ctx.updateTsChartFromState();
+  ctx.updateTsChartFromState(Date.parse("2026-11-03T19:00:00Z"));
   const index=new Map(ctx.tsChart.data.labels.map((t,i)=>[t,i]));
   for(const p of readings){
-    assert.equal(ctx.tsChart.data.datasets[0].data[index.get(new Date(p.t).toISOString())],p.ft);
+    assert.equal(ctx.tsChart.data.datasets[0].data[index.get(Date.parse(p.t))],p.ft);
   }
-  for(const time of ["16:15","16:30","16:45","17:00"]){
-    assert.equal(ctx.tsChart.data.datasets[0].data[index.get(`2026-11-03T${time}:00.000Z`)],null);
-  }
+  assert.equal(ctx.tsChart.data.datasets[0].data[index.get(Date.parse("2026-11-03T16:37:30Z"))],null);
 });
 
 test("identity datum conversion preserves finite values and their full sensor precision",()=>{

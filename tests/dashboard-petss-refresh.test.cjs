@@ -1,8 +1,12 @@
 "use strict";
 const test=require("node:test");
 const assert=require("node:assert/strict");
+const {execFileSync}=require("node:child_process");
+const {mkdtempSync,mkdirSync,rmSync,writeFileSync}=require("node:fs");
+const {tmpdir}=require("node:os");
+const {join}=require("node:path");
 const {parseStationCsv}=require("../tools/petss-exceedance");
-const {APPS,DATA_PATHS,request,chooseRun,chooseCycle,validateConnection,validateForecast,buildPayloads,mergeManifest,publishData,sha256}=require("../tools/refresh_dashboard_petss");
+const {APPS,DATA_PATHS,request,chooseRun,chooseCycle,validateConnection,validateForecast,buildPayloads,mergeManifest,loadSource,publishData,selectApps,sha256}=require("../tools/refresh_dashboard_petss");
 const now=Date.parse("2026-10-26T14:00:00Z");
 const source={runDir:"petss.20261026",cycle:"t06z",url:"https://nomads.ncep.noaa.gov/pub/data/nccf/com/petss/prod/petss.20261026/petss.t06z.csv.tar.gz",sha256:"c".repeat(64)};
 const isoHour=t=>new Date(t).toISOString().replace(/[-:TZ.]/g,"").slice(0,12);
@@ -14,6 +18,21 @@ function state(){return {published:true,deployment:"a".repeat(64),manifest:{file
 test("select only published official run directories and cycles, not filename mentions",()=>{
   assert.equal(chooseRun('<a href="petss.20261025/">old</a><a href="petss.20261026/">new</a>'),"petss.20261026");
   assert.equal(chooseCycle('<a href="petss.t00z.csv.tar.gz">old</a><a href="petss.t06z.csv.tar.gz">new</a> petss.t18z.csv.tar.gz'),"t06z");
+});
+test("the source archive only needs valid files for selected stations",async t=>{
+  const directory=mkdtempSync(join(tmpdir(),"dashboard-petss-test-"));
+  t.after(()=>rmSync(directory,{recursive:true,force:true}));
+  const archive=join(directory,"fixture.tar.gz");
+  const apps=selectApps("flooddashboard--stone-harbor,flooddashboard--cape-may-harbor,flooddashboard--sandy-hook");
+  const stationDirectory=join(source.runDir,`${source.cycle}.csv`);
+  mkdirSync(join(directory,stationDirectory),{recursive:true});
+  const files=apps.map(app=>join(stationDirectory,`${app.station}.csv`));
+  for(const filename of files)writeFileSync(join(directory,filename),csv());
+  execFileSync("tar",["-czf",archive,"-C",directory,...files]);
+
+  const data=await loadSource({...source,archive,apps,now});
+  assert.deepEqual([...data.stations.keys()],apps.map(app=>app.station));
+  await assert.rejects(loadSource({...source,archive,now}),/Official station file missing or duplicated: 8536110/);
 });
 test("five-day hindcast is allowed but future coverage and cycle freshness are required",()=>{
   const rows=parseStationCsv(csv());

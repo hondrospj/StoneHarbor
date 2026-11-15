@@ -11,6 +11,7 @@ async function run(name,{cache=true,daily=false,monthly=true}={},test){
   const calls=[];let h;const row={name};
   try{
     h=await createHarness({
+      now:'2026-08-04T22:00:00Z',
       responseForRequest:({url})=>!cache&&new URL(url).pathname.endsWith('/sealevel.json')
         ?{status:404,body:{error:'Controlled absent sea-level cache'}}:undefined,
       externalResponse:({url})=>{
@@ -41,7 +42,7 @@ async function state(page){
 await run('a successful NOAA monthly fallback renders real means after cache and daily-service failure',
   {cache:false},async({page},calls)=>{
     const result=await state(page);
-    assert.equal(result.monthly.length,monthlyResponse.data.length);assert(result.chart);assert.equal(result.meta,'');
+    assert.equal(result.monthly.length,monthlyResponse.data.length);assert(result.chart);assert.match(result.meta,/NOAA Lewes monthly means through 2026-10/);
     assert.match(result.source,/NOAA.*monthly/i);
     assert(result.monthly.every(row=>row.days===undefined||row.days===null));
     assert.equal(result.monthly.find(row=>row.month==='2013-11').ft,0);
@@ -52,17 +53,17 @@ await run('a successful NOAA monthly fallback renders real means after cache and
   });
 await run('real retained daily values retain the daily coverage path and source',
   {cache:false,daily:true},async({page},calls)=>{
-    const result=await state(page);assert(result.chart);assert.equal(result.meta,'');
+    const result=await state(page);assert(result.chart);assert.match(result.meta,/Stone Harbor USGS monthly means through 2026-07/);
     assert.equal(result.monthly.length,cached.monthly.length);assert.equal(result.source,'USGS daily values');
     assert(result.monthly.every(row=>row.days>=20));assert.equal(calls.filter(call=>call.provider==='NOAA').length,0);
     return {source:result.source,monthlyPoints:result.monthly.length,dailyObservations:cached.daily.length};
   });
-await run('the original monthly cache keeps its source and stored regression',
+await run('the monthly cache retains its official rate with the corrected zero point',
   {},async({page},calls)=>{
-    const result=await state(page);assert(result.chart);assert.equal(result.meta,'');
+    const result=await state(page);assert(result.chart);assert.match(result.meta,/Trend rate from NOAA Cape May/);
     assert.equal(result.monthly.length,cached.monthly.length);assert.equal(result.source,'data/sealevel.json');
     assert.equal(result.regression.slope,cached.regression.slopeFtPerYear);
-    assert.equal(result.regression.intercept,cached.regression.interceptFt);
+    assert.ok(Math.abs(result.regression.intercept-(cached.regression.interceptFt+0.14292))<1e-10);
     assert.equal(calls.length,0);return {source:result.source,monthlyPoints:result.monthly.length,officialSlope:result.regression.slope};
   });
 await run('failure of every sea-level source leaves an explicit unavailable result',

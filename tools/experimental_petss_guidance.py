@@ -150,15 +150,19 @@ def build_root(data):
             zones.append({"zoneId": name, "status": "unsupported", "reason": "incomplete local prediction adjustment metadata"})
             continue
         time_key = "sourceTimeUtc" if adjusted else "timeUtc"
-        level_key = "rawPetssTwlMllwFt" if adjusted else "twlMllwFt"
-        lower_by_time = {r.get(time_key): finite(r.get(level_key, r.get("mllwStageFt"))) for r in low_hours}
+        def input_level(row):
+            if adjusted:
+                return finite(row.get("rawPetssTwlMllwFt"))
+            return finite(row.get("twlMllwFt", row.get("mllwStageFt")))
+
+        lower_by_time = {r.get(time_key): input_level(r) for r in low_hours}
         hours = []
         for row in mean_hours:
             display_time = row.get("timeUtc")
             source_time = row.get(time_key)
             if not display_time or not source_time:
                 continue
-            mean = finite(row.get(level_key, row.get("mllwStageFt")))
+            mean = input_level(row)
             lower10 = lower_by_time.get(source_time)
             if adjusted and (mean is None or lower10 is None):
                 # Never silently mix a locally shifted stage with the raw tide.

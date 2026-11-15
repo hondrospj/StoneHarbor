@@ -194,9 +194,17 @@ test("statistics staging includes an existing receipt as the sole optional fifth
 test("stale feeds abort before a publish plan and leave their cursor untouched",async()=>{
   const config=worker.CONFIG[0],snap=snapshot(config),calls=[];
   const read=async url=>snap.inputs.get(new URL(url).pathname.split("/stone-harbor/")[1]);
-  await assert.rejects(worker.refreshApplication(config,connection(),{now:zero+36*H,api:async url=>{calls.push(url);return snap.state;},read,getRecent:async()=>recent([]),rebuild:async()=>{throw Error("must not rebuild");}}),/stale/);
-  assert.equal(calls.length,1);assert.equal(JSON.parse(snap.inputs.get(worker.CACHE_PATH)).lastProcessedISO,t(30));
+  for(const primary of [[],[{t:t(36),ft:-400}]]){
+    await assert.rejects(worker.refreshApplication(config,connection(),{now:zero+36*H,api:async url=>{calls.push(url);return snap.state;},read,getRecent:async()=>recent(primary),rebuild:async()=>{throw Error("must not rebuild");}}),/stale/);
+  }
+  assert.equal(calls.length,2);assert.equal(JSON.parse(snap.inputs.get(worker.CACHE_PATH)).lastProcessedISO,t(30));
   await assert.rejects(worker.refreshApplication({...config},connection(),{api:async()=>{throw Error("must not call");}}),/scope/);
+});
+test("an unusable reading after valid observations does not move archive freshness",async()=>{
+  const config=worker.CONFIG[0];
+  const result=await worker.updateCache(config,cache(config),recent([...series(),{t:t(37),ft:-400}]),{now:zero+37*H});
+  assert.equal(result.lastProcessedISO,"2026-01-02T12:00:00Z");
+  assert.equal(result.liveUpdate.primaryLatest,"2026-01-02T12:00:00Z");
 });
 test("publisher chunks large count files and aborts a stale deployment before commit",async()=>{
   const config=worker.CONFIG[0],snap=snapshot(config),data=payloads(snap),calls=[];data.set(worker.CACHE_PATH,Buffer.alloc(4*1024*1024+7,65));

@@ -6,6 +6,12 @@
 <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Stone Harbor Tidal Flood Dashboard</title>
+  <link rel="canonical" href="https://cupajoe.live/stone-harbor/flooddashboard/">
+  <script id="stone-harbor-legacy-redirect">
+    if (location.hostname === "hondrospj.github.io" && /^\/StoneHarbor(?:\/(?:index\.html)?)?$/i.test(location.pathname)) {
+      location.replace("https://cupajoe.live/stone-harbor/flooddashboard/" + location.search + location.hash);
+    }
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
@@ -1039,6 +1045,10 @@ thead th{
       opacity:0;
       pointer-events:none;
     }
+    .scenarioChoice:focus-within{
+      outline:2px solid var(--ok);
+      outline-offset:2px;
+    }
     .keyCheckBox{
       width:15px;
       height:15px;
@@ -1437,7 +1447,7 @@ thead th{
     }
 
     
-    #f48Meta{display:none !important;}
+    #f48Meta:not(:empty){display:block;}
     #curMeta{display:none !important;}
 
     
@@ -2580,7 +2590,7 @@ a.brand *{
           </div>
         </div>
 
-        <div class="rangeMeta" id="f48Meta">—</div>
+        <div class="rangeMeta" id="f48Meta"></div>
       </div>
     </div>
 
@@ -2950,10 +2960,6 @@ function fromDisplayToNavd(displayFt){
 
       const HOUR_MS = 60 * 60 * 1000;
 
-function floorToHourMs(tMs){
-  return Math.floor(tMs / HOUR_MS) * HOUR_MS;
-}
-
     
 
 
@@ -3191,37 +3197,36 @@ let DOY_ANNUAL_FORECAST_ENABLED = false;
 let DOY_FORECAST_DOT_VISIBLE = true;
 let DOY_FORECAST_RANGE_VISIBLE = true;
 
+const FLOOD_STAGE_VIEWS = ["minor", "moderate", "major"];
 
 function setSegActive(segEl, val){
   if(!segEl) return;
   segEl.querySelectorAll(".segBtn").forEach(b=>{
-    b.classList.toggle("isActive", b.dataset.val === val);
+    const active = b.dataset.val === val;
+    b.classList.toggle("isActive", active);
+    b.setAttribute("aria-pressed", String(active));
   });
 }
 
-function applyMonthView(){
- if(monthAvgChart){
-  
-  const showAll = (MONTH_VIEW === "total");
-
-  monthAvgChart.data.datasets[0].hidden = !showAll && (MONTH_VIEW !== "minor");
-  monthAvgChart.data.datasets[1].hidden = !showAll && (MONTH_VIEW !== "moderate");
-  monthAvgChart.data.datasets[2].hidden = !showAll && (MONTH_VIEW !== "major");
-
-  monthAvgChart.update();
-}
+function applyFloodStageView(chart, view){
+  if(!chart) return;
+  FLOOD_STAGE_VIEWS.forEach((stage, index)=>{
+    chart.setDatasetVisibility(index, view === "total" || view === stage);
+  });
+  chart.update();
 }
 
-function applyAnnualView(){
-  if(!annualChart) return;
-
-  const showAll = (ANNUAL_VIEW === "total");
-
-  annualChart.data.datasets[0].hidden = !showAll && (ANNUAL_VIEW !== "minor");
-  annualChart.data.datasets[1].hidden = !showAll && (ANNUAL_VIEW !== "moderate");
-  annualChart.data.datasets[2].hidden = !showAll && (ANNUAL_VIEW !== "major");
-
-  annualChart.update();
+function syncFloodStageView(chart){
+  if(chart !== annualChart && chart !== monthAvgChart) return;
+  const visible = FLOOD_STAGE_VIEWS.filter((_, index)=>chart.isDatasetVisible(index));
+  const view = visible.length === FLOOD_STAGE_VIEWS.length ? "total" : visible.length === 1 ? visible[0] : null;
+  if(chart === annualChart){
+    ANNUAL_VIEW = view;
+    setSegActive($("annualViewSeg"), view);
+  }else{
+    MONTH_VIEW = view;
+    setSegActive($("monthViewSeg"), view);
+  }
 }
 
 function hookMonthViewSwitch(){
@@ -3234,7 +3239,7 @@ function hookMonthViewSwitch(){
 
     MONTH_VIEW = btn.dataset.val;
     setSegActive(seg, MONTH_VIEW);
-    applyMonthView();
+    applyFloodStageView(monthAvgChart, MONTH_VIEW);
   });
 
   
@@ -3251,7 +3256,7 @@ function hookAnnualViewSwitch(){
 
     ANNUAL_VIEW = btn.dataset.val;
     setSegActive(seg, ANNUAL_VIEW);
-    applyAnnualView();
+    applyFloodStageView(annualChart, ANNUAL_VIEW);
   });
 
   
@@ -3274,13 +3279,18 @@ function renderAnnualScenarioControls(){
   if(!annualScenarioKey) return;
 
   annualScenarioKey.classList.toggle("isVisible", ANNUAL_PREDICTIONS_ENABLED);
-  annualScenarioKey.innerHTML = FUTURE_SCENARIOS.map(s => `
-    <label class="scenarioChoice">
-      <input type="radio" name="annualScenario" value="${s.id}" ${s.id === ANNUAL_SCENARIO ? "checked" : ""}>
-      <span class="keyCheckBox" aria-hidden="true"></span>
-      <span>${s.label}</span>
-    </label>
-  `).join("");
+  if(!annualScenarioKey.hasChildNodes()){
+    annualScenarioKey.innerHTML = FUTURE_SCENARIOS.map(s => `
+      <label class="scenarioChoice">
+        <input type="radio" name="annualScenario" value="${s.id}">
+        <span class="keyCheckBox" aria-hidden="true"></span>
+        <span>${s.label}</span>
+      </label>
+    `).join("");
+  }
+  annualScenarioKey.querySelectorAll("input[name='annualScenario']").forEach(input=>{
+    input.checked = input.value === ANNUAL_SCENARIO;
+  });
 }
 
 function hookAnnualPredictionControls(){
@@ -3416,9 +3426,7 @@ function nowISO(){ return new Date().toISOString(); }
 
 
 function fetchWithTimeout(resource, options={}, timeoutMs=8000){
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(resource, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+  return fetch(resource, { ...options, signal:AbortSignal.timeout(timeoutMs) });
 }
 
 function classifyByNavd(navdFt){
@@ -3674,7 +3682,7 @@ function buildExactFloodAccounting(rawPoints, t0, t1){
   return out;
 }
 
-function updateFloodOutlook48(){
+function updateFloodOutlook48(nowMs=Date.now()){
   if(!f48MinorHrsEl || !f48ModerHrsEl || !f48MajorHrsEl || !f48ListEl || !f48MetaEl) return;
 
   const moreWasOpen = !!f48ListEl.querySelector("details.floodMore")?.open;
@@ -3687,7 +3695,7 @@ function updateFloodOutlook48(){
       <div class="event">
         <div class="eventLeft">
           <div class="eventWhen">Forecast unavailable</div>
-          <div class="eventSub">NOAA/PETSS data did not load</div>
+          <div class="eventSub">${STATE.petssUnavailableReason || "NOAA/PETSS data did not load"}</div>
         </div>
         <div class="eventBadge" style="color:var(--muted)">—</div>
       </div>`;
@@ -3695,14 +3703,13 @@ function updateFloodOutlook48(){
     return;
   }
 
-  const nowMs = Date.now();
   const t0 = nowMs;
   const t1 = nowMs + 72 * 3600 * 1000;
 
   const rawPts = pred
     .map(p=>{
       const ms = new Date(p.t).getTime();
-      const mllw = Number(p.ft);
+      const mllw = p.ft;
       if(!Number.isFinite(ms) || !Number.isFinite(mllw)) return null;
       return { t:p.t, ms, ftDisplay:toDisplayFtFromMllw(mllw) };
     })
@@ -3778,8 +3785,9 @@ function updateFloodOutlook48(){
   if(!hasFullCoverage && segs.length){
     f48ListEl.innerHTML += `<div class="event"><div class="eventLeft"><div class="eventWhen">Partial forecast coverage</div><div class="eventSub">${coverageNote} Flood-hour totals include only available periods.</div></div></div>`;
   }
+  const issue = STATE.petssIssuedTime ? ` · Issued ${fmtESTFull(STATE.petssIssuedTime)} ET` : "";
   f48MetaEl.textContent =
-    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS`;
+    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS${issue}`;
 }
 
 
@@ -3850,9 +3858,13 @@ function dashboardNoaaTimeIsValid(value){
 }
 
 function renderLiveReadingStatus(){
-  if(!STATE.lastNavd) return;
   const point = STATE.lastNavd, sourceLabel = liveFeedLabel();
-  if(STATE.lastObservationIsCachedHighTide){
+  if(!point || (STATE.liveObservationError && !STATE.lastObservationIsCachedHighTide)){
+    lastPill.textContent = point ? `Last ${sourceLabel} reading: ${fmtESTFull(point.t)}` : "Last updated: —";
+    stageTextEl.textContent = point && hoursSinceISO(point.t) > 6 ? "LIVE DATA STALE" : "LIVE DATA UNAVAILABLE";
+    stageDotEl.style.background = "var(--minor)";
+    stageDotEl.style.boxShadow = "0 0 0 4px rgba(251,191,36,.18)";
+  }else if(STATE.lastObservationIsCachedHighTide){
     const category = classifyByNavd(point.ft);
     lastPill.textContent = `Live ${sourceLabel} feed unavailable; latest cached high tide: ${fmtESTFull(point.t)}`;
     stageTextEl.textContent = `CACHED HIGH: ${category.short.toUpperCase()}`;
@@ -3879,47 +3891,56 @@ function normalizePetssJsonToPoints(json){
     .sort((a,b) => Date.parse(a.t)-Date.parse(b.t));
 }
 
-async function fetchFirstOkJson(urls){
+async function fetchPETSSForecast_MLLW(){
   const errs = [];
-  const attempts = 2;
-  for(let attempt = 1; attempt <= attempts; attempt++){
-    for(const u of urls){
-      try{
-        const res = await fetchWithTimeout(`${u}?v=${Date.now()}`, { cache:"no-store" }, 7000);
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const j = await res.json();
-        return { url: u, json: j };
-      }catch(e){
-        errs.push(`${u} attempt ${attempt} (${e?.message || e})`);
-      }
+  const requestTime = Date.now();
+  const load = async path => {
+    const response = await fetch(`${path}?v=${requestTime}`, {cache:"no-store", signal:AbortSignal.timeout(7000)});
+    if(!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+    return response.json();
+  };
+  const metadata = load("data/petss_meta.json").catch(() => null);
+  for(const url of PETSS_JSON_CANDIDATES){
+    try{
+      const json = await load(url);
+      return { ...validatePetssForecast(json, await metadata), urlUsed:url };
+    }catch(error){
+      errs.push(error.message);
     }
-    if(attempt < attempts) await new Promise(resolve => setTimeout(resolve, 350));
   }
-  throw new Error("PETSS JSON not found. Tried: " + errs.join(" | "));
+  throw new Error("No current NOAA/PETSS forecast is available. " + errs.join(" | "));
 }
 
-async function fetchPETSSForecast_MLLW(){
-  const { url, json } = await fetchFirstOkJson(PETSS_JSON_CANDIDATES);
-  let meta = null;
-  try{
-    const r = await fetch(`data/petss_meta.json?v=${Date.now()}`,{cache:"no-store",signal:AbortSignal.timeout(7000)});
-    if(r.ok) meta = await r.json();
-  }catch(e){console.warn("PETSS run metadata unavailable",e);}
-  const runDate = String(meta?.run_dir || "").match(/(\d{4})(\d{2})(\d{2})/);
-  const runHour = String(meta?.cycle || "").match(/t(\d{2})z/);
-  const issuedTime = meta?.model_time_utc ||
-    (runDate && runHour ? `${runDate[1]}-${runDate[2]}-${runDate[3]}T${runHour[1]}:00:00Z` : null) ||
-    json?.model_time_utc ||
-    json?.issued_utc ||
-    json?.fetched_utc ||
-    json?.issuedTime ||
-    null;
+function validatePetssForecast(json, meta, nowMs=Date.now()){
+  const points = normalizePetssJsonToPoints(json);
+  if(!points.length) throw new Error("PETSS JSON contained no usable forecast points");
+  if(points.some((point,index) => index > 0 && Date.parse(point.t) === Date.parse(points[index-1].t))){
+    throw new Error("PETSS JSON contained duplicate forecast times");
+  }
+  const lastTime = Date.parse(points.at(-1).t);
+  if(lastTime <= nowMs) throw new Error("Stored PETSS run has expired");
 
-  const ptsAll = normalizePetssJsonToPoints(json);
-  if(!ptsAll.length) throw new Error("PETSS JSON loaded but contained no usable forecast points");
-  if(Date.parse(ptsAll[ptsAll.length-1].t) <= Date.now()) throw new Error("Stored PETSS run has expired; waiting for a new NOAA run");
-
-  return { issuedTime, points: ptsAll, urlUsed: url };
+  const runDate = /^petss\.(\d{4})(\d{2})(\d{2})$/.exec(meta?.run_dir);
+  const runHour = /^t(00|06|12|18)z$/.exec(meta?.cycle);
+  const embeddedIssue = json?.model_time_utc || json?.issued_utc || json?.issuedTime;
+  const metadataIssue = meta?.model_time_utc ||
+    (runDate && runHour ? `${runDate[1]}-${runDate[2]}-${runDate[3]}T${runHour[1]}:00:00Z` : null);
+  const issueMs = Date.parse(embeddedIssue || metadataIssue);
+  if(!Number.isFinite(issueMs)) throw new Error("PETSS issue time unavailable");
+  if(!embeddedIssue && meta?.forecast_valid_until_utc && Date.parse(meta.forecast_valid_until_utc) !== lastTime){
+    throw new Error("PETSS points and issuance metadata are from different runs");
+  }
+  const sourceMeta = embeddedIssue ? json : meta;
+  if(sourceMeta?.stid != null && String(sourceMeta.stid) !== PETSS_STATION){
+    throw new Error("PETSS forecast does not match the Stone Harbor station");
+  }
+  if([json?.datum, sourceMeta?.datum].some(datum => datum != null && datum !== "MLLW")){
+    throw new Error("PETSS forecast is not in MLLW");
+  }
+  if(issueMs > nowMs + 5*60000 || nowMs - issueMs > 24*3600000){
+    throw new Error("PETSS issuance is future-dated or stale");
+  }
+  return {issuedTime:new Date(issueMs).toISOString(), points};
 }
 
 
@@ -3955,8 +3976,10 @@ async function fetchIV({startISO=null,endISO=null,period=null}={}){
         if(p.monitoring_location_id !== `USGS-${USGS_SITE}` || p.parameter_code !== USGS_PARAM_PRIMARY) continue;
         if(String(p.unit_of_measure || "").toLowerCase() !== "ft") continue;
         const ft = dashboardGaugeNumber(p.value);
-        if(!p.time || !Number.isFinite(ft)) continue;
-        readings.set(p.time, {dateTime:p.time, value:String(ft)});
+        const time = Date.parse(p.time);
+        if(!Number.isFinite(time) || time < start.getTime() || time > end.getTime() ||
+           !Number.isFinite(ft) || Math.abs(ft) >= 9999) continue;
+        readings.set(time, {dateTime:p.time, value:String(ft)});
       }
       next = json?.links?.find(link => link.rel === "next")?.href || null;
     }
@@ -4012,7 +4035,7 @@ function extractWaterLevelSeries_NAVD88(json){
       .filter(p=>Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft));
     if(pts.length > best.length) best = pts;
   }
-  return best;
+  return best.sort((a,b) => Date.parse(a.t) - Date.parse(b.t));
 }
 
 function startOfUTCDate(date){
@@ -4238,78 +4261,27 @@ function filterSpikes15Min(values, maxDeltaFt=TS_MAX_DELTA_FT){
 
 
 
-function resampleTo15Min_MLLW(predSeries, startISO, endISO){
-  const start = new Date(startISO).getTime();
-  const end   = new Date(endISO).getTime();
-
+function interpolateForecastLevels(predSeries, sampleTimes){
   const pts = (predSeries || [])
     .map(p => ({
       t: new Date(p.t).getTime(),
-      ft: Number(p.ft)
+      ft: p.ft
     }))
     .filter(p => Number.isFinite(p.t) && Number.isFinite(p.ft))
     .sort((a,b) => a.t - b.t);
 
-  const labels = [];
-  const values = [];
-
-  const s0 = Math.floor(start / TS_STEP_MS) * TS_STEP_MS;
-  const e0 = Math.ceil(end   / TS_STEP_MS) * TS_STEP_MS;
-
-  if(!pts.length){
-    for(let t = s0; t <= e0; t += TS_STEP_MS){
-      labels.push(new Date(t).toISOString());
-      values.push(null);
-    }
-    return { labels, values };
-  }
-
-  const MAX_BRACKET_GAP_MS = 3 * 3600 * 1000; 
   let i = 0;
-
-  for(let t = s0; t <= e0; t += TS_STEP_MS){
-    labels.push(new Date(t).toISOString());
-
+  return sampleTimes.map(t => {
     while(i < pts.length && pts[i].t < t) i++;
-
-    if(i < pts.length && pts[i].t === t){
-      values.push(pts[i].ft);
-      continue;
-    }
-
-    if(i === 0){
-      values.push(Math.abs(pts[0].t - t) <= TS_STEP_MS ? pts[0].ft : null);
-      continue;
-    }
-
-    if(i >= pts.length){
-      values.push(
-        Math.abs(pts[pts.length - 1].t - t) <= TS_STEP_MS
-          ? pts[pts.length - 1].ft
-          : null
-      );
-      continue;
-    }
-
+    if(i < pts.length && pts[i].t === t) return pts[i].ft;
+    if(i === 0 || i >= pts.length) return null;
     const p0 = pts[i - 1];
     const p1 = pts[i];
     const gap = p1.t - p0.t;
-
-    if(gap <= 0 || gap > MAX_BRACKET_GAP_MS){
-      values.push(null);
-      continue;
-    }
-
-    if(t < p0.t || t > p1.t){
-      values.push(null);
-      continue;
-    }
-
+    if(gap <= 0 || gap > 3 * 3600 * 1000) return null;
     const f = (t - p0.t) / gap;
-    values.push(p0.ft + f * (p1.ft - p0.ft));
-  }
-
-  return { labels, values };
+    return p0.ft + f * (p1.ft - p0.ft);
+  });
 }
 
 const floodBandsPlugin = {
@@ -4597,11 +4569,15 @@ function chartLabels(chart){
 }
 
 function getChartZoomRange(chart){
-  const total = chartLabels(chart).length;
+  const labels = chartLabels(chart);
+  const unit = chart?.canvas?.id === "tsChart" && typeof labels[0] === "number" ? TS_STEP_MS : 1;
+  const first = unit === 1 ? 0 : labels[0] / unit;
+  const last = unit === 1 ? Math.max(first, labels.length - 1) : labels.at(-1) / unit;
+  const total = last - first + 1;
   const x = chart?.options?.scales?.x || {};
-  const min = typeof x.min === "number" ? x.min : 0;
-  const max = typeof x.max === "number" ? x.max : Math.max(0, total - 1);
-  return { min, max, total };
+  const min = typeof x.min === "number" ? x.min / unit : first;
+  const max = typeof x.max === "number" ? x.max / unit : last;
+  return { min, max, total, first, last, unit };
 }
 
 function chartMinRange(total){
@@ -4610,8 +4586,8 @@ function chartMinRange(total){
 }
 
 function isChartZoomed(chart){
-  const { min, max, total } = getChartZoomRange(chart);
-  return min > 0.01 || max < total - 1.01;
+  const { min, max, first, last } = getChartZoomRange(chart);
+  return min > first + 0.01 || max < last - 0.01;
 }
 
 function updateZoomResetButton(chart){
@@ -4621,21 +4597,21 @@ function updateZoomResetButton(chart){
 }
 
 function setChartZoomRange(chart, min, max){
-  const total = chartLabels(chart).length;
+  const { total, first, last, unit } = getChartZoomRange(chart);
   if(total < 2) return;
 
   const minRange = chartMinRange(total);
-  let nextMin = Math.max(0, Math.min(total - 1 - minRange, min));
-  let nextMax = Math.max(nextMin + minRange, Math.min(total - 1, max));
+  let nextMin = Math.max(first, Math.min(last - minRange, min));
+  let nextMax = Math.max(nextMin + minRange, Math.min(last, max));
 
-  if(nextMax > total - 1){
-    const shift = nextMax - (total - 1);
+  if(nextMax > last){
+    const shift = nextMax - last;
     nextMax -= shift;
-    nextMin = Math.max(0, nextMin - shift);
+    nextMin = Math.max(first, nextMin - shift);
   }
 
-  chart.options.scales.x.min = nextMin;
-  chart.options.scales.x.max = nextMax;
+  chart.options.scales.x.min = nextMin * unit;
+  chart.options.scales.x.max = nextMax * unit;
   chart.update("none");
   updateZoomResetButton(chart);
 }
@@ -4656,9 +4632,9 @@ function syncChartZoomToData(chart){
     return;
   }
 
-  const { min, max } = getChartZoomRange(chart);
+  const { min, max, last } = getChartZoomRange(chart);
   if(isChartZoomed(chart)){
-    setChartZoomRange(chart, min, Math.min(max, total - 1));
+    setChartZoomRange(chart, min, Math.min(max, last));
   }else{
     updateZoomResetButton(chart);
   }
@@ -4789,7 +4765,7 @@ function attachChartZoom(chart){
     if(width < 18) return false;
     const min = chartIndexFromClientX(chart, Math.min(drag.x0, drag.x1));
     const max = chartIndexFromClientX(chart, Math.max(drag.x0, drag.x1));
-    if(Math.abs(max - min) < chartMinRange(chartLabels(chart).length)) return false;
+    if(Math.abs(max - min) < chartMinRange(getChartZoomRange(chart).total)) return false;
     setChartZoomRange(chart, min, max);
     return true;
   }
@@ -4815,12 +4791,13 @@ function attachChartZoom(chart){
       state.drag = null;
       hideZoomBox();
       const pts = Array.from(state.pointers.values());
-      const { min, max } = getChartZoomRange(chart);
+      const { min, max, unit } = getChartZoomRange(chart);
       state.pinch = {
         distance:pointerDistance(pts[0], pts[1]),
         center:pointerCenterIndex(chart, pts[0], pts[1]),
         min,
-        max
+        max,
+        unit
       };
     }
   });
@@ -4835,8 +4812,8 @@ function attachChartZoom(chart){
       const dist = pointerDistance(pts[0], pts[1]);
       if(dist > 0 && state.pinch.distance > 0){
         const factor = state.pinch.distance / dist;
-        chart.options.scales.x.min = state.pinch.min;
-        chart.options.scales.x.max = state.pinch.max;
+        chart.options.scales.x.min = state.pinch.min * state.pinch.unit;
+        chart.options.scales.x.max = state.pinch.max * state.pinch.unit;
         applyChartZoom(chart, factor, state.pinch.center);
       }
       return;
@@ -4871,6 +4848,10 @@ function attachChartZoom(chart){
 
 let HIGH_TIDES_NAVD=[];
 let monthlyCoverage = [];
+let HISTORY_COMPLETED_THROUGH = null;
+let HISTORY_ARCHIVE_REVISION = null;
+let HISTORY_ARCHIVE_ETAG = null;
+let HISTORY_REFRESH_IN_FLIGHT = null;
 let annualChart=null, tsChart=null, monthAvgChart=null;
 let YEARS=[], annualMinor=[], annualModerate=[], annualMajor=[];
 
@@ -5216,20 +5197,24 @@ function annualPredictionRange(year, label){
   return "";
 }
 
-function annualPredictionBounds(year, label, value){
+function annualPredictionBounds(year, label, mean){
   const rec = annualPredictionLookup.get(Number(year));
   if(!rec) return null;
-  const prefix = label === "Minor" ? "minor" : label === "Moderate" ? "moderate" : label === "Major" ? "major" : "";
-  const center = Number(value);
-  if(prefix && Number.isFinite(center)){
-    const minus = Number(rec[`${prefix}Minus`]);
-    const plus = Number(rec[`${prefix}Plus`]);
-    if(Number.isFinite(minus) && Number.isFinite(plus)){
-      return {
-        low:Math.max(0, Math.floor(center - Math.abs(minus))),
-        high:Math.ceil(center + Math.abs(plus))
-      };
-    }
+  const prefix = label.toLowerCase();
+  if(!FLOOD_STAGE_VIEWS.includes(prefix)) return null;
+
+  const low = rec[`${prefix}P05`];
+  const high = rec[`${prefix}P95`];
+  if(Number.isInteger(low) && Number.isInteger(high) && low >= 0 && high >= low){
+    return {low, high};
+  }
+  const minus = rec[`${prefix}Minus`];
+  const plus = rec[`${prefix}Plus`];
+  if(Number.isFinite(mean) && Number.isFinite(minus) && Number.isFinite(plus)){
+    return {
+      low:Math.max(0, Math.round(mean - Math.abs(minus))),
+      high:Math.round(mean + Math.abs(plus))
+    };
   }
   const range = parseAnnualRange(annualPredictionRange(year, label));
   if(range) return { low:Math.max(0, Math.floor(range.low)), high:Math.ceil(range.high) };
@@ -5256,7 +5241,9 @@ function annualCoverageNote(year){
 }
 
 function annualTooltipFooter(items, total){
-  const lines=[`Total: ${Math.floor(total)} flooding high tides`];
+  const chart = items?.[0]?.chart;
+  const label = chart?.data?.datasets?.some((_, index)=>!chart.isDatasetVisible(index)) ? "Visible total" : "Total";
+  const lines=[`${label}: ${Math.floor(total)} flooding high tides`];
   const note=annualCoverageNote(items?.[0]?.label);
   if(note) lines.push(note);
   return lines;
@@ -5324,7 +5311,7 @@ function ensureAnnual(){
               if (!Number.isFinite(v)) return null;
               const year = ctx.label;
               const value = Math.floor(v);
-              const bounds = annualPredictionBounds(year, ctx.dataset.label, value);
+              const bounds = annualPredictionBounds(year, ctx.dataset.label, v);
               return bounds
                 ? `${ctx.dataset.label}: ${value} flooding high tides (${bounds.low} - ${bounds.high} flooding high tides)`
                 : `${ctx.dataset.label}: ${value} flooding high tides`;
@@ -5367,6 +5354,7 @@ function ensureAnnual(){
   });
 
   attachChartZoom(annualChart);
+  if(ANNUAL_VIEW !== "total") applyFloodStageView(annualChart, ANNUAL_VIEW);
 }
 
 
@@ -5382,7 +5370,6 @@ function renderAnnual(){
   annualChart.data.datasets[2].backgroundColor = annualColors("major");
 
   annualChart.update();
-  applyAnnualView();
   syncChartZoomToData(annualChart);
 }
 
@@ -5390,23 +5377,6 @@ function renderAnnual(){
 
 function compactTimeLabel(iso){
   return fmtESTTime(iso).replace(":00", "").replace(" AM", "a").replace(" PM", "p");
-}
-
-function buildDailyTickCallbackSkipFirstDay(labels){
-  return function(value){
-    const numericValue = Number(value);
-    const idx = Number.isFinite(numericValue) ? Math.round(numericValue) : 0;
-    const iso = labels?.[idx] || (typeof this?.getLabelForValue === "function" ? this.getLabelForValue(value) : null);
-    if(!iso) return "";
-
-    const d = new Date(iso);
-    if(Number.isNaN(d.getTime())) return "";
-
-    const prevIso = labels?.[idx - 1] || "";
-    const currentDay = fmtESTDay(iso);
-    const prevDay = prevIso ? fmtESTDay(prevIso) : "";
-    return idx === 0 ? "" : (currentDay !== prevDay ? currentDay : "");
-  };
 }
 
 function maxTsDateTicks(){
@@ -5423,15 +5393,43 @@ function applyTsDateAxis(labels){
   if(!tsChart?.options?.scales?.x) return;
 
   const x = tsChart.options.scales.x;
+  x.type = "linear";
+  x.bounds = "data";
+  x.suggestedMin = labels[0];
+  x.suggestedMax = labels.at(-1);
+  x.afterBuildTicks = scale => {
+    if(!Number.isFinite(scale.min) || !Number.isFinite(scale.max)) return;
+    const spanHours = (scale.max - scale.min) / HOUR_MS;
+    const tickTimes = [];
+    if(spanHours <= 30){
+      const hoursPerTick = spanHours / maxTsDateTicks();
+      const step = ([1, 2, 3, 6].find(hours => hours >= hoursPerTick) || 6) * HOUR_MS;
+      for(let t=Math.ceil(scale.min / step)*step; t <= scale.max; t+=step) tickTimes.push(t);
+    }else{
+      const { y, m, d } = getESTParts(new Date(scale.min));
+      for(let day=d; ; day++){
+        const t = Date.parse(zonedTimeToUtcISO(y, m, day));
+        if(t > scale.max) break;
+        if(t >= scale.min) tickTimes.push(t);
+      }
+    }
+    scale.ticks = tickTimes.map(value => ({value}));
+  };
   x.ticks = {
     ...(x.ticks || {}),
     color:"rgba(169,182,211,.9)",
     autoSkip:false,
-    maxTicksLimit:20,
     maxRotation:0,
     minRotation:0,
     padding:8,
-    callback:buildDailyTickCallbackSkipFirstDay(labels)
+    callback(value, index, ticks){
+      const shortRange = this.max - this.min <= 30 * HOUR_MS;
+      if(!shortRange) return fmtESTDay(value);
+      const day = fmtESTDay(value);
+      return index === 0 || day !== fmtESTDay(ticks[index - 1].value)
+        ? `${day} ${compactTimeLabel(value)}`
+        : compactTimeLabel(value);
+    }
   };
 
   x.grid = {
@@ -5463,35 +5461,7 @@ function ensureTsChart(){
     type:"line",
     data:{
       labels:[],
-      datasets:[
-        {
-          label:"Observed",
-          data:[],
-          borderWidth:2,
-          pointRadius:0,
-          pointHoverRadius:0,
-          pointHitRadius:0,
-          tension:0.25,
-          spanGaps:false, 
-          borderColor:"rgba(45,212,191,.9)"
-        },
-        {
-          label:"Forecast",
-          data:[],
-          borderWidth:2,
-          pointRadius:0,
-          pointHoverRadius:0,
-          pointHitRadius:0,
-          tension:0.25,
-          spanGaps:true,
-
-          
-          borderDash:[8,6],
-          borderDashOffset:0,
-
-          borderColor:"rgba(45,212,191,.9)"
-        }
-      ]
+      datasets:[tsObservedDataset([])]
     },
     options:{
       responsive:true,
@@ -5515,7 +5485,7 @@ function ensureTsChart(){
               const idx = items?.[0]?.dataIndex;
               if(idx == null) return "";
               const iso = tsChart?.data?.labels?.[idx];
-              return iso ? fmtESTFull(iso) : "";
+              return iso != null ? fmtESTFull(iso) : "";
             },
             label:(ctx)=>{
               const v = ctx.parsed?.y;
@@ -5586,20 +5556,6 @@ function isTopOfHourISO(iso){
   return d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0;
 }
 
-
-function build15MinLabels(startISO, endISO){
-  const start = new Date(startISO).getTime();
-  const end   = new Date(endISO).getTime();
-
-  const s0 = Math.floor(start/TS_STEP_MS)*TS_STEP_MS;
-  const e0 = Math.ceil(end/TS_STEP_MS)*TS_STEP_MS;
-
-  const labels = [];
-  for(let t = s0; t <= e0; t += TS_STEP_MS){
-    labels.push(new Date(t).toISOString());
-  }
-  return labels;
-}
 
 
 
@@ -5693,7 +5649,7 @@ function hookForecastToggles(){
     tsAnnualForecastToggle.addEventListener("click", ()=>{
       TS_ANNUAL_FORECAST_ENABLED = !TS_ANNUAL_FORECAST_ENABLED;
       renderForecastToggle(tsAnnualForecastToggle, TS_ANNUAL_FORECAST_ENABLED);
-      updateTsChartFromState();
+      renderTimeseries();
       resetChartZoom(tsChart);
     });
   }
@@ -5956,7 +5912,7 @@ function tsPredictedDataset(data, label="Forecast", color="rgba(45,212,191,.9)",
     pointRadius:context=>isolatedPoint(context) ? 3 : 0,
     pointHoverRadius:context=>isolatedPoint(context) ? 4 : 0,
     pointHitRadius:0,
-    tension:0.25,
+    tension:0,
     spanGaps:false,
     pointStyle:"circle",
     pointBackgroundColor:color,
@@ -6087,72 +6043,49 @@ function updateTsAnnualForecastChartFromState(){
 }
 
 
-function updateTsChartFromState(){
-  const endISO = nowISO();
-  const startObsISO = new Date(new Date(endISO).getTime() - 24*3600*1000).toISOString();
-
-  const lastObsT = (STATE.obs24Navd && STATE.obs24Navd.length)
-    ? STATE.obs24Navd[STATE.obs24Navd.length - 1].t
-    : endISO;
-
-  const lastObsMs = new Date(lastObsT).getTime();
-  const predStartMs = floorToHourMs(lastObsMs) + HOUR_MS;
-  const predStartISO = new Date(predStartMs).toISOString();
-  const predEndISO   = new Date(predStartMs + 72*3600*1000).toISOString();
-  const predEndMs    = new Date(predEndISO).getTime();
-  const chartEndISO  = TS_ANNUAL_FORECAST_ENABLED ? predEndISO : endISO;
-
-  const labels = build15MinLabels(startObsISO, chartEndISO);
-
+function buildTimeseriesSamples(nowMs, observations, forecast, forecastEnabled, cachedHighs){
+  const obsStartMs = nowMs - 24*HOUR_MS;
+  const forecastEndMs = nowMs + 72*HOUR_MS;
   const obsMap = new Map();
-  for(const p of (STATE.obs24Navd || [])){
-    const t = new Date(p.t).getTime();
-    const ft = Number(p.ft);
-    if(!Number.isFinite(t) || !Number.isFinite(ft)) continue;
-    const snapped = Math.round(t/TS_STEP_MS)*TS_STEP_MS;
-    obsMap.set(snapped, ft);
+  for(const p of observations){
+    const t = Date.parse(p.t);
+    const ft = p.ft;
+    if(!Number.isFinite(t) || !Number.isFinite(ft) || t < obsStartMs || t > nowMs) continue;
+    obsMap.set(t, toDisplayFtFromNavd(ft));
   }
 
-  const obsValsDisplay = labels.map(iso=>{
-    const t = new Date(iso).getTime();
-    const v = obsMap.has(t) ? obsMap.get(t) : null;
-    return (v==null) ? null : toDisplayFtFromNavd(v);
-  });
-
-  const obsFiltered = filterSpikes15Min(
-    obsValsDisplay.map(v => (Number.isFinite(v) ? v : null)),
-    TS_MAX_DELTA_FT
-  );
-
-  const forecastValuesDisplay = field => {
-    const raw = (STATE.pred72Mllw || [])
-      .map(p => ({t:p.t, ft:Number(p[field])}))
-      .filter(p=>{
-        const tMs = Date.parse(p.t);
-        return p.t && Number.isFinite(p.ft) && Number.isFinite(tMs)
-          && tMs >= predStartMs && tMs <= predEndMs;
-      });
-    const resampled = resampleTo15Min_MLLW(raw, predStartISO, predEndISO);
-    const values = new Map();
-    for(let i=0;i<resampled.labels.length;i++){
-      const ms = Date.parse(resampled.labels[i]);
-      const ft = resampled.values[i];
-      if(Number.isFinite(ms) && Number.isFinite(ft)) values.set(ms, ft);
+  const observedTimes = [...obsMap.keys()].sort((a,b) => a-b);
+  const timeline = new Set([obsStartMs, ...observedTimes, nowMs]);
+  for(let index=1; index<observedTimes.length; index++){
+    const before = observedTimes[index-1], after = observedTimes[index];
+    if(after - before > TS_STEP_MS) timeline.add(Math.round((before + after) / 2));
+  }
+  if(forecastEnabled){
+    timeline.add(forecastEndMs);
+    for(let t=Math.ceil(nowMs/TS_STEP_MS)*TS_STEP_MS; t<forecastEndMs; t+=TS_STEP_MS) timeline.add(t);
+    for(const point of forecast){
+      const t = Date.parse(point.t);
+      if(t >= nowMs && t <= forecastEndMs) timeline.add(t);
     }
-    return labels.map(iso=>{
-      const t = Date.parse(iso);
-      if(t < predStartMs || t > predEndMs) return null;
-      const mllw = values.get(t);
-      return Number.isFinite(mllw) ? toDisplayFtFromMllw(mllw) : null;
-    });
-  };
-  const predMinValsDisplay = forecastValuesDisplay("minFt");
-  const predValsDisplay = forecastValuesDisplay("ft");
-  const predMaxValsDisplay = forecastValuesDisplay("maxFt");
+  }
+  const labels = [...timeline].sort((a,b) => a-b);
+  const obsValues = labels.map(t => obsMap.get(t) ?? null);
+  const obsFiltered = cachedHighs ? obsValues : filterSpikes15Min(obsValues);
+  const forecastTimes = labels.filter(t => t >= nowMs);
+  const forecastValues = forecastEnabled ? interpolateForecastLevels(forecast, forecastTimes) : [];
+  const firstForecastIndex = labels.length - forecastTimes.length;
+  const predValsDisplay = labels.map((_,index)=>{
+    const ft = forecastValues[index - firstForecastIndex];
+    return Number.isFinite(ft) ? toDisplayFtFromMllw(ft) : null;
+  });
+  return {labels, obsFiltered, predValsDisplay};
+}
 
-
-
-
+function updateTsChartFromState(nowMs=Date.now()){
+  const {labels, obsFiltered, predValsDisplay} = buildTimeseriesSamples(
+    nowMs, STATE.obs24Navd || [], STATE.pred72Mllw || [],
+    TS_ANNUAL_FORECAST_ENABLED, !!STATE.obs24CachedHighs
+  );
   ensureTsChart();
   styleTsLegendAsLines();
   tsChart.data.labels = labels;
@@ -6200,8 +6133,6 @@ function updateTsChartFromState(){
   tsChart.options.scales.y.ticks.precision = 0;
   tsChart.options.scales.y.ticks.callback = value => Number(value).toFixed(0);
 
-  delete tsChart.options.scales.x.min;
-  delete tsChart.options.scales.x.max;
   tsChart.update("none");
   syncChartZoomToData(tsChart);
   stabilizeTsChartLayout();
@@ -6219,6 +6150,9 @@ function updateTsChartFromState(){
 
 let seaLevelChart = null;
 let SEA_LEVEL_STATE = null;
+let SEA_LEVEL_REFRESH_IN_FLIGHT = null;
+let SEA_LEVEL_BACKFILL = null;
+let SEA_LEVEL_PROVIDER_RETRY_AT = 0;
 const SEA_LEVEL_SERIES_VISIBILITY = new Map();
 
 function renderSeaLevelProjectionControls(){
@@ -6247,7 +6181,7 @@ function hookSeaLevelControls(){
 }
 
 function seaLevelNumber(v){
-  const n = Number(v);
+  const n = dashboardGaugeNumber(v);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -6256,7 +6190,8 @@ function normalizeSeaLevelPoint(row){
   const t = row.t || row.date || row.datetime || row.time || row.month;
   const ft = seaLevelNumber(row.ft ?? row.navd88 ?? row.value ?? row.mean ?? row.meanFt ?? row.waterLevel);
   if(!t || !Number.isFinite(ft)) return null;
-  const month = row.month || monthKeyFromDate(t) || String(t).slice(0, 7);
+  const month = row.month || monthKeyFromDate(t);
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return null;
   const days = row.days == null ? null : seaLevelNumber(row.days);
   return { t:String(t), month:String(month), ft, days:Number.isFinite(days) ? days : null };
 }
@@ -6279,7 +6214,8 @@ function normalizeSeaLevelJson(json){
   const monthly = monthlyRaw.map(normalizeSeaLevelPoint).filter(Boolean);
   const daily = dailyRaw.map(normalizeSeaLevelPoint).filter(Boolean);
   const regression = normalizeSeaLevelRegression(json?.regression);
-  return { monthly, daily, regression, updated:json?.updated || json?.updated_utc || json?.fetched_utc || null };
+  return { monthly, daily, regression, station:json?.station || null, datum:json?.datum || null,
+    updated:json?.updated || json?.updated_utc || json?.fetched_utc || null };
 }
 
 function monthKeyFromDate(t){
@@ -6296,9 +6232,13 @@ function decimalYearFromMonth(key){
 
 function computeMonthlySeaLevel(points){
   const byMonth = new Map();
+  const countedDays = new Set();
   for(const p of points){
-    const key = monthKeyFromDate(p.t);
-    if(!key) continue;
+    // Daily means are labeled by the gauge's local calendar date.
+    const day = p.t.slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Number.isFinite(Date.parse(day)) || countedDays.has(day)) continue;
+    countedDays.add(day);
+    const key = day.slice(0,7);
     if(!byMonth.has(key)) byMonth.set(key, { month:key, sum:0, count:0 });
     const rec = byMonth.get(key);
     rec.sum += p.ft;
@@ -6325,12 +6265,13 @@ function filterSeaLevelMonthlyQuality(monthly){
   });
 }
 
-function relativeSeaLevelSeries(monthly){
-  if(!monthly.length) return null;
+function seaLevelBaseline(monthly){
   const baseRows = monthly.filter(r => r.month.startsWith("2000-"));
   const baseSet = baseRows.length >= 6 ? baseRows : monthly.slice(0, Math.min(12, monthly.length));
-  const base = baseSet.reduce((sum, r)=>sum + r.ft, 0) / Math.max(1, baseSet.length);
-  return monthly.map(r => ({ month:r.month, relFt:r.ft - base, ft:r.ft }));
+  return {
+    ft:baseSet.reduce((sum, r)=>sum + r.ft, 0) / baseSet.length,
+    label:baseRows.length >= 6 ? "2000 mean" : `${baseSet[0].month}–${baseSet.at(-1).month} mean`
+  };
 }
 
 function seaLevelLinearRegression(pts){
@@ -6469,7 +6410,7 @@ function buildSeaLevelDatasets(labels, state){
 
   if(historicalTrendDataset) datasets.push(historicalTrendDataset);
 
-  const base2020 = state.regression.intercept + state.regression.slope * SEA_LEVEL_RSLR_PROJECTIONS.originYear;
+  const scenarioBaseline = state.regression.intercept + state.regression.slope * SEA_LEVEL_RSLR_PROJECTIONS.originYear;
   for(const scenario of SEA_LEVEL_RSLR_PROJECTIONS.scenarios){
     if(scenario.id === "Baseline") continue;
     datasets.push({
@@ -6477,7 +6418,7 @@ function buildSeaLevelDatasets(labels, state){
       data:labels.map(m => {
         const x = decimalYearFromMonth(m);
         const ft = rslrFtForDecimalYear(scenario, x);
-        return ft === null ? null : base2020 + ft;
+        return ft === null ? null : scenarioBaseline + ft;
       }),
       borderColor:seaLevelScenarioColor(scenario.id),
       backgroundColor:seaLevelScenarioColor(scenario.id),
@@ -6547,7 +6488,7 @@ function renderSeaLevelChart(){
           label:(ctx)=>{
             const v = ctx.parsed?.y;
             if(!Number.isFinite(v)) return null;
-            return `${ctx.dataset.label}: ${v.toFixed(2)} ft vs 2000`;
+            return `${ctx.dataset.label}: ${v.toFixed(2)} ft vs ${state.baseline.label}`;
           }
         }
       }
@@ -6580,6 +6521,17 @@ function renderSeaLevelChart(){
   const canvas = $("seaLevelChart");
   if(!canvas) return;
   if(seaLevelChart){
+    if(isChartZoomed(seaLevelChart)){
+      const oldRange = getChartZoomRange(seaLevelChart);
+      const firstMonth = seaLevelChart.data.labels[Math.floor(oldRange.min)];
+      const lastMonth = seaLevelChart.data.labels[Math.ceil(oldRange.max)];
+      const min = labels.findIndex(month=>month >= firstMonth);
+      const max = labels.findLastIndex(month=>month <= lastMonth);
+      if(min >= 0 && max > min){
+        options.scales.x.min = min;
+        options.scales.x.max = max;
+      }
+    }
     // Labels identify the observed, trend and scenario series across rebuilds.
     seaLevelChart.data.datasets.forEach((dataset,index)=>{
       SEA_LEVEL_SERIES_VISIBILITY.set(dataset.label,seaLevelChart.isDatasetVisible(index));
@@ -6603,7 +6555,7 @@ async function fetchSeaLevelJson(){
   const errs = [];
   for(const u of SEA_LEVEL_JSON_PATH_CANDIDATES){
     try{
-      const res = await fetch(`${u}?v=${Date.now()}`, { cache:"no-store" });
+      const res = await fetchWithTimeout(u, { cache:"no-cache" }, 8000);
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       return { url:u, json };
@@ -6614,23 +6566,30 @@ async function fetchSeaLevelJson(){
   throw new Error(errs.join(" | "));
 }
 
-async function fetchUSGSDailySeaLevel(){
+async function fetchUSGSDailySeaLevel(startDate="2000-01-01", endDate=null){
   const url = new URL("https://waterservices.usgs.gov/nwis/dv/");
   url.searchParams.set("format","json");
   url.searchParams.set("sites",USGS_SITE);
   url.searchParams.set("parameterCd",USGS_PARAM_PRIMARY);
   url.searchParams.set("statCd","00003");
-  url.searchParams.set("startDT","2000-01-01");
+  url.searchParams.set("startDT",startDate);
+  if(endDate) url.searchParams.set("endDT",endDate);
   url.searchParams.set("siteStatus","all");
   const res = await fetchWithTimeout(url.toString(), { cache:"no-store" }, 8000);
   if(!res.ok) throw new Error("USGS daily sea level failed " + res.status);
   const json = await res.json();
-  const ts = json?.value?.timeSeries?.[0];
+  const timeSeries = json?.value?.timeSeries || [];
+  const ts = endDate ? timeSeries.find(series=>
+    series.sourceInfo?.siteCode?.some(code=>String(code.value) === String(USGS_SITE)) &&
+    series.variable?.variableCode?.some(code=>String(code.value) === String(USGS_PARAM_PRIMARY)) &&
+    series.variable?.unit?.unitCode === "ft"
+  ) : timeSeries[0];
   const series = ts?.values?.[0]?.value || [];
   return series
     .filter(p => p && Number.isFinite(Date.parse(p.dateTime)))
     .map(p => ({ t:p.dateTime, ft:dashboardGaugeNumber(p.value, ts?.variable?.noDataValue) }))
-    .filter(p => Number.isFinite(p.ft) && Math.abs(p.ft) < 100);
+    .filter(p => Number.isFinite(p.ft) && Math.abs(p.ft) < 100 &&
+      (!endDate || (p.t.slice(0,10) >= startDate && p.t.slice(0,10) <= endDate)));
 }
 
 async function fetchNOAAMonthlySeaLevel(){
@@ -6658,7 +6617,7 @@ async function fetchNOAAMonthlySeaLevel(){
           const y = dashboardGaugeNumber(r.year), m = dashboardGaugeNumber(r.month), ft = dashboardGaugeNumber(r.MSL);
           if(!Number.isInteger(y) || y < 1 || y > 9999 || !Number.isInteger(m) || m < 1 || m > 12 || !Number.isFinite(ft) || Math.abs(ft) >= 100) return null;
           const month = `${String(y).padStart(4,"0")}-${String(m).padStart(2,"0")}`;
-          return { t:`${month}-15T00:00:00Z`, month, ft };
+          return { t:`${month}-15T00:00:00Z`, month, ft, stationName:json.metadata?.name || station };
         })
         .filter(Boolean);
       if(points.length) return points;
@@ -6674,12 +6633,12 @@ async function fetchSeaLevelFallback(){
   if(GAUGE_TYPE !== "NOAA"){
     try{
       const daily = await fetchUSGSDailySeaLevel();
-      if(daily.length) return {resolution:"daily", source:"USGS daily values", daily, monthly:[], updated:null};
+      if(daily.length) return {resolution:"daily", source:"USGS daily values", station:USGS_SITE, daily, monthly:[], updated:null};
     }catch(e){}
   }
   const monthly = (await fetchNOAAMonthlySeaLevel()).slice()
     .sort((a,b)=>a.month.localeCompare(b.month));
-  return {resolution:"monthly", source:"NOAA monthly means", daily:[], monthly, updated:null};
+  return {resolution:"monthly", source:"NOAA monthly means", stationName:`NOAA ${monthly[0].stationName}`, daily:[], monthly, updated:null};
 }
 
 async function fetchDailySeaLevel(){
@@ -6688,36 +6647,94 @@ async function fetchDailySeaLevel(){
   return result.resolution === "monthly" ? result.monthly : result.daily;
 }
 
+function applySeaLevelSnapshot(normalized, source, monthly){
+  if(!monthly.length) throw new Error("No monthly sea level values available");
+  const baseline = seaLevelBaseline(monthly);
+  const relative = monthly.map(row=>({ month:row.month, relFt:row.ft - baseline.ft, ft:row.ft }));
+  // The cache stores the fitted intercept in the same datum as its unshifted monthly means.
+  const regression = normalized.regression
+    ? { ...normalized.regression, intercept:normalized.regression.intercept - baseline.ft }
+    : seaLevelRegression(relative);
+  const station = normalized.stationName || (String(normalized.station) === String(USGS_SITE)
+    ? `${GAUGE_DISPLAY_NAME} USGS` : normalized.station ? `Station ${normalized.station}` : "Sea level");
+  const official = regression?.officialTrend;
+  const trendPeriod = official?.startYear && official?.endYear ? ` (${official.startYear}–${official.endYear})` : "";
+  const trendSource = official ? ` Trend rate from NOAA ${official.stationName || official.station}${trendPeriod}.` : "";
+  const description = `${station} monthly means through ${monthly.at(-1).month}.${trendSource}`;
+  seaLevelMeta.textContent = description;
+  const signature = JSON.stringify([monthly.map(row=>[row.month,row.ft,row.days]),regression,source,station]);
+  if(SEA_LEVEL_STATE?.signature === signature) return;
+  SEA_LEVEL_STATE = { monthly, baseline, relative, regression, source, signature, description,
+    providerFallback:!!normalized.resolution };
+  renderSeaLevelChart();
+  if(DOY_ANNUAL_FORECAST_ENABLED) renderDOYCumPanel();
+}
+
+async function supplementSeaLevelMonths(monthly){
+  const now = new Date();
+  const { y, m } = getESTParts(now);
+  const lastCompleteDay = new Date(Date.UTC(y,m-1,0)).toISOString().slice(0,10);
+  const latest = monthly.at(-1).month;
+  if(latest >= lastCompleteDay.slice(0,7)) return monthly;
+  const nextMonth = new Date(Date.UTC(Number(latest.slice(0,4)),Number(latest.slice(5,7)),1));
+  const startDate = nextMonth.toISOString().slice(0,10);
+  if(!SEA_LEVEL_BACKFILL || SEA_LEVEL_BACKFILL.endDate !== lastCompleteDay || SEA_LEVEL_BACKFILL.startDate > startDate ||
+      now.getTime() >= SEA_LEVEL_BACKFILL.retryAt){
+    const previousMonths = SEA_LEVEL_BACKFILL?.monthly || [];
+    try{
+      const daily = await fetchUSGSDailySeaLevel(startDate,lastCompleteDay);
+      SEA_LEVEL_BACKFILL = { startDate, endDate:lastCompleteDay, retryAt:now.getTime()+86400000,
+        monthly:filterSeaLevelMonthlyQuality(computeMonthlySeaLevel(daily)) };
+    }catch(error){
+      console.warn("Recent USGS daily means unavailable:", error);
+      SEA_LEVEL_BACKFILL = { startDate, endDate:lastCompleteDay, retryAt:now.getTime()+3600000, monthly:previousMonths };
+    }
+  }
+  return monthly.concat(SEA_LEVEL_BACKFILL.monthly.filter(row=>row.month > latest));
+}
+
 async function updateSeaLevelTrends(){
   if(!seaLevelMeta) return;
-  try{
-    let source = "";
-    let normalized = null;
+  if(SEA_LEVEL_REFRESH_IN_FLIGHT) return SEA_LEVEL_REFRESH_IN_FLIGHT;
+  SEA_LEVEL_REFRESH_IN_FLIGHT = (async ()=>{
+    let normalized, source;
     try{
       const fetched = await fetchSeaLevelJson();
       normalized = normalizeSeaLevelJson(fetched.json);
       source = fetched.url;
-    }catch(cacheErr){
+    }catch(cacheError){
+      if(SEA_LEVEL_STATE && !SEA_LEVEL_STATE.providerFallback) throw cacheError;
+      const now = Date.now();
+      if(now < SEA_LEVEL_PROVIDER_RETRY_AT){
+        if(SEA_LEVEL_STATE) return;
+        throw cacheError;
+      }
+      // An absent static cache should not trigger full provider-history downloads every five minutes.
+      SEA_LEVEL_PROVIDER_RETRY_AT = now + 3600000;
       normalized = await fetchSeaLevelFallback();
       source = normalized.source;
     }
-
     const monthlyRaw = normalized.monthly.length ? normalized.monthly : computeMonthlySeaLevel(normalized.daily);
-    const monthly = filterSeaLevelMonthlyQuality(monthlyRaw);
-    const relative = relativeSeaLevelSeries(monthly);
-    if(!relative || !relative.length) throw new Error("No monthly sea level values available");
-    const regression = normalized.regression || seaLevelRegression(relative);
-    SEA_LEVEL_STATE = { monthly, relative, regression, source };
-    seaLevelMeta.textContent = "";
-    renderSeaLevelChart();
-    if(DOY_ANNUAL_FORECAST_ENABLED) renderDOYCumPanel();
-  }catch(e){
-    console.warn("Sea level trends failed:", e);
-    seaLevelMeta.textContent = "Sea level data unavailable. Add data/sealevel.json or run the monthly sea-level cache.";
+    let monthly = filterSeaLevelMonthlyQuality(monthlyRaw).sort((a,b)=>a.month.localeCompare(b.month));
+    if(monthly.length && String(normalized.station) === String(USGS_SITE) && normalized.datum === "NAVD88"){
+      monthly = await supplementSeaLevelMonths(monthly);
+    }
+    applySeaLevelSnapshot(normalized, source, monthly);
+  })().catch(error=>{
+    console.warn("Sea level trends failed:", error);
+    seaLevelMeta.textContent = SEA_LEVEL_STATE
+      ? `${SEA_LEVEL_STATE.description} Refresh unavailable.`
+      : "Sea level data unavailable.";
+  });
+  try{
+    await SEA_LEVEL_REFRESH_IN_FLIGHT;
+  }finally{
+    SEA_LEVEL_REFRESH_IN_FLIGHT = null;
   }
 }
 
 let DOY_CACHE = null;   
+let DOY_HISTORY_LOAD_STATE = "loading";
 let doyCumChart = null;
 let DOY_YEAR_RANGE_KEY = "";
 let DOY_RANGE_START = null;
@@ -7534,12 +7551,17 @@ function computeDOYStatsFromEvents(eventsNavd){
 
 
 function buildYTDSeriesFromEvents(eventsNavd){
-  const {y,m,d} = getESTParts(new Date());
+  const now = new Date();
+  const {y} = getESTParts(now);
+  const archiveEnd = Date.parse(HISTORY_COMPLETED_THROUGH);
+  if(!Number.isFinite(archiveEnd)) return null;
+  const through = getESTParts(new Date(Math.min(archiveEnd, now.getTime())));
+  if(through.y !== y) return null;
   const daily = buildDOYYearDailyCountsFromEvents(eventsNavd).get(y);
   if(!daily) return null;
-  const todayIndex = calIndex365(y,m,d);
+  const endIndex = calIndex365(y,through.m,through.d);
   let total = 0;
-  return daily.map((count,index)=>{total+=count;return index<=todayIndex?total:null;});
+  return daily.map((count,index)=>{total+=count;return index<=endIndex?total:null;});
 }
 
 function emptyCurrentYTDSeries(){
@@ -7553,7 +7575,13 @@ function renderDOYCumPanel(){
   if(!canvas) return;
 
   if(!DOY_CACHE){
-    if(meta) meta.textContent = "Loading flood-event history…";
+    if(meta){
+      meta.textContent = DOY_HISTORY_LOAD_STATE === "loaded"
+        ? "No recorded high tides available."
+        : DOY_HISTORY_LOAD_STATE === "unavailable"
+          ? "Tide history unavailable."
+          : "Loading flood-event history…";
+    }
     return;
   }
 
@@ -7570,7 +7598,8 @@ function renderDOYCumPanel(){
   renderDOYYearControls(controlYears, CUR_Y);
 
   if(meta){
-    meta.textContent = `${years[0]}–${years[years.length - 1]} · ${stageLabel}`;
+    const through = HISTORY_COMPLETED_THROUGH ? ` · Archive through ${fmtESTFull(HISTORY_COMPLETED_THROUGH)} ET` : "";
+    meta.textContent = `${years[0]}–${years[years.length - 1]} · ${stageLabel}${through}`;
   }
 
   const labels  = Array.from({length:365}, (_,i)=> i+1);
@@ -7951,6 +7980,11 @@ function renderDOYCumPanel(){
   };
 
   if(doyCumChart){
+    const zoom = isChartZoomed(doyCumChart) ? getChartZoomRange(doyCumChart) : null;
+    if(zoom){
+      options.scales.x.min = zoom.min;
+      options.scales.x.max = zoom.max;
+    }
     doyCumChart.data = data;
     doyCumChart.options = options;
     if(window.shorelyInstallChartLegend){
@@ -8050,7 +8084,7 @@ function monthlyEventLocalDateParts(event){
 }
 
 function computeMonthlyAveragesFromEvents(eventsNavd){
-  return IndividualHighTides.monthlyAverages(eventsNavd,monthlyCoverage,THRESH.NAVD88);
+  return IndividualHighTides.monthlyAverages(eventsNavd,monthlyCoverage,THRESH.NAVD88,new Date(),HISTORY_COMPLETED_THROUGH);
 }
 
 function formatMonthAverage(value){
@@ -8092,7 +8126,7 @@ const monthAvgTotalLabelPlugin = {
       });
 
       const trueTotal = Number(chart.$monthAvgTotals?.[i]);
-      const labelValue = MONTH_VIEW === "total" && Number.isFinite(trueTotal) ? trueTotal : visibleTotal;
+      const labelValue = visibleCount === chart.data.datasets.length && Number.isFinite(trueTotal) ? trueTotal : visibleTotal;
       if(!visibleCount || !Number.isFinite(labelValue) || labelValue <= 0 || x === null) continue;
 
       const barTopY = Number.isFinite(stackTopY) ? stackTopY : yScale.getPixelForValue(labelValue);
@@ -8187,6 +8221,7 @@ function ensureMonthAvgChart(){
 
   // Average monthly flooding high tides is not zoomable.
   monthAvgChart.canvas.style.touchAction = "auto";
+  if(MONTH_VIEW !== "total") applyFloodStageView(monthAvgChart, MONTH_VIEW);
 }
 
 function renderMonthAveragesChart(monthStats){
@@ -8197,8 +8232,6 @@ function renderMonthAveragesChart(monthStats){
   monthAvgChart.data.datasets[2].data = monthStats.map(r=>r.avgMajor);
   monthAvgChart.$monthAvgTotals = monthStats.map(r=>r.avgTotal);
   monthAvgChart.update();
-  // Average monthly flooding high tides keeps its full-month view.
-    applyMonthView();
 }
 
 function updateMonthAveragesFromHistory(){
@@ -8207,35 +8240,41 @@ function updateMonthAveragesFromHistory(){
   renderMonthAveragesChart(stats);
 }
 
-async function updateLiveAndAnnualCounts(){
-  buildAnnualArrays();
-  renderAnnual();
-
-  const recent = await fetchRecentObservedSeriesWithFallback();
-  if(!recent.length) throw new Error("no recent water-level data returned");
-
-  const usingCachedHighTides = !!recent.isCachedHighTideFallback;
-  STATE.lastObservationIsCachedHighTide = usingCachedHighTides;
+async function updateLiveConditions(){
+  let recent;
+  try{
+    recent = await fetchRecentObservedSeriesWithFallback();
+    const latest = recent.at(-1);
+    if(!latest) throw new Error("No recent water-level observations");
+    if(recent.isCachedHighTideFallback && STATE.lastNavd && !STATE.lastObservationIsCachedHighTide &&
+      Date.parse(latest.t) <= Date.parse(STATE.lastNavd.t)){
+      throw new Error("Live feed unavailable and the cached high tide is older than the last live reading");
+    }
+    STATE.liveObservationError = false;
+    STATE.lastObservationIsCachedHighTide = !!recent.isCachedHighTideFallback;
+    STATE.lastNavd = latest;
+  }catch(error){
+    console.warn("USGS live observations unavailable:", error);
+    STATE.liveObservationError = true;
+    recent = STATE.todayNavd || [];
+  }
   const sourceLabel = liveFeedLabel();
-
-  STATE.lastNavd = recent[recent.length - 1];
-
-  const ageHours = hoursSinceISO(STATE.lastNavd.t);
-  const isStale = ageHours > 6;
-
-  curFtEl.textContent = toDisplayFtFromNavd(STATE.lastNavd.ft).toFixed(2);
-  curMetaEl.textContent = (usingCachedHighTides ? "Cached high tide: " : "Updated: ") + fmtESTFull(STATE.lastNavd.t);
-
+  const usingCachedHighTides = STATE.lastObservationIsCachedHighTide;
+  const isStale = STATE.lastNavd && hoursSinceISO(STATE.lastNavd.t) > 6;
+  const last = STATE.lastNavd;
+  const readingLabel = usingCachedHighTides ? "Cached high tide: " : STATE.liveObservationError || isStale ? "Last reading: " : "Updated: ";
+  curFtEl.textContent = last ? toDisplayFtFromNavd(last.ft).toFixed(2) : "—";
+  curMetaEl.textContent = readingLabel + (last ? fmtESTFull(last.t) : "—");
   renderLiveReadingStatus();
-
-  setCurrentNumberColorByNavd(STATE.lastNavd.ft);
+  if(last) setCurrentNumberColorByNavd(last.ft);
 
   const todayStart = startOfTodayLocalTZ_ISO();
   if(dailyRangeDateEl){
     dailyRangeDateEl.textContent = fmtNiceDate(todayStart);
   }
 
-  const today = recent.filter(p => sameLocalDayISO(p.t, new Date().toISOString()));
+  const now = nowISO();
+  const today = recent.filter(p => sameLocalDayISO(p.t, now));
   STATE.todayNavd = today;
 
   if(today.length && usingCachedHighTides){
@@ -8254,7 +8293,8 @@ async function updateLiveAndAnnualCounts(){
 
     if(dayMaxWhenEl) dayMaxWhenEl.textContent = fmtESTTime(dmx.t);
     if(dayMinWhenEl) dayMinWhenEl.textContent = fmtESTTime(dmn.t);
-    if(dayRangeMeta) dayRangeMeta.textContent = "";
+    if(dayRangeMeta) dayRangeMeta.textContent = STATE.liveObservationError || isStale
+      ? `Range through the last ${sourceLabel} reading.` : "";
   }else{
     dayMaxFtEl.textContent = "—";
     dayMinFtEl.textContent = "—";
@@ -8262,7 +8302,7 @@ async function updateLiveAndAnnualCounts(){
     if(dayMinWhenEl) dayMinWhenEl.textContent = "—";
     if(dayRangeMeta) dayRangeMeta.textContent = usingCachedHighTides
       ? `Live ${sourceLabel} feed unavailable; no cached high tide exists for today.`
-      : (isStale ? `${sourceLabel} feed has no observations for today.` : "");
+      : (STATE.liveObservationError || isStale ? `${sourceLabel} feed has no observations for today.` : "");
   }
 }
 
@@ -8271,44 +8311,51 @@ async function updateLiveAndAnnualCounts(){
 
 
 
-async function updateTimeseries(){
+function renderTimeseries(nowMs=Date.now()){
+  updateFloodOutlook48(nowMs);
+  updateTsChartFromState(nowMs);
+}
+
+async function updateObservedTimeseries(){
   const end = new Date();
   const start = new Date(end.getTime() - 24*3600*1000);
-
+  const range = {startISO:start.toISOString(), endISO:end.toISOString()};
   try{
-    const obs = await fetchObservedSeries({
-      startISO: start.toISOString(),
-      endISO: end.toISOString()
-    });
-    STATE.obs24Navd = obs || [];
+    const obs = await fetchObservedSeries(range);
+    if(!obs.length) throw new Error("No observations in the last 24 hours");
+    STATE.obs24Navd = obs;
     STATE.obs24CachedHighs = false;
   }catch(e){
     console.warn("Observed water level failed:", e);
-    const cached = cachedHighTideFallbackSeries({
-      startISO: start.toISOString(),
-      endISO: end.toISOString()
-    });
-    STATE.obs24Navd = cached || [];
-    STATE.obs24CachedHighs = !!(cached && cached.isCachedHighTideFallback && cached.length);
+    const retained = (STATE.obs24Navd || []).filter(point => Date.parse(point.t) >= start.getTime());
+    const cached = cachedHighTideFallbackSeries(range);
+    if(retained.length && !STATE.obs24CachedHighs){
+      STATE.obs24Navd = retained;
+    }else{
+      STATE.obs24Navd = cached;
+      STATE.obs24CachedHighs = cached.length > 0;
+    }
   }
+  renderTimeseries();
+}
 
+async function updateForecastTimeseries(){
   try{
     const { points, issuedTime } = await fetchPETSSForecast_MLLW();
-    STATE.pred72MllwRaw = points || [];
-    STATE.pred72Mllw = points || [];
-
+    STATE.pred72Mllw = points;
     STATE.petssIssuedTime = issuedTime;
-    STATE.petssError = null;
+    STATE.petssUnavailableReason = null;
   }catch(e){
     console.warn("Forecast failed:", e);
-    STATE.pred72Mllw = [];
-    STATE.pred72MllwRaw = [];
-
-    STATE.petssError = e?.message || "Forecast unavailable";
+    const now = Date.now(), issued = Date.parse(STATE.petssIssuedTime);
+    const lastPoint = Date.parse(STATE.pred72Mllw?.at(-1)?.t);
+    if(!(now - issued <= 24*3600000 && lastPoint > now)){
+      STATE.pred72Mllw = [];
+      STATE.petssIssuedTime = null;
+      STATE.petssUnavailableReason = "Waiting for a current NOAA/PETSS run";
+    }
   }
-
-  updateTsChartFromState();
-  updateFloodOutlook48();
+  renderTimeseries();
 }
 
 
@@ -8319,11 +8366,12 @@ async function resolvePeaksJsonUrl(){
   const errs = [];
   for(const u of PEAKS_JSON_PATH_CANDIDATES){
     try{
-      const res = await fetch(`${u}?v=${Date.now()}`, { cache:"no-store" });
+      const res = await fetchWithTimeout(u, { cache:"no-cache" }, 20000);
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const etag = res.headers.get("etag");
+      if(etag && u === PEAKS_JSON_URL && etag === HISTORY_ARCHIVE_ETAG) return { unchanged:true };
       const json = await res.json();
-      PEAKS_JSON_URL = u;
-      return { url:u, json };
+      return { url:u, json, etag };
     }catch(e){
       errs.push(`${u} (${e?.message || e})`);
     }
@@ -8332,21 +8380,46 @@ async function resolvePeaksJsonUrl(){
 }
 
 function normalizePeaksJson(json){
+  if ((json?.site && String(json.site) !== USGS_SITE) || (json?.datum && json.datum !== "NAVD88")){
+    throw new Error("High-tide archive belongs to a different gauge or datum.");
+  }
   return IndividualHighTides.normalizeCache(json, {primaryAgency:GAUGE_TYPE});
 }
 
 async function initJSONBackedHistory(){
-  const { json } = await resolvePeaksJsonUrl();
-  // The validated v3 cache is the only counting authority. Live conditions are separate.
-  HIGH_TIDES_NAVD = normalizePeaksJson(json);
-  stationAnnualCoverageYears = inferStationAnnualCoverageYears(json, HIGH_TIDES_NAVD, []);
-  annualCoverageByYear = new Map((json.coverage || []).filter(r=>r && Number.isFinite(Number(r.year))).map(r=>[Number(r.year),r]));
-  monthlyCoverage = Array.isArray(json.monthlyCoverage) ? json.monthlyCoverage : [];
-  applyFilter();
-  updateMonthAveragesFromHistory();
-  buildAnnualArrays();
-  renderAnnual();
-  refreshDOYFromHistory();
+  if(HISTORY_REFRESH_IN_FLIGHT) return HISTORY_REFRESH_IN_FLIGHT;
+  HISTORY_REFRESH_IN_FLIGHT = (async ()=>{
+    const { url, json, etag, unchanged } = await resolvePeaksJsonUrl();
+    if(unchanged) return;
+    const revision = json.generatedAt
+      ? JSON.stringify([json.generatedAt,json.lastCompletedWindowEnd,json.lastProcessedISO,json.events?.length])
+      : null;
+    if(revision && revision === HISTORY_ARCHIVE_REVISION) return;
+    // Only validated high-tide events contribute to historical counts.
+    const events = normalizePeaksJson(json);
+    const latestTimedEvent = events.find(event=>event.t);
+    const completedThrough = [json.lastCompletedWindowEnd,latestTimedEvent?.windowEnd,latestTimedEvent?.t]
+      .find(timestamp=>Number.isFinite(Date.parse(timestamp))) || null;
+    if(HISTORY_COMPLETED_THROUGH && (!completedThrough || Date.parse(completedThrough) < Date.parse(HISTORY_COMPLETED_THROUGH))) return;
+    HISTORY_COMPLETED_THROUGH = completedThrough;
+    HIGH_TIDES_NAVD = events;
+    stationAnnualCoverageYears = inferStationAnnualCoverageYears(json, events);
+    annualCoverageByYear = new Map((json.coverage || []).filter(r=>r && Number.isFinite(Number(r.year))).map(r=>[Number(r.year),r]));
+    monthlyCoverage = Array.isArray(json.monthlyCoverage) ? json.monthlyCoverage : [];
+    applyFilter();
+    updateMonthAveragesFromHistory();
+    buildAnnualArrays();
+    renderAnnual();
+    refreshDOYFromHistory();
+    PEAKS_JSON_URL = url;
+    HISTORY_ARCHIVE_ETAG = etag;
+    HISTORY_ARCHIVE_REVISION = revision;
+  })();
+  try{
+    await HISTORY_REFRESH_IN_FLIGHT;
+  }finally{
+    HISTORY_REFRESH_IN_FLIGHT = null;
+  }
 }
 
 
@@ -8367,7 +8440,8 @@ const NOAA_STATION_TIDECLOCK = "8557380";
 const CREST_WINDOW_HOURS = 2;
 const REQUIRE_WITHIN_HOURS = 1;
 const LIVE_START_ISO = "2026-01-01T00:00:00Z";
-const ALERT_POINT = {"lat":39.0,"lon":-74.7};
+// An onshore Stone Harbor point in NWS forecast zone NJZ024.
+const ALERT_POINT = {"lat":39.0533,"lon":-74.7605};
 let DISPLAY_DATUM = "MLLW";
 const DATUMS = ["MLLW","NAVD88","MSL","MHHW"];
 const OFFSET_FROM_MLLW = {"MLLW":0,"NAVD88":-2.66,"MSL":-2.31,"MHHW":-4.74};
@@ -8712,13 +8786,10 @@ const SEA_LEVEL_JSON_PATH_CANDIDATES = [
   `../data/${SEA_LEVEL_JSON_FILE}`,
   `/data/${SEA_LEVEL_JSON_FILE}`
 ];
+const PETSS_STATION = "8535581";
 const PETSS_JSON_CANDIDATES = [
   "data/petss_forecast.json",
-  "./data/petss_forecast.json",
-  "/data/petss_forecast.json",
-  `data/petss_forecast_${COOPS_STATION}_mllw.json`,
-  `./data/petss_forecast_${COOPS_STATION}_mllw.json`,
-  `/data/petss_forecast_${COOPS_STATION}_mllw.json`
+  `data/petss_forecast_${PETSS_STATION}_mllw.json`
 ];
 const PEAKS_JSON_FILE = "peaks_navd88.json";
 const FLOODMAPPER_V2_PIPELINE = {"releaseVersion":"20261030-individual-high-tides-v3","primaryUsgsGaugeId":"01411360","noaaStationId":"8557380","noaaBiasCorrectionFt":0.064,"crestUsgsStationId":"01411360","sourcePrecedence":["qualified-primary-measured-high-tide","flood-calibrated-noaa-gap-fill","supported-official-crest-for-uncovered-tide"],"countUnit":"individual-high-tide"};
@@ -8732,6 +8803,39 @@ let PEAKS_JSON_URL = PEAKS_JSON_PATH_CANDIDATES[0];
 
 function openAllAccordionsOnLoad(){
   document.querySelectorAll("details.acc").forEach(d => { d.open = true; });
+}
+
+const pendingRefreshes = new Set();
+let hasLoadedHistory = false;
+
+function runDashboardRefresh(task){
+  if(pendingRefreshes.has(task)) return;
+  pendingRefreshes.add(task);
+  Promise.resolve().then(task).catch(error => {
+    console.warn("Dashboard refresh failed:", task.name, error);
+    if(task === refreshDashboardHistory && !hasLoadedHistory){
+      if(histMeta) histMeta.textContent = "Tide history unavailable";
+      if(monthAvgMeta) monthAvgMeta.textContent = "Monthly averages unavailable";
+      DOY_HISTORY_LOAD_STATE = "unavailable";
+      if(doyMeta) doyMeta.textContent = "Tide history unavailable";
+    }
+  }).finally(() => pendingRefreshes.delete(task));
+}
+
+async function refreshDashboardHistory(){
+  await initJSONBackedHistory();
+  hasLoadedHistory = true;
+  if(STATE.liveObservationError) runDashboardRefresh(updateLiveConditions);
+  if(!STATE.obs24Navd?.length) runDashboardRefresh(updateObservedTimeseries);
+}
+
+function refreshDashboard(){
+  runDashboardRefresh(updateAlerts);
+  runDashboardRefresh(updateLiveConditions);
+  runDashboardRefresh(updateObservedTimeseries);
+  runDashboardRefresh(updateForecastTimeseries);
+  runDashboardRefresh(updateSeaLevelTrends);
+  runDashboardRefresh(refreshDashboardHistory);
 }
 
 async function boot(){
@@ -8754,50 +8858,12 @@ async function boot(){
   hookDOYControls();
 
 
-    
   hookGaugeMapAccordion();
-
-  
   const mapAcc = document.getElementById("mapAcc");
   if(mapAcc && mapAcc.open){
     ensureGaugeMap();
   }
-
-
-  
-
-
-const alertTask = updateAlerts().catch(e => console.warn("Alerts init failed:", e));
-
-
- 
-const hist = await Promise.allSettled([
-  initJSONBackedHistory()
-]);
-
-const seaLevelTask = updateSeaLevelTrends().catch(e => console.warn("Sea level init failed:", e));
-
-if (hist[0].status === "rejected") {
-  console.error("History init failed:", hist[0].reason);
-  if (histMeta)      histMeta.textContent = "History load failed. Check /data/peaks_navd88.json.";
-  if (monthAvgMeta)  monthAvgMeta.textContent = "History load failed (monthly averages unavailable).";
-}
-
-  
-  const live = await Promise.allSettled([ updateLiveAndAnnualCounts() ]);
-  if(live[0].status === "rejected"){
-    console.error("Live init failed:", live[0].reason);
-    stageTextEl.textContent="LIVE DATA UNAVAILABLE";
-    lastPill.textContent="Last updated: —";
-    curFtEl.textContent="—";
-    curMetaEl.textContent="Updated: —";
-  }
-
-  
-  const timeseriesTask = updateTimeseries().catch(e => console.warn("Timeseries init failed:", e));
-  void alertTask;
-  void seaLevelTask;
-  void timeseriesTask;
+  refreshDashboard();
 }
 
 
@@ -8886,8 +8952,9 @@ if(STATE.todayNavd && STATE.todayNavd.length){
 
 
   
-  updateTsChartFromState();
-  updateFloodOutlook48();
+  const nowMs = Date.now();
+  updateFloodOutlook48(nowMs);
+  updateTsChartFromState(nowMs);
 }
 
 
@@ -8898,18 +8965,7 @@ boot().catch(err=>{
 });
 
 
-setInterval(async ()=>{
-  try{
-    await Promise.allSettled([
-      updateAlerts(),
-      updateLiveAndAnnualCounts(),
-      updateTimeseries(),
-      updateSeaLevelTrends()
-    ]);
-  }catch(e){
-    console.error(e);
-  }
-}, 5*60*1000);
+setInterval(refreshDashboard, 5*60*1000);
 
     
 
@@ -8925,7 +8981,7 @@ setInterval(async ()=>{
     ["Observations", "Observations and forecast", "The solid line is measured water. The forecast line shows what water levels may do over the next few days."],
     ["Flooding throughout the year", "Flooding throughout the year", "Each line counts individual flooding high tides as the year goes on. The year grid lists each annual total and controls which years are visible."],
     ["Flooding over the years", "Flooding over the years", "This compares yearly flood counts so you can see whether flooding is becoming more common."],
-    ["Sea Level Trends", "Sea level trends", "Monthly mean sea level is the measured history. Historical trend is the fitted past pattern, while Current Trend and the other scenarios extend possible future sea level."],
+    ["Sea Level Trends", "Sea level trends", "Monthly means show the measurements. The chart identifies the gauge supplying the trend rate. Turn on Forecast to see projections."],
     ["Average flooding high tides per month", "Average flooding high tides by month", "This shows which months usually have more coastal flooding in the historic record."],
     ["Historic flooding filter", "Historic flooding filter", "Choose a water-height and date range to look up past flood events."],
     ["NJ tide gauge map", "NJ tide gauge map", "This marks the tide gauge used for this dashboard, so the chart data has a place on the map."]
@@ -9171,6 +9227,7 @@ setInterval(async ()=>{
     const clicker = typeof legendOptions.onClick === "function" ? legendOptions.onClick : defaultClick;
     if(typeof clicker === "function"){
       clicker.call(legendOptions, {type:"click", native:null}, item, {chart});
+      syncFloodStageView(chart);
     }
     requestAnimationFrame(() => renderHtmlLegend(chart));
   }
@@ -9369,7 +9426,6 @@ setInterval(async ()=>{
   ];
   let index = 0;
   let active = false;
-  let lastFocus = null;
   let positionFrame = 0;
 
   function resolveTarget(step){
@@ -9434,8 +9490,12 @@ setInterval(async ()=>{
     document.getElementById("dashboardTutorialProgress").textContent = "Step " + (index + 1) + " of " + steps.length;
     document.getElementById("dashboardTutorialTitle").textContent = step.title();
     document.getElementById("dashboardTutorialBody").innerHTML = step.body();
-    document.getElementById("dashboardTutorialBack").disabled = index === 0;
-    document.getElementById("dashboardTutorialNext").textContent = index === steps.length - 1 ? "Finish" : "Next";
+    const back = document.getElementById("dashboardTutorialBack");
+    const next = document.getElementById("dashboardTutorialNext");
+    const backHadFocus = back === document.activeElement;
+    back.disabled = index === 0;
+    next.textContent = index === steps.length - 1 ? "Finish" : "Next";
+    if(back.disabled && backHadFocus) next.focus({preventScroll:true});
     revealTarget(target);
     window.setTimeout(scheduleSpotlight, isMobileTour() ? 380 : 300);
   }
@@ -9446,15 +9506,15 @@ setInterval(async ()=>{
     shell.hidden = !active;
     shell.setAttribute("aria-hidden", active ? "false" : "true");
     document.body.classList.toggle("dashboard-tutorial-active", active);
+    document.querySelectorAll("body > .wrap, body > .contactNote").forEach(el=>{ el.inert = active; });
     if(active){
-      lastFocus = document.activeElement;
       index = 0;
       render();
       document.getElementById("dashboardTutorialNext")?.focus({preventScroll:true});
     }else{
       if(positionFrame) cancelAnimationFrame(positionFrame);
       positionFrame = 0;
-      (lastFocus || document.getElementById("dashboardTutorialBtn"))?.focus?.({preventScroll:true});
+      document.getElementById("dashboardTutorialBtn")?.focus();
     }
   }
 
@@ -9464,7 +9524,8 @@ setInterval(async ()=>{
     const controls = Array.from(card?.querySelectorAll("button:not(:disabled)") || []);
     if(!controls.length) return;
     const first = controls[0], last = controls[controls.length - 1];
-    if(event.shiftKey && document.activeElement === first){ event.preventDefault(); last.focus(); }
+    if(!card.contains(document.activeElement)){ event.preventDefault(); (event.shiftKey ? last : first).focus(); }
+    else if(event.shiftKey && document.activeElement === first){ event.preventDefault(); last.focus(); }
     else if(!event.shiftKey && document.activeElement === last){ event.preventDefault(); first.focus(); }
   }
 

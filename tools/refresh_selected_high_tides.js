@@ -23,7 +23,6 @@ const CONFIG = Object.freeze([
 ].map(c => Object.freeze({...c, thresholds:Object.freeze(c.thresholds)})));
 const allowedConfig = config => {if (!CONFIG.includes(config)) throw new Error("Application is outside the selected high-tide scope."); return config;};
 const iso = t => new Date(t).toISOString();
-const newest = series => Math.max(-Infinity, ...series.map(p => Date.parse(p.t)).filter(Number.isFinite));
 const stableJSON = value => Buffer.from(JSON.stringify(value) + "\n");
 
 function validateConnection(connection) {
@@ -196,7 +195,9 @@ async function updateCache(config, cache, recent, {now = Date.now(), fetchClock 
   allowedConfig(config);
   const engine = createEngine(config); engine.validateCache(cache);
   const primary = recent.primary || [], backup = recent.backup || [], hourly = recent.hourly || [], verified = recent.verifiedHighs || [];
-  const latest = Math.min(now, Math.max(newest(primary), newest(backup), newest(hourly), newest(verified)));
+  const latestUsable = series => engine.prepareSeries(series).findLast(p => p.ms <= now)?.ms ?? -Infinity;
+  const primaryLatest = latestUsable(primary), backupLatest = latestUsable(backup);
+  const latest = Math.max(primaryLatest, backupLatest, latestUsable(hourly), latestUsable(verified));
   if (!Number.isFinite(latest) || now - latest > 6*HOUR) throw new Error("Observed feeds are missing or stale by more than six hours; cache and cursor were not advanced.");
   const startISO = recent.startISO || iso(Date.parse(cache.lastProcessedISO) - LOOKBACK_DAYS*DAY);
   const alignedHighs = alignPredictedHighs(engine, recent.highs, cache);
@@ -254,8 +255,8 @@ async function updateCache(config, cache, recent, {now = Date.now(), fetchClock 
     ...(Object.hasOwn(cache, "generatedUTC") ? {generatedUTC:iso(now)} : {}),
     liveUpdate:{checkedAt:iso(now), observedThrough:engine.secondsISO(latest), lastCompletedWindowEnd:engine.secondsISO(completedEnd), overlapDays:LOOKBACK_DAYS, completedWindows:windows.length,
       qualifiedPrimaryCycles:primaryEvents.length, qualifiedBackupCycles:backupEvents.length,
-      primaryLatest:Number.isFinite(newest(primary)) ? engine.secondsISO(newest(primary)) : null,
-      backupLatest:Number.isFinite(newest(backup)) ? engine.secondsISO(newest(backup)) : null,
+      primaryLatest:Number.isFinite(primaryLatest) ? engine.secondsISO(primaryLatest) : null,
+      backupLatest:Number.isFinite(backupLatest) ? engine.secondsISO(backupLatest) : null,
       ...(recent.datumConversions?.length ? {datumConversions:recent.datumConversions} : {})}};
   if (Array.isArray(cache.expectedCycleRegistry)) {
     result.expectedCycleRegistry = mergeRegistry(engine, cache.expectedCycleRegistry, windows);

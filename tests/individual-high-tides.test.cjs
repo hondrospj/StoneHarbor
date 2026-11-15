@@ -17,10 +17,11 @@ function localParts(date){const p=tides.parts({t:date.toISOString()});return {y:
 function appContext(json){
   class FixedDate extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return Date.parse(now);}}
   const context=vm.createContext({IndividualHighTides:tides,Date:FixedDate,console,getESTParts:localParts,
-    GAUGE_TYPE:"USGS",THRESH:{NAVD88:T},resolvePeaksJsonUrl:async()=>({json}),
+    GAUGE_TYPE:"USGS",USGS_SITE:"01411360",THRESH:{NAVD88:T},resolvePeaksJsonUrl:async()=>({url:"data/peaks_navd88.json",json}),
     applyFilter(){},updateMonthAveragesFromHistory(){},renderAnnual(){},renderDOYCumPanel(){},
     ANNUAL_PREDICTIONS_ENABLED:false,ANNUAL_SCENARIO:"Baseline",FUTURE_FLOOD_PREDICTIONS:{},doyStageLabel:()=>"Flooding high tides"});
   vm.runInContext(`let HIGH_TIDES_NAVD=[],monthlyCoverage=[],stationAnnualCoverageYears=new Set(),annualCoverageByYear=new Map(),annualPredictionLookup=new Map(),annualSource=[],YEARS=[],annualMinor=[],annualModerate=[],annualMajor=[],DOY_CACHE=null,DOY_HISTORY_LOAD_STATE="loading";`,context);
+  vm.runInContext(`let HISTORY_COMPLETED_THROUGH=null,HISTORY_REFRESH_IN_FLIGHT=null,HISTORY_ARCHIVE_ETAG=null,HISTORY_ARCHIVE_REVISION=null,PEAKS_JSON_URL;`,context);
   for(const name of ["normalizePeaksJson","annualYearFromEvent","inferStationAnnualCoverageYears","annualNumber","countEventsFromListForYear","buildStationAnnualCountsMap","buildAnnualArrays","combinedHistoricRowsNavd","calIndex365","doyCompleteHistoricalYear","buildDOYYearDailyCountsFromEvents","computeDOYStatsFromEvents","buildYTDSeriesFromEvents","emptyCurrentYTDSeries","computeMonthlyAveragesFromEvents","refreshDOYFromHistory","initJSONBackedHistory"]){
     vm.runInContext(extract(name),context);
   }
@@ -96,6 +97,41 @@ test("a successfully loaded empty canonical archive leaves loading state",async(
   const context=appContext(cache([]));await vm.runInContext("initJSONBackedHistory()",context);
   assert.equal(vm.runInContext("DOY_CACHE",context),null);
   assert.equal(vm.runInContext("DOY_HISTORY_LOAD_STATE",context),"loaded");
+});
+test("a month must have completed according to both the calendar and archive coverage",()=>{
+  const november=[{year:2026,month:11,expectedCycles:6,acceptedCycles:6}];
+  const december=new Date("2026-12-01T12:00:00Z");
+  const rows=normalize([event("2026-11-03T16:00:00Z",4.2,"november")]);
+  for(const archiveEnd of ["2026-11-04T03:13:00Z","2026-12-01T04:59:59Z"]){
+    assert.equal(tides.monthlyAverages(rows,november,T,december,archiveEnd)[10].years,0);
+  }
+  assert.equal(tides.monthlyAverages(rows,november,T,december,"2026-12-01T05:00:00Z")[10].avgTotal,1);
+});
+test("the current-year chart ends at the last local day with archive coverage and advances on refresh",async()=>{
+  const first=cache([event("2026-10-10T23:00:00Z",4.2,"a")]);
+  first.generatedAt="2026-10-11T04:00:00Z";
+  first.lastCompletedWindowEnd="2026-10-11T03:30:00Z";
+  const ctx=appContext(first);
+  await ctx.initJSONBackedHistory();
+  const series=()=>Array.from(vm.runInContext("buildYTDSeriesFromEvents(HIGH_TIDES_NAVD)",ctx));
+  const oct10=tides.calendarIndex365(2026,10,10),oct20=tides.calendarIndex365(2026,10,20);
+  assert.equal(series()[oct10],1);assert.equal(series()[oct10+1],null);
+  const updated=cache([...first.events,event("2026-10-20T17:00:00Z",5.2,"b")]);
+  updated.generatedAt="2026-10-21T02:00:00Z";
+  updated.lastCompletedWindowEnd="2026-10-20T23:30:00Z";
+  let requests=0;
+  ctx.resolvePeaksJsonUrl=async()=>{requests++;return {json:updated};};
+  await Promise.all([ctx.initJSONBackedHistory(),ctx.initJSONBackedHistory()]);
+  assert.equal(requests,1);assert.equal(series()[oct20],2);assert.equal(series()[oct20+1],null);
+  ctx.resolvePeaksJsonUrl=async()=>{throw Error("Unavailable");};
+  await assert.rejects(ctx.initJSONBackedHistory(),/Unavailable/);
+  assert.equal(series()[oct20],2);
+  ctx.resolvePeaksJsonUrl=async()=>({json:first});
+  await ctx.initJSONBackedHistory();
+  assert.equal(series()[oct20],2,"a later refresh cannot replace held data with an older archive");
+  ctx.resolvePeaksJsonUrl=async()=>({json:{...updated,generatedAt:"2026-10-23T00:00:00Z",site:"01411390",datum:"NAVD88"}});
+  await assert.rejects(ctx.initJSONBackedHistory(),/different gauge or datum/);
+  assert.equal(series()[oct20],2);
 });
 test("retrospective empirical fits use the canonical primary-only monthly exposure model",()=>{
   assert.match(extract("pastAnnualForecastInfo"),/IndividualHighTides\.fitEvents\(eventsNavd\)/);

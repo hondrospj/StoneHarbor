@@ -23,3 +23,11 @@ test('legacy daily rows and foreign station/thresholds fail closed',()=>{assert.
 test('hourly backup uses exact-hour preliminary samples and verified values take precedence',async()=>{const fetchImpl=async u=>({ok:true,json:async()=>new URL(u).searchParams.get('product')==='hourly_height'?{data:[{t:'2026-01-01 12:00',v:'3.2',f:'0,0'}]}:{data:[{t:'2026-01-01 12:00',v:'3.25',f:'0,0,0,0'},{t:'2026-01-01 12:06',v:'3.8',f:'0,0,0,0'},{t:'2026-01-01 13:00',v:'0',f:'0,0,0,0'}]}});const b=await updater.fetchBackup({startISO:t(0),endISO:t(24),fetchImpl});assert.deepEqual(b.series.map(x=>x.ft),[3.2,0]);});
 test('incremental updater corrects a prior crossing without dropping the second tide',async()=>{const old=cache([evt(12,3.44),evt(24,4.5)]);const result=await updater.updateCache(old,{now:new Date(t(36)),fetchPrimary:async()=>series(0,36,{12:3.43,24:4.5}),fetchDonor:async()=>({series:series(0,36,{12:5,24:5})}),fetchClock:async()=>clock,warn:()=>{}});assert.equal(result.events.length,2);assert.equal(result.events.find(e=>e.cycleId===evt(12).cycleId).ft,3.43);assert.equal(result.events.filter(e=>e.ft>=3.44).length,1);assert.equal(old.events[0].ft,3.44);});
 test('stale or absent feeds cannot advance history',async()=>{await assert.rejects(updater.updateCache(cache(),{now:new Date(t(36)),fetchPrimary:async()=>[],fetchDonor:async()=>({series:[]}),fetchClock:async()=>clock,warn:()=>{}}),/stale/);});
+test('an invalid reading cannot make the standalone archive updater advance history',async()=>{
+  await assert.rejects(updater.updateCache(cache(),{
+    now:new Date(t(36)),
+    fetchPrimary:async()=>[{t:t(36),ft:-400}],
+    fetchDonor:async()=>({series:[]}),
+    fetchClock:async()=>{throw new Error('must not fetch the clock');}
+  }),/stale/);
+});

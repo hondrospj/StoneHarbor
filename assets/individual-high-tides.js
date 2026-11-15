@@ -104,8 +104,9 @@
     }
     return byYear;
   }
-  function monthlyAverages(events, coverage, threshold, now=new Date()){
+  function monthlyAverages(events, coverage, threshold, now=new Date(), completedThrough=now){
     const current = parts({t:now.toISOString()});
+    const completed = parts({t:completedThrough});
     const byMonth = new Map();
     for(const row of coverage || []){
       const year = Number(row?.year), month = Number(row?.month);
@@ -113,6 +114,7 @@
       if(!Number.isInteger(year) || !Number.isInteger(month) || month<1 || month>12) continue;
       if(!(expected>0 && accepted>=expected)) continue;
       if(year>current.year || (year===current.year && month>=current.month)) continue;
+      if(!completed || year>completed.year || (year===completed.year && month>=completed.month)) continue;
       byMonth.set(`${year}-${month}`,{year,month,total:0,minor:0,moderate:0,major:0,expectedCycles:expected,acceptedCycles:accepted});
     }
     for(const event of events || []){

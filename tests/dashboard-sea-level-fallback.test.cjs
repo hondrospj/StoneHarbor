@@ -16,13 +16,16 @@ function source(name,optional=false){
   }
   throw Error("Cannot extract "+name);
 }
-function harness({cacheBody=null,dailyRows=null,dailyEmpty=false,monthly=true,monthlyBody=monthlyMeanResponse,gauge="USGS"}={}){
+function harness({cacheBody=null,dailyRows=null,dailyEmpty=false,monthly=true,monthlyBody=monthlyMeanResponse,gauge="USGS",now="2026-08-04T16:00:00Z"}={}){
   const calls=[],warnings=[];let rendered=0;
-  const ctx=vm.createContext({Date,URL,console:{warn:(...args)=>warnings.push(args.map(String).join(" "))},
-    GAUGE_TYPE:gauge,USGS_SITE:"01411360",USGS_PARAM_PRIMARY:"72279",NOAA_SEA_LEVEL_STATION_CANDIDATES:["8557380"],
+  class FixedDate extends Date { constructor(...args){super(...(args.length?args:[now]));} }
+  const ctx=vm.createContext({Date:FixedDate,URL,AbortSignal,console:{warn:(...args)=>warnings.push(args.map(String).join(" "))},
+    GAUGE_TYPE:gauge,GAUGE_DISPLAY_NAME:"Stone Harbor",USGS_SITE:"01411360",USGS_PARAM_PRIMARY:"72279",NOAA_SEA_LEVEL_STATION_CANDIDATES:["8557380"],
+    getESTParts:date=>({y:date.getUTCFullYear(),m:date.getUTCMonth()+1}),
     SEA_LEVEL_JSON_PATH_CANDIDATES:["data/sealevel.json","./data/sealevel.json","../data/sealevel.json","/data/sealevel.json"],
     SEA_LEVEL_MIN_DAILY_VALUES_PER_MONTH:20,SEA_LEVEL_EXCLUDED_USGS_MONTHS:{},DOY_ANNUAL_FORECAST_ENABLED:false,
-    seaLevelMeta:{textContent:""},SEA_LEVEL_STATE:null,renderSeaLevelChart:()=>{rendered++;}});
+    seaLevelMeta:{textContent:""},SEA_LEVEL_STATE:null,SEA_LEVEL_REFRESH_IN_FLIGHT:null,SEA_LEVEL_BACKFILL:null,
+    SEA_LEVEL_PROVIDER_RETRY_AT:0,renderSeaLevelChart:()=>{rendered++;}});
   const transport=async resource=>{
     const url=new URL(String(resource),"https://fixture.invalid/dashboard/");calls.push(url);
     if(url.hostname==="fixture.invalid")return {ok:cacheBody!==null,status:cacheBody?200:404,json:async()=>cacheBody};
@@ -34,14 +37,15 @@ function harness({cacheBody=null,dailyRows=null,dailyEmpty=false,monthly=true,mo
   ctx.fetch=transport;ctx.fetchWithTimeout=transport;
   const names=["dashboardGaugeNumber","nowISO","ymdCompactFromISO","seaLevelNumber","normalizeSeaLevelPoint",
     "normalizeSeaLevelRegression","normalizeSeaLevelJson","monthKeyFromDate","decimalYearFromMonth",
-    "computeMonthlySeaLevel","filterSeaLevelMonthlyQuality","relativeSeaLevelSeries","seaLevelLinearRegression",
-    "seaLevelRegression","fetchSeaLevelJson","fetchUSGSDailySeaLevel","fetchNOAAMonthlySeaLevel","fetchDailySeaLevel","updateSeaLevelTrends"];
+    "computeMonthlySeaLevel","filterSeaLevelMonthlyQuality","seaLevelBaseline","seaLevelLinearRegression",
+    "seaLevelRegression","fetchSeaLevelJson","fetchUSGSDailySeaLevel","fetchNOAAMonthlySeaLevel","fetchDailySeaLevel",
+    "applySeaLevelSnapshot","supplementSeaLevelMonths","updateSeaLevelTrends"];
   vm.runInContext(source("fetchSeaLevelFallback",true),ctx);
   for(const name of names)vm.runInContext(source(name),ctx);
   return {ctx,calls,warnings,get rendered(){return rendered;},async update(){await ctx.updateSeaLevelTrends();return ctx.SEA_LEVEL_STATE;}};
 }
 function assertMonthlyState(h,state){
-  assert.equal(h.rendered,1);assert.equal(h.ctx.seaLevelMeta.textContent,"");
+  assert.equal(h.rendered,1);assert.match(h.ctx.seaLevelMeta.textContent,/NOAA Lewes monthly means through 2026-10/);
   assert.equal(state.monthly.length,monthlyMeanResponse.data.length);
   assert.match(state.source,/NOAA.*monthly/i);
   assert(state.monthly.every(row=>row.days===undefined||row.days===null),"Published monthly means must not receive invented daily sample counts");
@@ -68,13 +72,32 @@ test("retained daily values retain the existing daily aggregation and quality pa
   assert(state.monthly.every(row=>row.days>=20));
   assert.equal(h.calls.filter(url=>url.searchParams.get("product")==="monthly_mean").length,0);
 });
-test("cached monthly values and their stored regression are unchanged",async()=>{
+test("the cached trend keeps its slope and adopts the same zero point as the observations",async()=>{
   const h=harness({cacheBody:cached}),state=await h.update();
   assert.equal(h.rendered,1);assert.equal(state.monthly.length,cached.monthly.length);
   assert.deepEqual(plain(state.monthly),plain(h.ctx.normalizeSeaLevelJson(cached).monthly));
-  assert.deepEqual(plain(state.regression),plain(h.ctx.normalizeSeaLevelJson(cached).regression));
+  assert.equal(state.regression.slope,cached.regression.slopeFtPerYear);
+  assert.ok(Math.abs(state.baseline.ft + 0.14292)<1e-10);
+  assert.equal(state.regression.intercept,cached.regression.interceptFt-state.baseline.ft);
+  assert.match(h.ctx.seaLevelMeta.textContent,/Stone Harbor USGS monthly means through 2026-07\. Trend rate from NOAA Cape May \(1965–2025\)/);
   assert.equal(state.source,"data/sealevel.json");
   assert.equal(h.calls.filter(url=>url.hostname!=="fixture.invalid").length,0);
+});
+test("a stale local cache is supplemented with completed USGS months once per refresh window",async()=>{
+  const points=(month,count)=>Array.from({length:count},(_,index)=>({date:`${month}-${String(index+1).padStart(2,"0")}`,ft:0.25}));
+  const august=points("2026-08",20), september=points("2026-09",19);
+  const dailyRows=[...august,...september,september[0],...points("2026-10",21),...points("2026-11",24)];
+  const h=harness({cacheBody:cached,dailyRows,now:"2026-11-15T16:00:00Z"}),state=await h.update();
+  const updates=h.calls.filter(url=>url.hostname==="waterservices.usgs.gov");
+  assert.equal(updates.length,1);
+  assert.equal(updates[0].searchParams.get("startDT"),"2026-08-01");
+  assert.equal(updates[0].searchParams.get("endDT"),"2026-10-31");
+  assert.deepEqual(Array.from(state.monthly.slice(-3),row=>row.month),["2026-07","2026-08","2026-10"]);
+  assert.equal(state.monthly.at(-1).days,21);
+  assert.equal(state.regression.officialTrend.station,"8536110");
+  assert.strictEqual(await h.update(),state);
+  assert.equal(h.rendered,1);
+  assert.equal(h.calls.filter(url=>url.hostname==="waterservices.usgs.gov").length,1);
 });
 test("a supported cached daily-only document keeps its existing aggregation path",async()=>{
   const h=harness({cacheBody:{daily:cached.daily}}),state=await h.update();

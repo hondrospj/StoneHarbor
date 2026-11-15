@@ -162,7 +162,7 @@ function mergeManifest(state,payloads){
   return [...files.values()].sort((a,b)=>a.path.localeCompare(b.path));
 }
 
-async function loadSource({archive=null,runDir=null,cycle=null}={}){
+async function loadSource({archive=null,runDir=null,cycle=null,apps=APPS,now}={}){
   let temp=null;
   try{
     if(!archive){
@@ -182,11 +182,11 @@ async function loadSource({archive=null,runDir=null,cycle=null}={}){
     const tarOptions={encoding:"utf8",maxBuffer:4*1024*1024,env:{...process.env,LC_ALL:"C"}};
     const names=execFileSync("tar",["-tzf",archive],tarOptions).trim().split(/\r?\n/);
     const stations=new Map();
-    for(const app of APPS){
+    for(const app of apps){
       const expected=`${runDir}/${cycle}.csv/${app.station}.csv`;
       if(names.filter(name=>name===expected).length!==1)throw new Error(`Official station file missing or duplicated: ${app.station}`);
       const text=execFileSync("tar",["-xOf",archive,expected],tarOptions);
-      validateForecast(parseStationCsv(text),{runDir,cycle,datum:app.datum});
+      validateForecast(parseStationCsv(text),{runDir,cycle,datum:app.datum,now});
       stations.set(app.station,text);
     }
     return {runDir,cycle,url:`${NOMADS}${runDir}/petss.${cycle}.csv.tar.gz`,sha256:sha256(bytes),stations};
@@ -233,7 +233,7 @@ async function main(){
   if(!dry){try{connection=validateConnection(JSON.parse(process.env.SHORELYSAFE_DASHBOARD_CONNECTION||""));}catch{throw new Error("SHORELYSAFE_DASHBOARD_CONNECTION must contain the approved six-app connection.");}}
   if(args.includes("--apps") && !arg("--apps"))throw new Error("--apps requires a comma-separated application list.");
   const selectedApps=selectApps(arg("--apps"));
-  const source=await loadSource({archive:arg("--archive"),runDir:arg("--run-dir"),cycle:arg("--cycle")});
+  const source=await loadSource({archive:arg("--archive"),runDir:arg("--run-dir"),cycle:arg("--cycle"),apps:selectedApps});
   const results=[];
   for(const app of selectedApps){
     if(dry){const payloads=buildPayloads(app,source.stations.get(app.station),source);results.push({application:app.id,...validateForecast(JSON.parse(payloads.get(DATA_PATHS[0])),{...source,datum:app.datum})});}

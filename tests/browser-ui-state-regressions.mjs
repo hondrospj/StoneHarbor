@@ -49,4 +49,44 @@ await run('queued redraws respect newer field focus and open tutorial focus',{},
   await ready();await p.locator('#shorelyLegend-annualChart button').first().focus();await p.keyboard.press('Enter');await p.locator('#minElev').focus();await p.evaluate(()=>{annualChart.update('none');refreshDOYFromHistory();});await p.waitForTimeout(200);assert.equal((await focused(p)).id,'minElev');
   await p.locator('#dashboardTutorialBtn').click();assert.equal((await focused(p)).id,'dashboardTutorialNext');await p.evaluate(()=>{annualChart.update('none');refreshDOYFromHistory();});await p.waitForTimeout(200);assert.equal((await focused(p)).id,'dashboardTutorialNext');await p.keyboard.press('Escape');return{newerInputAndDialogFocusPreserved:true};
 });
+await run('annual and monthly category buttons override the previous legend selection',{},async({page,ready})=>{
+  await ready();
+  for (const [chartId, segmentId, label] of [
+    ['annualChart', 'annualViewSeg', 'Moderate'],
+    ['monthAvgChart', 'monthViewSeg', 'Average Moderate']
+  ]) {
+    const legend = page.locator(`#shorelyLegend-${chartId}`);
+    const segment = page.locator(`#${segmentId}`);
+    const visible = () => page.evaluate(id => {
+      const chart = Chart.getChart(id);
+      return chart.data.datasets.map((_, index) => chart.isDatasetVisible(index));
+    }, chartId);
+
+    await legend.getByRole('button', {name:label, exact:true}).click();
+    assert.deepEqual(await visible(), [true, false, true]);
+    assert.equal(await segment.locator('[aria-pressed=true]').count(), 0);
+    await segment.getByRole('button', {name:'Moderate', exact:true}).click();
+    assert.deepEqual(await visible(), [false, true, false]);
+    await page.evaluate(() => {renderAnnual(); updateMonthAveragesFromHistory();});
+    assert.deepEqual(await visible(), [false, true, false]);
+    await segment.getByRole('button', {name:'Total', exact:true}).click();
+    assert.deepEqual(await visible(), [true, true, true]);
+  }
+  return {annualAndMonthlyPresetsVerified:true};
+});
+await run('the tutorial keeps focus after Back and returns it to the launch button',{},async({page,ready})=>{
+  await ready();
+  await page.locator('#dashboardTutorialBtn').click();
+  await page.locator('#dashboardTutorialNext').click();
+  await page.locator('#dashboardTutorialBack').focus();
+  await page.keyboard.press('Enter');
+  assert.equal((await focused(page)).id, 'dashboardTutorialNext');
+  await page.keyboard.press('Tab');
+  assert.equal((await focused(page)).id, 'dashboardTutorialClose');
+  assert.ok(await page.locator('#datumSelect').evaluate(el => Boolean(el.closest('[inert]'))));
+  await page.keyboard.press('Escape');
+  assert.equal((await focused(page)).id, 'dashboardTutorialBtn');
+  assert.equal(await page.locator('.wrap[inert]').count(), 0);
+  return {modalFocusVerified:true};
+});
 writeReport(record);if(record.errors.length||record.checks.some(row=>!row.passed))process.exitCode=1;

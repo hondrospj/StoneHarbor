@@ -12,7 +12,9 @@ async function run(name,options,fn){
   if(process.env.DASHBOARD_OBSERVATION_TEST_FILTER&&!new RegExp(process.env.DASHBOARD_OBSERVATION_TEST_FILTER).test(name))return;
   let h;const row={name};
   try{
-    h=await createHarness(options);await h.ready();row.observations=await fn(h);
+    h=await createHarness(options);
+    if(!options.skipReady) await h.ready();
+    row.observations=await fn(h);
     assert.deepEqual(h.errors,[]);row.passed=true;
   }catch(e){row.passed=false;row.failure=e.stack||String(e);}
   finally{if(h){record.browser=h.browser.version();record.engine=h.engineName;record.errors.push(...h.errors);await h.close();}}
@@ -55,10 +57,10 @@ const gap=[{time:'2026-11-03T16:00:00Z',value:3.2},
 await run('the real observed chart retains valid flood readings after a 75-minute gap',{
   externalResponse:feeds(gap)
 },async({page:p})=>{
-  await p.waitForFunction(()=>STATE.obs24Navd.length===7&&tsChart?.data.datasets[0]?.data.length);
+  await p.waitForFunction(()=>STATE.obs24Navd?.length===7&&tsChart?.data.datasets[0]?.data.length);
   await p.locator('#datumSelect').selectOption('NAVD88');
   const values=await p.evaluate(rows=>rows.map(row=>{
-    const i=tsChart.data.labels.findIndex(t=>Date.parse(t)===Date.parse(row.time));
+    const i=tsChart.data.labels.indexOf(Date.parse(row.time));
     return {time:row.time,expected:row.value,displayed:i<0?undefined:tsChart.data.datasets[0].data[i]};
   }),gap);
   assert.equal(values.length,7);for(const v of values){assert.notEqual(v.displayed,null);assert.ok(Math.abs(v.displayed-v.expected)<1e-10,JSON.stringify(v));}
@@ -80,9 +82,9 @@ await run('an inclusive exact 3.44 NAVD88 filter returns every actual matching t
 for(const [name,height,target]of [['Minor',6.1,'f48MinorHrs'],['Moderate',7.1,'f48ModerHrs'],['Major',8.1,'f48MajorHrs']]){
   const points=Array.from({length:97},(_,i)=>({t:new Date(Date.parse('2026-11-03T21:00:00Z')+i*3600000).toISOString(),source_twl_mean:height,twl:height}));
   await run(`${name} threshold forecast keeps the same 72 flood hours in every datum`,{
-    responseForRequest:({url})=>new URL(url).pathname.endsWith('/data/petss_forecast.json')?{body:{points}}:undefined
+    responseForRequest:forecastFixture(points)
   },async({page:p})=>{
-    await p.waitForFunction(()=>STATE.pred72Mllw.length===97&&document.getElementById('f48MinorHrs').textContent!=='—');
+    await p.waitForFunction(()=>STATE.pred72Mllw?.length===97&&document.getElementById('f48MinorHrs').textContent!=='—');
     const results=[];
     for(const datum of ['MLLW','NAVD88','MSL','MHHW']){
       await p.locator('#datumSelect').selectOption(datum);
@@ -95,11 +97,107 @@ for(const [name,height,target]of [['Minor',6.1,'f48MinorHrs'],['Moderate',7.1,'f
 }
 
 const forecastStart=Date.parse('2026-11-03T22:00:00Z');
+function forecastFixture(points){
+  return ({url})=>new URL(url).pathname.endsWith('/data/petss_forecast.json')
+    ? {body:{points,model_time_utc:'2026-11-03T18:00:00Z',stid:'8535581',datum:'MLLW'}}
+    : undefined;
+}
+
+let releaseHistory;
+const historyGate=new Promise(resolve=>{releaseHistory=resolve;});
+const earlyForecast=forecastFixture([
+  {t:'2026-11-03T22:00:00Z',twl:7.2},
+  {t:'2026-11-03T23:00:00Z',twl:7.2}
+]);
+await run('observations and forecast can load while the initial tide history is pending',{
+  skipReady:true,
+  async responseForRequest(request){
+    if(new URL(request.url).pathname.endsWith('/data/peaks_navd88.json')) await historyGate;
+    return earlyForecast(request);
+  },
+  externalResponse:feeds([valid])
+},async(h)=>{
+  try{
+    await h.page.waitForFunction(()=>STATE.lastNavd?.ft===3.5 && STATE.pred72Mllw?.length===2);
+    assert.match(await h.page.locator('#f48List').textContent(), /Moderate/);
+    assert.equal(await h.page.locator('#doyYearTable button').count(),0);
+  }finally{
+    releaseHistory();
+  }
+  await h.ready();
+  return {liveAndForecastBeforeHistory:true};
+});
+
+await run('the time axis preserves two nearby readings and charts the flood before the next whole hour',{
+  now:'2026-11-03T21:15:00Z',
+  responseForRequest:forecastFixture([
+    {t:'2026-11-03T21:00:00Z',twl:8.4},
+    {t:'2026-11-03T22:00:00Z',twl:4},
+    {t:'2026-11-03T23:00:00Z',twl:3}
+  ]),
+  externalResponse:feeds([
+    {time:'2026-11-03T21:06:00Z',value:3.2},
+    {time:'2026-11-03T21:12:00Z',value:3.3}
+  ])
+},async({page:p})=>{
+  await p.waitForFunction(()=>STATE.obs24Navd?.length===2&&STATE.pred72Mllw?.length===3);
+  const result=await p.evaluate(()=>{
+    const labels=tsChart.data.labels;
+    const observed=tsChart.data.datasets.find(ds=>ds.label==='Observed').data;
+    const forecast=tsChart.data.datasets.find(ds=>ds.label==='Forecast').data;
+    const x=tsChart.scales.x;
+    const first=Date.parse('2026-11-03T21:06:00Z'),second=Date.parse('2026-11-03T21:12:00Z');
+    const pixelDistance=(start,end)=>x.getPixelForValue(end)-x.getPixelForValue(start);
+    const forecastIndex=forecast.findIndex(Number.isFinite);
+    return {
+      first:observed[labels.indexOf(first)], second:observed[labels.indexOf(second)],
+      ratio:pixelDistance(first,second)/pixelDistance(first,first+3600000),
+      forecastStart:labels[forecastIndex], forecastHeight:forecast[forecastIndex],
+      forecastEnd:labels.at(-1), outlook:document.getElementById('f48List').textContent
+    };
+  });
+  assert.equal(result.first, 3.2+2.66);
+  assert.equal(result.second, 3.3+2.66);
+  assert.ok(Math.abs(result.ratio-.1)<1e-10);
+  assert.ok(result.forecastStart>=Date.parse('2026-11-03T21:15:00Z'));
+  assert.ok(result.forecastStart<Date.parse('2026-11-03T22:00:00Z'));
+  assert.ok(result.forecastHeight>7.1);
+  assert.equal(result.forecastEnd-result.forecastStart,72*3600000);
+  assert.match(result.outlook,/Moderate/);
+  const zoom = await p.evaluate(()=>{
+    const {min,max,unit}=getChartZoomRange(tsChart);
+    setChartZoomRange(tsChart,min+4,max-8);
+    const cropped=[tsChart.scales.x.min,tsChart.scales.x.max];
+    const zoomed=isChartZoomed(tsChart);
+    resetChartZoom(tsChart);
+    return {cropped,expected:[(min+4)*unit,(max-8)*unit],zoomed,reset:!isChartZoomed(tsChart)};
+  });
+  assert.deepEqual(zoom.cropped,zoom.expected);
+  assert.equal(zoom.zoomed,true);
+  assert.equal(zoom.reset,true);
+  return result;
+});
+
+let failed=false;
+const beforeFeedFailure=feeds([{time:'2026-11-03T21:54:00Z',value:2.15}]);
+await run('a failed periodic observation refresh withdraws an old all-clear',{
+  clock:true,
+  externalResponse:request=>failed ? unavailable : beforeFeedFailure(request)
+},async({page:p})=>{
+  await p.waitForFunction(()=>STATE.lastNavd && !STATE.liveObservationError);
+  assert.equal((await liveState(p)).stage,'NO FLOODING');
+  failed=true;
+  await p.clock.fastForward(7*3600000);
+  await p.waitForFunction(()=>STATE.liveObservationError);
+  assert.equal((await liveState(p)).stage,'LIVE DATA STALE');
+  assert.match(await p.locator('#lastPill').textContent(),/Last USGS reading/);
+  return liveState(p);
+});
 const partialForecast=Array.from({length:97},(_,i)=>i>1&&i<10?null:{
   t:new Date(forecastStart+i*3600000).toISOString(),source_twl_mean:i===10?8.5:5,twl:i===10?8.5:5
 }).filter(Boolean);
 await run('a supplied forecast peak survives a long gap in every datum',{
-  responseForRequest:({url})=>new URL(url).pathname.endsWith('/data/petss_forecast.json')?{body:partialForecast}:undefined,
+  responseForRequest:forecastFixture(partialForecast),
   externalResponse:feeds([valid])
 },async({page:p})=>{
   await p.waitForFunction(n=>STATE.pred72Mllw?.length===n&&tsChart?.data.datasets.some(d=>d.label==='Forecast'),partialForecast.length);
@@ -108,7 +206,7 @@ await run('a supplied forecast peak survives a long gap in every datum',{
     await p.locator('#datumSelect').selectOption(datum);
     const result=await p.evaluate(time=>{
       const series=tsChart.data.datasets.find(d=>d.label==='Forecast');
-      const i=tsChart.data.labels.findIndex(t=>Date.parse(t)===time);
+      const i=tsChart.data.labels.indexOf(time);
       return {peak:series.data[i],before:series.data[i-1],after:series.data[i+1],maximum:Math.max(...series.data.filter(Number.isFinite)),spanGaps:series.spanGaps,majorHours:document.getElementById('f48MajorHrs').textContent,details:document.getElementById('f48List').textContent};
     },forecastStart+10*3600000);
     assert.ok(Math.abs(result.peak-(8.5+offset))<1e-10);
@@ -124,12 +222,12 @@ const isolatedForecast=Array.from({length:97},(_,i)=>(i>1&&i<10)||(i>10&&i<20)?n
   t:new Date(forecastStart+i*3600000).toISOString(),source_twl_mean:i===10?8.5:5,twl:i===10?8.5:5
 }).filter(Boolean);
 await run('a known forecast peak between two gaps is visibly marked and can be inspected',{
-  responseForRequest:({url})=>new URL(url).pathname.endsWith('/data/petss_forecast.json')?{body:isolatedForecast}:undefined,
+  responseForRequest:forecastFixture(isolatedForecast),
   externalResponse:feeds([valid])
 },async({page:p})=>{
   await p.waitForFunction(n=>STATE.pred72Mllw?.length===n&&tsChart?.data.datasets.some(d=>d.label==='Forecast'),isolatedForecast.length);
   const result=await p.evaluate(time=>{
-    const index=tsChart.data.labels.findIndex(t=>Date.parse(t)===time),dataset=tsChart.data.datasets.findIndex(d=>d.label==='Forecast');
+    const index=tsChart.data.labels.indexOf(time),dataset=tsChart.data.datasets.findIndex(d=>d.label==='Forecast');
     const series=tsChart.data.datasets[dataset],point=tsChart.getDatasetMeta(dataset).data[index];
     return{value:series.data[index],before:series.data[index-1],after:series.data[index+1],radius:point.options.radius,skip:point.skip,spanGaps:series.spanGaps,index};
   },forecastStart+10*3600000);

@@ -66,7 +66,6 @@ async function fetchBackup({startISO, endISO, fetchImpl = fetch}) {
   }
 }
 
-function newest(series) { return series.reduce((latest, p) => Math.max(latest, Date.parse(p.t)), -Infinity); }
 function atomicSave(file, value) {
   const temporary = `${file}.${process.pid}.tmp`;
   try { fs.writeFileSync(temporary, JSON.stringify(value) + "\n"); fs.renameSync(temporary, file); }
@@ -82,7 +81,9 @@ async function updateCache(cache, {now = new Date(), fetchPrimary = fetchObserva
   const donor = donorResult.status === "fulfilled" ? donorResult.value : {series: []};
   if (primaryResult.status === "rejected") warn(`Primary unavailable: ${primaryResult.reason.message}`);
   if (donorResult.status === "rejected") warn(`Backup unavailable: ${donorResult.reason.message}`);
-  const latest = Math.min(now.getTime(), Math.max(newest(primary), newest(donor.series)));
+  const latestUsable = series => tides.prepareSeries(series).findLast(p => p.ms <= now.getTime())?.ms ?? -Infinity;
+  const primaryLatest = latestUsable(primary), backupLatest = latestUsable(donor.series);
+  const latest = Math.max(primaryLatest, backupLatest);
   if (!Number.isFinite(latest) || now.getTime() - latest > 6 * tides.HOUR) throw new Error("Both observed feeds are missing or stale by more than six hours; cache and cursor were not advanced.");
   const predictedHighs = await fetchClock({product: "predictions", datum: "MLLW",
     startISO: new Date(Date.parse(startISO) - 48 * tides.HOUR).toISOString(), endISO: new Date(now.getTime() + 48 * tides.HOUR).toISOString()});
@@ -105,8 +106,8 @@ async function updateCache(cache, {now = new Date(), fetchPrimary = fetchObserva
   return {...cache, ...coverage, events, lastProcessedISO, generatedAt: endISO,
     liveUpdate: {checkedAt: endISO, observedThrough: tides.secondsISO(latest), overlapHours: 48, completedWindows: windows.length,
       qualifiedPrimaryCycles: p.events.length, qualifiedBackupCycles: b.events.length,
-      primaryLatest: Number.isFinite(newest(primary)) ? tides.secondsISO(newest(primary)) : null,
-      backupLatest: Number.isFinite(newest(donor.series)) ? tides.secondsISO(newest(donor.series)) : null,
+      primaryLatest: Number.isFinite(primaryLatest) ? tides.secondsISO(primaryLatest) : null,
+      backupLatest: Number.isFinite(backupLatest) ? tides.secondsISO(backupLatest) : null,
       ...(donor.datumConversion ? {donorDatumConversion: donor.datumConversion} : {})}};
 }
 async function main() {
