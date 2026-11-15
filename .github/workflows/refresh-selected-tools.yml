@@ -2,8 +2,8 @@ name: Refresh selected dashboard tools four times daily
 
 on:
   schedule:
-    # Four refresh cycles daily, after the 00/06/12/18Z PETSS runs.
-    - cron: "35 2,8,14,20 * * *"
+    # PETSS station archives arrive about six hours and 15 minutes after issuance.
+    - cron: "35 0,6,12,18 * * *"
   workflow_dispatch:
 
 permissions:

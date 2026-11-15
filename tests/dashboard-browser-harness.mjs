@@ -47,9 +47,9 @@ export async function createHarness({viewport={width:1440,height:1000},now='2026
   try{
     browser=await engine.launch({headless:true,...(process.env.DASHBOARD_BROWSER_EXECUTABLE?{executablePath:process.env.DASHBOARD_BROWSER_EXECUTABLE}:{})});
     context=await browser.newContext({viewport,timezoneId:'America/New_York'});
-    // Offset the wall clock while retaining elapsed real time and advancing
-    // performance.now(), so Chart.js animations and gesture timing complete.
-    await context.addInitScript(value=>{
+    // Let Playwright own Date when simulating refreshes. Other tests offset just
+    // the wall clock while keeping real Chart.js animation and gesture timing.
+    if(!clock) await context.addInitScript(value=>{
       const NativeDate=Date,offset=NativeDate.parse(value)-NativeDate.now();
       class AuditDate extends NativeDate{
         constructor(...args){super(...(args.length?args:[NativeDate.now()+offset]));}

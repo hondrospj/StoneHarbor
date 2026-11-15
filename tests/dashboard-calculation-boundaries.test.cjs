@@ -50,6 +50,13 @@ test("an isolated spike remains masked and does not become the following reading
   assert.deepEqual(Array.from(ctx.filterSpikes15Min([0,.1,4,.2,.3])),[0,.1,null,.2,.3]);
   assert.deepEqual(Array.from(ctx.filterSpikes15Min([.1,4,null,2.2,2.3])),[.1,null,null,2.2,2.3]);
 });
+test("confirmed rises and falls remain visible while sharp returns are masked",()=>{
+  const ctx=harness();
+  for(const values of [[2.55,3.5,3.61,3.63],[3.63,2.55,2.61,2.6],[2.55,3.5,4.45,5.4]]){
+    assert.deepEqual(Array.from(ctx.filterSpikes15Min(values)),values);
+  }
+  assert.deepEqual(Array.from(ctx.filterSpikes15Min([2.55,5.5,3.51,3.61])),[2.55,null,3.51,3.61]);
+});
 test("invalid observation bins remain missing and cannot anchor the next finite reading",()=>{
   const ctx=harness();
   for(const missing of [null,undefined,NaN,Infinity,-Infinity,"",false,"3.2",{},[]]){

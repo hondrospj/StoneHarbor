@@ -97,9 +97,9 @@ for(const [name,height,target]of [['Minor',6.1,'f48MinorHrs'],['Moderate',7.1,'f
 }
 
 const forecastStart=Date.parse('2026-11-03T22:00:00Z');
-function forecastFixture(points){
+function forecastFixture(points,issuedTime='2026-11-03T18:00:00Z'){
   return ({url})=>new URL(url).pathname.endsWith('/data/petss_forecast.json')
-    ? {body:{points,model_time_utc:'2026-11-03T18:00:00Z',stid:'8535581',datum:'MLLW'}}
+    ? {body:{points,model_time_utc:issuedTime,stid:'8535581',datum:'MLLW'}}
     : undefined;
 }
 
@@ -193,6 +193,64 @@ await run('a failed periodic observation refresh withdraws an old all-clear',{
   assert.match(await p.locator('#lastPill').textContent(),/Last USGS reading/);
   return liveState(p);
 });
+
+const rapidRise=[2.55,3.50,3.61,3.63].map((value,index)=>({
+  time:`2026-11-03T21:${String(index*15).padStart(2,'0')}:00Z`,value
+}));
+await run('a sustained rise keeps real flood readings and draws straight observed segments',{
+  externalResponse:feeds(rapidRise)
+},async({page:p})=>{
+  await p.waitForFunction(()=>STATE.obs24Navd?.length===4);
+  await p.locator('#datumSelect').selectOption('NAVD88');
+  const result=await p.evaluate(rows=>{
+    const {labels,datasets}=tsChart.data;
+    return {
+      values:rows.map(row=>datasets[0].data[labels.indexOf(Date.parse(row.time))]),
+      tension:datasets[0].tension,
+      stage:document.getElementById('stageText').textContent
+    };
+  },rapidRise);
+  assert.deepEqual(result.values,rapidRise.map(row=>row.value));
+  assert.equal(result.tension,0);
+  assert.equal(result.stage,'MINOR FLOODING');
+  return result;
+});
+
+let refreshRevision=0;
+const initialIssue='2026-11-03T18:00:00Z';
+const refreshForecast=(ft,issue)=>forecastFixture([
+  {t:'2026-11-03T22:00:00Z',twl:ft},{t:'2026-11-03T23:00:00Z',twl:ft}
+],issue);
+const refreshForecasts=[refreshForecast(7.5,initialIssue),refreshForecast(5,'2026-11-03T12:00:00Z'),refreshForecast(7.6,initialIssue)];
+const refreshFeeds=[feeds(rapidRise),feeds([rapidRise[0]]),feeds([...rapidRise,{time:'2026-11-03T21:54:00Z',value:3.7}])];
+await run('periodic refresh keeps newer observations, newer guidance and the Observed legend choice',{
+  clock:true,
+  responseForRequest:request=>refreshForecasts[refreshRevision](request),
+  externalResponse:request=>refreshFeeds[refreshRevision](request)
+},async({page:p})=>{
+  await p.waitForFunction(()=>STATE.lastNavd?.ft===3.63&&STATE.obs24Navd?.length===4&&STATE.pred72Mllw?.length===2);
+  const observed=p.locator('#shorelyLegend-tsChart').getByRole('button',{name:'Observed',exact:true});
+  await observed.click();
+  await p.waitForFunction(()=>!tsChart.isDatasetVisible(0));
+
+  refreshRevision=1;
+  await p.clock.fastForward(5*60000);
+  await p.waitForFunction(()=>STATE.liveObservationError&&!pendingRefreshes.size);
+  const retained=await p.evaluate(()=>({
+    observation:STATE.lastNavd.ft, latestChartTime:STATE.obs24Navd.at(-1).t,
+    issue:STATE.petssIssuedTime, forecast:STATE.pred72Mllw[0].ft,
+    observedVisible:tsChart.isDatasetVisible(0)
+  }));
+  assert.deepEqual(retained,{observation:3.63,latestChartTime:rapidRise.at(-1).time,issue:'2026-11-03T18:00:00.000Z',forecast:7.5,observedVisible:false});
+  assert.equal(await observed.getAttribute('aria-pressed'),'false');
+
+  refreshRevision=2;
+  await p.clock.fastForward(5*60000);
+  await p.waitForFunction(()=>!STATE.liveObservationError&&STATE.lastNavd?.ft===3.7&&STATE.pred72Mllw?.[0]?.ft===7.6&&!pendingRefreshes.size);
+  assert.equal(await observed.getAttribute('aria-pressed'),'false');
+  return {...retained,acceptedFreshObservationAndRevisedForecast:true};
+});
+
 const partialForecast=Array.from({length:97},(_,i)=>i>1&&i<10?null:{
   t:new Date(forecastStart+i*3600000).toISOString(),source_twl_mean:i===10?8.5:5,twl:i===10?8.5:5
 }).filter(Boolean);

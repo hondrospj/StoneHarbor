@@ -1,5 +1,13 @@
 # Dashboard regression checks
 
+Start a local preview with current Stone Harbor forecast and high-tide data:
+
+```sh
+python3 tools/serve_dashboard_preview.py
+```
+
+The preview listens on `http://127.0.0.1:51414/`. Pass `--port` to select a different port. The page and its assets come from the checkout. The server checks Cup A Joe for current data when the page requests it and retains the last validated snapshot during a temporary upstream failure. If the server has no validated snapshot, the affected data requests return HTTP 503. Inspect the `X-Dashboard-Data` response header for `live` or `retained` status.
+
 Run the deterministic source and pipeline tests from the repository root:
 
 ```sh

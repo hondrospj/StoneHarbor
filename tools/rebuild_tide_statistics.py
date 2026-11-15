@@ -80,26 +80,38 @@ def year_fraction(t):
     return t.year+(t-start).total_seconds()/(end-start).total_seconds()
 
 def rebuild(cache,previous_future,projections,cache_hash):
-    events=unique_events(cache); T=cache['thresholdsNAVD88']; byyear=defaultdict(Counter); nbyyear=Counter(); agencies=defaultdict(Counter)
+    events=unique_events(cache); T=cache['thresholdsNAVD88']; byyear=defaultdict(Counter); nbyyear=Counter()
+    sources_by_cycle_year = defaultdict(Counter)
     for event in events:
         date=event_date(event); year=int(date[:4]); nbyyear[year]+=1
         cat=category(event['ft'],T)
         if cat: byyear[year][cat]+=1
-        agencies[year][event.get('sourceRole','unknown')]+=1
+        # Coverage follows the predicted tide even when the measured crest crosses midnight.
+        anchor = instant(event.get('crest'))
+        if anchor is not None:
+            role = event.get('sourceRole')
+            if event.get('officialCrestOverride') or role == 'official-crest':
+                role = 'official-crest'
+            elif role != 'primary':
+                role = 'backup'
+            sources_by_cycle_year[anchor.astimezone(TZ).year][role] += 1
     coverage={int(x['year']):x for x in cache.get('coverage',[]) if 'year' in x}
-    years=sorted(set(coverage)|set(nbyyear))
+    years=sorted(set(coverage)|set(nbyyear)|set(sources_by_cycle_year))
     annual=[]
     for year in years:
         c=coverage.get(year,{})
         available=nbyyear[year]>0
+        sources = dict(sources_by_cycle_year[year])
         record={'year':year,**{k:byyear[year][k] if available else None for k in ['minor','moderate','major']},
                 'total':sum(byyear[year].values()) if available else None,
-                'acceptedCycles':c.get('acceptedCycles',nbyyear[year]),'expectedCycles':c.get('expectedCycles'),
-                'missingCycles':c.get('missingCycles'),'sourceRoles':dict(agencies[year]),
+                'acceptedCycles':c.get('acceptedCycles',sum(sources.values())),'expectedCycles':c.get('expectedCycles'),
+                'missingCycles':c.get('missingCycles'),'sourceRoles':sources,
                 'status':c.get('status','available-records' if available else 'unavailable')}
         annual.append(record)
     annual_payload={'schema':'individual-high-tide-counts-v3','countUnit':'individual-high-tide','sourceSHA256':cache_hash,'station':annual,'fallback':[],
-                    'method':'One count per canonical tide cycle at or above the local gauge threshold; incomplete periods are available-record counts, never annualized.'}
+                    'method':'One count per canonical tide cycle at or above the local gauge threshold. Incomplete periods use available records without annualizing.',
+                    'countDateBasis':'Measured or official local crest date in America/New_York.',
+                    'coverageDateBasis':'Predicted local tide date in America/New_York for expected and accepted cycles and their source roles.'}
     origin=int(projections.get('originYear',projections.get('rebaseYear',datetime.now(TZ).year)))
     slope=float(projections.get('baseline',{}).get('trendFtPerYear',previous_future.get('trendFtPerYear',0)))
     # Keep qualified measured tides even in years with a few missing cycles.

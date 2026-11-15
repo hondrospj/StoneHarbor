@@ -37,7 +37,7 @@ function harness({cacheBody=null,dailyRows=null,dailyEmpty=false,monthly=true,mo
   ctx.fetch=transport;ctx.fetchWithTimeout=transport;
   const names=["dashboardGaugeNumber","nowISO","ymdCompactFromISO","seaLevelNumber","normalizeSeaLevelPoint",
     "normalizeSeaLevelRegression","normalizeSeaLevelJson","monthKeyFromDate","decimalYearFromMonth",
-    "computeMonthlySeaLevel","filterSeaLevelMonthlyQuality","seaLevelBaseline","seaLevelLinearRegression",
+    "computeMonthlySeaLevel","filterSeaLevelMonthlyQuality","validSeaLevelMonths","seaLevelBaseline","seaLevelLinearRegression",
     "seaLevelRegression","fetchSeaLevelJson","fetchUSGSDailySeaLevel","fetchNOAAMonthlySeaLevel","fetchDailySeaLevel",
     "applySeaLevelSnapshot","supplementSeaLevelMonths","updateSeaLevelTrends"];
   vm.runInContext(source("fetchSeaLevelFallback",true),ctx);
@@ -60,6 +60,19 @@ test("NOAA monthly fallback survives failed cache and USGS requests with the cor
 });
 test("an empty successful daily response also falls back to published monthly means",async()=>{
   const h=harness({dailyEmpty:true});assertMonthlyState(h,await h.update());
+});
+test("unusable or unrelated successful cache responses fall back to the configured provider",async()=>{
+  for(const cacheBody of [{}, {...cached,station:"99999999"}, {...cached,datum:"MSL"}]){
+    const h=harness({cacheBody});assertMonthlyState(h,await h.update());
+    assert(h.calls.some(url=>url.searchParams.get("product")==="monthly_mean"));
+  }
+});
+test("cached monthly means of the configured NOAA fallback station remain valid",async()=>{
+  const h=harness({cacheBody:{station:"8557380",datum:"MSL",monthly:[{month:"2026-07",ft:1.0}]}});
+  const state=await h.update();
+  assert.equal(state.source,"data/sealevel.json");
+  assert.equal(state.monthly[0].ft,1.0);
+  assert.equal(h.calls.length,1);
 });
 test("a NOAA gauge takes the monthly path directly without making a USGS daily request",async()=>{
   const h=harness({gauge:"NOAA"});assertMonthlyState(h,await h.update());
@@ -108,19 +121,27 @@ test("19 daily observations remain insufficient while 20 qualify",async()=>{
   for(const n of [19,20]){
     const dailyRows=Array.from({length:n},(_,i)=>({date:`2026-06-${String(i+1).padStart(2,"0")}`,ft:i/100}));
     const h=harness({dailyRows}),state=await h.update();
-    assert.equal(h.rendered,n===20?1:0);
-    if(n===19){assert.equal(state,null);assert.match(h.ctx.seaLevelMeta.textContent,/unavailable/);}
-    else{assert.equal(state.monthly[0].days,20);assert(Math.abs(state.monthly[0].ft-.095)<1e-12);}
-    assert.equal(h.calls.filter(url=>url.searchParams.get("product")==="monthly_mean").length,0);
+    if(n===19){
+      assertMonthlyState(h,state);
+    }else{
+      assert.equal(h.rendered,1);
+      assert.equal(state.monthly[0].days,20);
+      assert(Math.abs(state.monthly[0].ft-.095)<1e-12);
+      assert.equal(h.calls.filter(url=>url.searchParams.get("product")==="monthly_mean").length,0);
+    }
   }
 });
 test("cached monthly daily-coverage metadata still rejects 19 and accepts 20",async()=>{
   for(const days of [19,20]){
     const h=harness({cacheBody:{monthly:[{month:"2026-06",ft:0,days}]}}),state=await h.update();
-    assert.equal(h.rendered,days===20?1:0);
-    if(days===20){assert.equal(state.monthly[0].ft,0);assert.equal(state.monthly[0].days,20);}
-    else assert.equal(state,null);
-    assert.equal(h.calls.length,1);
+    if(days===20){
+      assert.equal(h.rendered,1);
+      assert.equal(state.monthly[0].ft,0);
+      assert.equal(state.monthly[0].days,20);
+      assert.equal(h.calls.length,1);
+    }else{
+      assertMonthlyState(h,state);
+    }
   }
 });
 test("all unavailable providers retain the existing visible unavailable result",async()=>{

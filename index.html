@@ -13,7 +13,7 @@
     }
   </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="assets/chart.umd.js"></script>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -75,6 +75,7 @@ option{
     }
     .banner b{font-weight:950}
     .banner .small{color:var(--muted);font-size:12.5px;margin-top:4px;line-height:1.25}
+    .chartsUnavailable :is(.chartWrap,.chartWrapTall){display:none}
 
     .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
     .brand{display:flex;align-items:center;gap:12px}
@@ -2448,8 +2449,8 @@ a.brand *{
 <body data-highlands-dashboard="20261019">
 <div class="wrap">
 
-  <div class="banner" id="alertBanner">
-    <div><b id="alertTitle">Coastal Flood Advisory</b></div>
+  <div class="banner" id="alertBanner" role="status">
+    <div><b id="alertTitle">Coastal flood alerts</b></div>
     <div class="small" id="alertBody"></div>
   </div>
 
@@ -2597,15 +2598,15 @@ a.brand *{
     <div class="stages" aria-label="Flood stages">
       <div class="stage">
         <div class="stageName">Minor</div>
-        <div class="badge" id="minorBadge" style="color:var(--minor)">7.20–8.20 ft</div>
+        <div class="badge" id="minorBadge" style="color:var(--minor)">—</div>
       </div>
       <div class="stage">
         <div class="stageName">Moderate</div>
-        <div class="badge" id="moderateBadge" style="color:var(--moderate)">8.20–9.20 ft</div>
+        <div class="badge" id="moderateBadge" style="color:var(--moderate)">—</div>
       </div>
       <div class="stage">
         <div class="stageName">Major</div>
-        <div class="badge" id="majorBadge" style="color:var(--major)">≥ 9.20 ft</div>
+        <div class="badge" id="majorBadge" style="color:var(--major)">—</div>
       </div>
     </div>
   </div>
@@ -2625,6 +2626,7 @@ a.brand *{
       </div>
     </div>
 
+    <p class="hint" id="chartStatus" role="status" hidden>Charts unavailable.</p>
     <div class="chartWrapTall">
       <canvas id="tsChart"></canvas>
     </div>
@@ -2907,6 +2909,7 @@ a.brand *{
 
 
 const TZ = "America/New_York";
+const CHARTS_AVAILABLE = typeof window.Chart === "function";
 
 if(window.Chart?.defaults?.font){
   Chart.defaults.font.size = 13;
@@ -3338,6 +3341,9 @@ const fmtFull = new Intl.DateTimeFormat("en-US",{ timeZone:TZ,year:"numeric",mon
 const fmtDay = new Intl.DateTimeFormat("en-US",{timeZone:TZ,month:"short",day:"2-digit"});
 const fmtPartsYMD = new Intl.DateTimeFormat("en-US",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit"});
 const fmtMonthName = new Intl.DateTimeFormat("en-US",{timeZone:TZ,month:"short"});
+const fmtOutlookTime = new Intl.DateTimeFormat("en-US",{
+  timeZone:TZ, hour:"numeric", minute:"2-digit", timeZoneName:"short"
+});
 
       const fmtTime = new Intl.DateTimeFormat("en-US", {
   timeZone: TZ,
@@ -3370,6 +3376,12 @@ function fmtNiceDate(iso){
     (dayN % 10 === 3) ? "rd" : "th";
 
   return `${month} ${dayN}${suffix}, ${year}`;
+}
+
+function formatFloodWindow(startMs, endMs){
+  const start = new Date(startMs), end = new Date(endMs);
+  const endDate = sameLocalDayISO(start, end) ? "" : `${fmtNiceDate(end)} · `;
+  return `${fmtNiceDate(start)} · ${fmtOutlookTime.format(start)} → ${endDate}${fmtOutlookTime.format(end)}`;
 }
 
 function getESTParts(date=new Date()){
@@ -3749,7 +3761,7 @@ function updateFloodOutlook48(nowMs=Date.now()){
 
     const renderEvent = seg=>{
       const durH = Math.max(0, (seg.endMs - seg.startMs) / 3600000);
-      const when = `${fmtNiceDate(isoFromMs(seg.startMs))} · ${fmtESTTime(isoFromMs(seg.startMs))} → ${fmtESTTime(isoFromMs(seg.endMs))}`;
+      const when = formatFloodWindow(seg.startMs, seg.endMs);
       const sub  = `${durH.toFixed(1)}h · Peak ${seg.peakFt.toFixed(2)} ${unitText()}`;
       const badgeColor = stageColorVar(seg.peakStage);
 
@@ -4207,23 +4219,70 @@ function sameLocalDayISO(aISO, bISO){
 
 
 
+const COASTAL_ALERT_PRIORITY = {warning:3, advisory:2, watch:1};
+let lastCoastalAlerts = [];
+let coastalAlertExpiryTimer;
+
+function coastalAlertFromFeature(feature){
+  const p = feature?.properties;
+  if(typeof p?.event !== "string" || !/coastal flood/i.test(p.event)) return null;
+  const ends = Date.parse(p.ends);
+  const expires = Date.parse(p.expires);
+  // NWS message expiration can precede the expected end of the hazard.
+  const validityTimes = [ends,expires].filter(Number.isFinite);
+  const kind = p.event.match(/\b(warning|advisory|watch)\b/i)?.[1]?.toLowerCase();
+  return {
+    event:p.event,
+    priority:COASTAL_ALERT_PRIORITY[kind] ?? 0,
+    sent:Date.parse(p.sent) || 0,
+    headline:typeof p.headline === "string" ? p.headline : "",
+    displayEnd:Number.isFinite(ends) ? ends : expires,
+    validUntil:validityTimes.length ? Math.min(...validityTimes) : null
+  };
+}
+
+function renderCoastalAlerts(unavailable){
+  clearTimeout(coastalAlertExpiryTimer);
+  const now = Date.now();
+  const alert = lastCoastalAlerts.find(item=>item.validUntil === null ? !unavailable : item.validUntil > now);
+  if(!alert && !unavailable){
+    alertBanner.style.display = "none";
+    return;
+  }
+  const title = alert?.event || "Coastal flood alerts unavailable";
+  const details = [];
+  if(alert){
+    if(alert.headline) details.push(alert.headline);
+    const ends = Number.isFinite(alert.displayEnd) ? `${fmtESTFull(alert.displayEnd)} ET` : "—";
+    details.push(`Ends: ${ends}`);
+    if(unavailable) details.push("NWS alert checks unavailable. Showing the last confirmed alert.");
+    if(alert.validUntil !== null){
+      const delay = Math.min(alert.validUntil - now, 2147483647);
+      coastalAlertExpiryTimer = setTimeout(()=>renderCoastalAlerts(unavailable), delay);
+    }
+  }else{
+    details.push("The latest alert check failed.");
+  }
+  const body = details.join(" · ");
+  if(alertTitle.textContent !== title) alertTitle.textContent = title;
+  if(alertBody.textContent !== body) alertBody.textContent = body;
+  alertBanner.style.display = "block";
+}
+
 async function updateAlerts(){
   try{
     const url = `https://api.weather.gov/alerts/active?point=${ALERT_POINT.lat},${ALERT_POINT.lon}`;
     const res=await fetchWithTimeout(url,{cache:"no-store"},5000);
     if(!res.ok) throw new Error("alerts "+res.status);
     const j=await res.json();
-    const feats=j?.features||[];
-    const coastal=feats.find(f=>((f?.properties?.event||"").toLowerCase().includes("coastal flood")));
-    if(!coastal){ alertBanner.style.display="none"; return; }
-    const p=coastal.properties||{};
-    alertTitle.textContent=p.event||"Coastal Flood Alert";
-    const ends=p.ends?fmtESTFull(p.ends):(p.expires?fmtESTFull(p.expires):"—");
-    alertBody.textContent=(p.headline?p.headline+" · ":"")+"Ends: "+ends;
-    alertBanner.style.display="block";
+    if(!Array.isArray(j?.features)) throw new Error("Invalid NWS alert response");
+    lastCoastalAlerts = j.features.map(coastalAlertFromFeature).filter(Boolean)
+      .sort((a,b)=>b.priority - a.priority || b.sent - a.sent);
   }catch{
-    alertBanner.style.display="none";
+    renderCoastalAlerts(true);
+    return;
   }
+  renderCoastalAlerts(false);
 }
 
 
@@ -4250,11 +4309,24 @@ function filterSpikes15Min(values, maxDeltaFt=TS_MAX_DELTA_FT){
       lastGood = v;
       continue;
     }
-    if(compareFeet(Math.abs(v - lastGood), maxDeltaFt) > 0){
-      out[i] = null; 
-    }else{
-      lastGood = v;
+    const change = v - lastGood;
+    if(compareFeet(Math.abs(change), maxDeltaFt) > 0){
+      const next = values[i+1];
+      const direction = Math.sign(change);
+      // Keep a sustained shift. A lone jump or a quick return toward the old level is a spike.
+      const supportedByNext = Number.isFinite(next) &&
+        compareFeet(direction * (next - lastGood), maxDeltaFt) > 0 &&
+        compareFeet(direction * (v - next), maxDeltaFt) <= 0;
+      const priorChange = lastGood - out[i-2];
+      const continuesTrend = !Number.isFinite(next) && Number.isFinite(out[i-1]) && Number.isFinite(out[i-2]) &&
+        compareFeet(direction * priorChange, maxDeltaFt) > 0 &&
+        compareFeet(Math.abs(change - priorChange), maxDeltaFt) <= 0;
+      if(!supportedByNext && !continuesTrend){
+        out[i] = null;
+        continue;
+      }
     }
+    lastGood = v;
   }
   return out;
 }
@@ -4321,7 +4393,6 @@ ctx.fillRect(left, chartArea.top, right - left, yMajor - chartArea.top);
   }
 };
 
-Chart.register(floodBandsPlugin);
 
 
 const tsFloodLineOverlayPlugin = {
@@ -4372,7 +4443,6 @@ const tsFloodLineOverlayPlugin = {
   }
 };
 
-Chart.register(tsFloodLineOverlayPlugin);
 
 const drawDatasetLastPlugin = {
   id: "drawDatasetLast",
@@ -4398,7 +4468,6 @@ const drawDatasetLastPlugin = {
   }
 };
 
-Chart.register(drawDatasetLastPlugin);
 
 const annualForecastRangePlugin = {
   id: "annualForecastRange",
@@ -4530,7 +4599,6 @@ const annualForecastRangePlugin = {
   }
 };
 
-Chart.register(annualForecastRangePlugin);
 
 const mirrorRightYAxisPlugin = {
   id: "mirrorRightYAxis",
@@ -4551,7 +4619,10 @@ const mirrorRightYAxisPlugin = {
   }
 };
 
-Chart.register(mirrorRightYAxisPlugin);
+if(CHARTS_AVAILABLE){
+  Chart.register(floodBandsPlugin, tsFloodLineOverlayPlugin, drawDatasetLastPlugin,
+    annualForecastRangePlugin, mirrorRightYAxisPlugin);
+}
 
 function rightFloodAxisConfig(){
   return {
@@ -5359,6 +5430,7 @@ function ensureAnnual(){
 
 
 function renderAnnual(){
+  if(!CHARTS_AVAILABLE) return;
   ensureAnnual();
 
   annualChart.data.labels = YEARS;
@@ -5455,7 +5527,7 @@ window.addEventListener("resize", ()=>{
 
 
 function ensureTsChart(){
-  if(tsChart) return;
+  if(tsChart || !CHARTS_AVAILABLE) return;
 
   tsChart = new Chart($("tsChart"),{
     type:"line",
@@ -5887,7 +5959,7 @@ function tsObservedDataset(data, {cachedHighs=false}={}){
     pointRadius: cachedHighs ? 4.6 : 0,
     pointHoverRadius: cachedHighs ? 6.4 : 0,
     pointHitRadius: cachedHighs ? 10 : 0,
-    tension:0.25,
+    tension:0,
     spanGaps:false,
     showLine: !cachedHighs,
     pointStyle: cachedHighs ? "circle" : "line",
@@ -5970,6 +6042,7 @@ function buildSeasonallyAdjustedHighRows(){
 
 function updateTsAnnualForecastChartFromState(){
   ensureTsChart();
+  if(!tsChart) return;
   styleTsLegendAsLines();
 
   if(!TS_ANNUAL_FORECAST_POINTS.length){
@@ -6087,11 +6160,15 @@ function updateTsChartFromState(nowMs=Date.now()){
     TS_ANNUAL_FORECAST_ENABLED, !!STATE.obs24CachedHighs
   );
   ensureTsChart();
+  if(!tsChart) return;
   styleTsLegendAsLines();
   tsChart.data.labels = labels;
   const tsDatasets = [tsObservedDataset(obsFiltered, {cachedHighs: !!STATE.obs24CachedHighs})];
   if(TS_ANNUAL_FORECAST_ENABLED){
     tsDatasets.push(tsPredictedDataset(predValsDisplay, "Forecast", "rgba(45,212,191,.95)", 3));
+  }
+  for(const [index, dataset] of tsDatasets.entries()){
+    if(tsChart.data.datasets?.[index] && !tsChart.isDatasetVisible(index)) dataset.hidden = true;
   }
   tsChart.data.datasets = tsDatasets;
 
@@ -6263,6 +6340,11 @@ function filterSeaLevelMonthlyQuality(monthly){
     if(Number.isFinite(row.days) && row.days < SEA_LEVEL_MIN_DAILY_VALUES_PER_MONTH) return false;
     return true;
   });
+}
+
+function validSeaLevelMonths({monthly, daily}){
+  return filterSeaLevelMonthlyQuality(monthly.length ? monthly : computeMonthlySeaLevel(daily))
+    .sort((a,b)=>a.month.localeCompare(b.month));
 }
 
 function seaLevelBaseline(monthly){
@@ -6457,6 +6539,8 @@ function renderSeaLevelStats(state){
 function renderSeaLevelChart(){
   if(!SEA_LEVEL_STATE) return;
   const state = SEA_LEVEL_STATE;
+  renderSeaLevelStats(state);
+  if(!CHARTS_AVAILABLE) return;
   const lastMonth = state.relative[state.relative.length - 1]?.month;
   const startMonth = state.relative[0]?.month;
   if(!lastMonth || !startMonth) return;
@@ -6548,7 +6632,6 @@ function renderSeaLevelChart(){
     window.shorelyInstallChartLegend(seaLevelChart);
   }
   attachChartZoom(seaLevelChart);
-  renderSeaLevelStats(state);
 }
 
 async function fetchSeaLevelJson(){
@@ -6557,8 +6640,21 @@ async function fetchSeaLevelJson(){
     try{
       const res = await fetchWithTimeout(u, { cache:"no-cache" }, 8000);
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      return { url:u, json };
+      const normalized = normalizeSeaLevelJson(await res.json());
+      const {station, datum} = normalized;
+      if(station !== null){
+        const id = String(station);
+        const expectedDatum = id === String(USGS_SITE) ? "NAVD88" :
+          NOAA_SEA_LEVEL_STATION_CANDIDATES.some(candidate=>String(candidate) === id) ? "MSL" : null;
+        if(!expectedDatum || (datum !== null && datum !== expectedDatum)){
+          throw new Error("Sea-level cache does not match a configured station and datum");
+        }
+      }else if(datum !== null && !["NAVD88", "MSL"].includes(datum)){
+        throw new Error("Sea-level cache has an unsupported datum");
+      }
+      const monthly = validSeaLevelMonths(normalized);
+      if(!monthly.length) throw new Error("Sea-level cache has no usable monthly values");
+      return { url:u, normalized, monthly };
     }catch(e){
       errs.push(`${u} (${e?.message || e})`);
     }
@@ -6610,6 +6706,9 @@ async function fetchNOAAMonthlySeaLevel(){
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if(json?.error?.message) throw new Error(json.error.message);
+      if(json?.metadata?.id != null && String(json.metadata.id) !== station){
+        throw new Error("NOAA monthly means are for a different station");
+      }
       const rows = Array.isArray(json?.data) ? json.data : [];
       const points = rows
         .map(r => {
@@ -6633,7 +6732,8 @@ async function fetchSeaLevelFallback(){
   if(GAUGE_TYPE !== "NOAA"){
     try{
       const daily = await fetchUSGSDailySeaLevel();
-      if(daily.length) return {resolution:"daily", source:"USGS daily values", station:USGS_SITE, daily, monthly:[], updated:null};
+      const monthly = validSeaLevelMonths({monthly:[], daily});
+      if(monthly.length) return {resolution:"daily", source:"USGS daily values", station:USGS_SITE, daily, monthly, updated:null};
     }catch(e){}
   }
   const monthly = (await fetchNOAAMonthlySeaLevel()).slice()
@@ -6697,11 +6797,9 @@ async function updateSeaLevelTrends(){
   if(!seaLevelMeta) return;
   if(SEA_LEVEL_REFRESH_IN_FLIGHT) return SEA_LEVEL_REFRESH_IN_FLIGHT;
   SEA_LEVEL_REFRESH_IN_FLIGHT = (async ()=>{
-    let normalized, source;
+    let normalized, source, monthly;
     try{
-      const fetched = await fetchSeaLevelJson();
-      normalized = normalizeSeaLevelJson(fetched.json);
-      source = fetched.url;
+      ({normalized, url:source, monthly} = await fetchSeaLevelJson());
     }catch(cacheError){
       if(SEA_LEVEL_STATE && !SEA_LEVEL_STATE.providerFallback) throw cacheError;
       const now = Date.now();
@@ -6713,9 +6811,8 @@ async function updateSeaLevelTrends(){
       SEA_LEVEL_PROVIDER_RETRY_AT = now + 3600000;
       normalized = await fetchSeaLevelFallback();
       source = normalized.source;
+      monthly = validSeaLevelMonths(normalized);
     }
-    const monthlyRaw = normalized.monthly.length ? normalized.monthly : computeMonthlySeaLevel(normalized.daily);
-    let monthly = filterSeaLevelMonthlyQuality(monthlyRaw).sort((a,b)=>a.month.localeCompare(b.month));
     if(monthly.length && String(normalized.station) === String(USGS_SITE) && normalized.datum === "NAVD88"){
       monthly = await supplementSeaLevelMonths(monthly);
     }
@@ -7601,6 +7698,7 @@ function renderDOYCumPanel(){
     const through = HISTORY_COMPLETED_THROUGH ? ` · Archive through ${fmtESTFull(HISTORY_COMPLETED_THROUGH)} ET` : "";
     meta.textContent = `${years[0]}–${years[years.length - 1]} · ${stageLabel}${through}`;
   }
+  if(!CHARTS_AVAILABLE) return;
 
   const labels  = Array.from({length:365}, (_,i)=> i+1);
   const mStarts = monthStarts365();
@@ -8225,6 +8323,7 @@ function ensureMonthAvgChart(){
 }
 
 function renderMonthAveragesChart(monthStats){
+  if(!CHARTS_AVAILABLE) return;
   ensureMonthAvgChart();
   monthAvgChart.data.labels = monthStats.map(r=>monthNameFromIndex(r.month));
   monthAvgChart.data.datasets[0].data = monthStats.map(r=>r.avgMinor);
@@ -8236,7 +8335,7 @@ function renderMonthAveragesChart(monthStats){
 
 function updateMonthAveragesFromHistory(){
   const stats = computeMonthlyAveragesFromEvents(HIGH_TIDES_NAVD);
-  monthAvgMeta.textContent = "Only completed months with all expected high-tide cycles observed are averaged; missing months are excluded.";
+  monthAvgMeta.textContent = "Averages use completed months with full tide-cycle coverage, including calibrated backup observations where available.";
   renderMonthAveragesChart(stats);
 }
 
@@ -8246,9 +8345,11 @@ async function updateLiveConditions(){
     recent = await fetchRecentObservedSeriesWithFallback();
     const latest = recent.at(-1);
     if(!latest) throw new Error("No recent water-level observations");
-    if(recent.isCachedHighTideFallback && STATE.lastNavd && !STATE.lastObservationIsCachedHighTide &&
-      Date.parse(latest.t) <= Date.parse(STATE.lastNavd.t)){
-      throw new Error("Live feed unavailable and the cached high tide is older than the last live reading");
+    if(STATE.lastNavd){
+      const changeInTime = Date.parse(latest.t) - Date.parse(STATE.lastNavd.t);
+      if(changeInTime < 0 || (changeInTime === 0 && recent.isCachedHighTideFallback && !STATE.lastObservationIsCachedHighTide)){
+        throw new Error("Observation refresh returned an older or lower-priority reading");
+      }
     }
     STATE.liveObservationError = false;
     STATE.lastObservationIsCachedHighTide = !!recent.isCachedHighTideFallback;
@@ -8323,6 +8424,10 @@ async function updateObservedTimeseries(){
   try{
     const obs = await fetchObservedSeries(range);
     if(!obs.length) throw new Error("No observations in the last 24 hours");
+    const retainedLatest = STATE.obs24Navd?.at(-1);
+    if(!STATE.obs24CachedHighs && retainedLatest && Date.parse(obs.at(-1).t) < Date.parse(retainedLatest.t)){
+      throw new Error("Observation refresh returned an older 24-hour series");
+    }
     STATE.obs24Navd = obs;
     STATE.obs24CachedHighs = false;
   }catch(e){
@@ -8340,20 +8445,23 @@ async function updateObservedTimeseries(){
 }
 
 async function updateForecastTimeseries(){
+  let forecast;
   try{
-    const { points, issuedTime } = await fetchPETSSForecast_MLLW();
-    STATE.pred72Mllw = points;
-    STATE.petssIssuedTime = issuedTime;
-    STATE.petssUnavailableReason = null;
+    forecast = await fetchPETSSForecast_MLLW();
   }catch(e){
     console.warn("Forecast failed:", e);
-    const now = Date.now(), issued = Date.parse(STATE.petssIssuedTime);
-    const lastPoint = Date.parse(STATE.pred72Mllw?.at(-1)?.t);
-    if(!(now - issued <= 24*3600000 && lastPoint > now)){
-      STATE.pred72Mllw = [];
-      STATE.petssIssuedTime = null;
-      STATE.petssUnavailableReason = "Waiting for a current NOAA/PETSS run";
-    }
+  }
+  const now = Date.now(), issued = Date.parse(STATE.petssIssuedTime);
+  const lastPoint = Date.parse(STATE.pred72Mllw?.at(-1)?.t);
+  const retainedIsCurrent = now - issued <= 24*3600000 && lastPoint > now;
+  if(forecast && (!retainedIsCurrent || Date.parse(forecast.issuedTime) >= issued)){
+    STATE.pred72Mllw = forecast.points;
+    STATE.petssIssuedTime = forecast.issuedTime;
+    STATE.petssUnavailableReason = null;
+  }else if(!retainedIsCurrent){
+    STATE.pred72Mllw = [];
+    STATE.petssIssuedTime = null;
+    STATE.petssUnavailableReason = "Waiting for a current NOAA/PETSS run";
   }
   renderTimeseries();
 }
@@ -8841,6 +8949,10 @@ function refreshDashboard(){
 async function boot(){
   openAllAccordionsOnLoad();
   renderGaugeStaticText();
+  if(!CHARTS_AVAILABLE){
+    document.documentElement.classList.add("chartsUnavailable");
+    $("chartStatus").hidden = false;
+  }
 
   if(datumSelect){
     datumSelect.innerHTML = DATUMS.map(d => `<option value="${d}">${d}</option>`).join("");

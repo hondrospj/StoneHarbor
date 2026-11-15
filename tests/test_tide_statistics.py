@@ -25,7 +25,13 @@ class TideStatisticsTests(unittest.TestCase):
   first=min(m.instant(e['crest']).astimezone(m.TZ).year for e in source);self.assertNotIn(first,training)
   pool=[e for e in source if m.instant(e['crest']).astimezone(m.TZ).year in training]
   self.assertEqual(len(pool),future['highTideCount'])
+  coverage={r['year']:r for r in cache['coverage']}
   for row in annual['station']:
+   self.assertEqual(sum(row['sourceRoles'].values()),row['acceptedCycles'])
+   if row['year'] in coverage:
+    expected=coverage[row['year']]
+    for role, field in [('primary','primaryCycles'),('backup','backupCycles'),('official-crest','officialCycles')]:
+     self.assertEqual(row['sourceRoles'].get(role,0),expected[field],(row['year'],role))
    values=[e['ft'] for e in cache['events'] if m.event_date(e).startswith(str(row['year'])+'-')]
    if not values:self.assertIsNone(row['total']);continue
    self.assertEqual(sum(v>=cache['thresholdsNAVD88']['minorLow']-1e-9 for v in values),row['total'])
