@@ -18,8 +18,7 @@ const INPUT_PATHS = Object.freeze([...DATA_PATHS, PROJECTIONS_PATH]);
 const RECEIPT_PATH = "data/refresh_status.json";
 const CONFIG = Object.freeze([
   {id:"flooddashboard--stone-harbor", town:"stone-harbor", primarySite:"01411360", primaryAgency:"USGS", parameter:"72279", clockStation:"8557380", backupSite:"8557380", isoMilliseconds:false, thresholds:{minorLow:3.44, moderateLow:4.44, majorLow:5.44}},
-  {id:"flooddashboard--sandy-hook", town:"sandy-hook", primarySite:"8531680", primaryAgency:"NOAA", clockStation:"8531680", backupSite:null, isoMilliseconds:true, thresholds:{minorLow:3.88, moderateLow:4.88, majorLow:5.88}},
-  {id:"flooddashboard--cape-may-harbor", town:"cape-may-harbor", primarySite:"01411390", primaryAgency:"USGS", parameter:"72279", clockStation:"8536110", backupSite:"8536110", isoMilliseconds:true, thresholds:{minorLow:3.43, moderateLow:4.43, majorLow:5.43}}
+  {id:"flooddashboard--sandy-hook", town:"sandy-hook", primarySite:"8531680", primaryAgency:"NOAA", clockStation:"8531680", backupSite:null, isoMilliseconds:true, thresholds:{minorLow:3.88, moderateLow:4.88, majorLow:5.88}}
 ].map(c => Object.freeze({...c, thresholds:Object.freeze(c.thresholds)})));
 const allowedConfig = config => {if (!CONFIG.includes(config)) throw new Error("Application is outside the selected high-tide scope."); return config;};
 const iso = t => new Date(t).toISOString();
@@ -30,8 +29,14 @@ function validateConnection(connection) {
   if (!connection || connection.site !== SITE || !connection.tokens || typeof connection.tokens !== "object" ||
       JSON.stringify(Object.keys(connection.tokens).sort()) !== JSON.stringify(expected) ||
       expected.some(id => typeof connection.tokens[id] !== "string" || !/^[-_A-Za-z0-9]{43}$/.test(connection.tokens[id])))
-    throw new Error("The selected high-tide connection requires the exact HTTPS site and exactly three approved application credentials.");
+    throw new Error("The selected high-tide connection requires the exact HTTPS site and the two approved application credentials.");
   return connection;
+}
+function normalizeScheduledConnection(connection) {
+  // Discard the former Cape May Harbor credential from existing workflow secrets.
+  const tokens = {...connection?.tokens};
+  delete tokens["flooddashboard--cape-may-harbor"];
+  return validateConnection({...connection, tokens});
 }
 async function publicFetch(url, options = {}) {
   const parsed = new URL(url);
@@ -384,8 +389,8 @@ async function refreshApplication(config, connection, {api = serviceJSON, read =
 async function main() {
   if (process.argv.slice(2).some(a => a !== "--dry-run")) throw new Error("Only --dry-run is supported.");
   let connection;
-  try {connection = validateConnection(JSON.parse(process.env.SHORELYSAFE_HIGH_TIDE_CONNECTION || ""));}
-  catch {throw new Error("SHORELYSAFE_HIGH_TIDE_CONNECTION must contain the approved three-app connection.");}
+  try {connection = normalizeScheduledConnection(JSON.parse(process.env.SHORELYSAFE_HIGH_TIDE_CONNECTION || ""));}
+  catch {throw new Error("SHORELYSAFE_HIGH_TIDE_CONNECTION must contain the approved Stone Harbor and Sandy Hook credentials.");}
   const results = [];
   for (const config of CONFIG) {
     try {results.push(await refreshApplication(config, connection, {dryRun:process.argv.includes("--dry-run")}));}
@@ -396,6 +401,6 @@ async function main() {
   if (results.some(r => r.error)) process.exitCode = 1;
 }
 module.exports = {CONFIG, SITE, DATA_PATHS, INPUT_PATHS, CACHE_PATH, ANNUAL_PATH, FUTURE_PATH, PROJECTIONS_PATH, RECEIPT_PATH, LOOKBACK_DAYS,
-  validateConnection, publicFetch, fetchNOAA, stationDatumOffset, fetchNAVD, fetchHourlyBackup, fetchRecent, verifiedHighEvents,
+  validateConnection, normalizeScheduledConnection, publicFetch, fetchNOAA, stationDatumOffset, fetchNAVD, fetchHourlyBackup, fetchRecent, verifiedHighEvents,
   alignPredictedHighs, updateCache, mergeManifest, loadSnapshot, updateRefreshReceipt, rebuildPayloads, publishSnapshot, refreshApplication, ConcurrentPublication};
 if (require.main === module) main().catch(() => {console.error("The selected high-tide refresh could not start; verify its scoped connection and public inputs."); process.exitCode = 1;});

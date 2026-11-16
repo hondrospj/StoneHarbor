@@ -24,7 +24,7 @@ jobs:
           node-version: "20"
       - name: Check exact mean, future coverage and manifest preservation
         run: node --test tests/petss-exceedance.test.js tests/dashboard-petss-refresh.test.cjs
-      - name: Refresh the Stone Harbor, Cape May Harbor and Sandy Hook dashboard forecasts
+      - name: Refresh the Stone Harbor and Sandy Hook dashboard forecasts
         env:
           SHORELYSAFE_DASHBOARD_CONNECTION: ${{ secrets.SHORELYSAFE_DASHBOARD_CONNECTION }}
-        run: node tools/refresh_dashboard_petss.js --apps flooddashboard--stone-harbor,flooddashboard--cape-may-harbor,flooddashboard--sandy-hook
+        run: node tools/refresh_dashboard_petss.js --apps flooddashboard--stone-harbor,flooddashboard--sandy-hook

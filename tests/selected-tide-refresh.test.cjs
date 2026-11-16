@@ -100,7 +100,7 @@ test("NOAA fallback cannot downgrade an existing measured product, while equal-q
   assert.deepEqual(revised.events.map(e=>e.ft),[4,3.8]);
 });
 test("historical missing denominators survive and all coverage roles are initialized by astronomical anchor",async()=>{
-  const config=worker.CONFIG[2], e=createEngine(config), old=cache(config,[event(config,12,4,{sourceRole:"backup"})]);
+  const config=worker.CONFIG[0], e=createEngine(config), old=cache(config,[event(config,12,4,{sourceRole:"backup"})]);
   old.coverage[0].primaryCycles=0; old.monthlyCoverage[0].primaryCycles=0;
   old.expectedCycleRegistry=[{crest:e.secondsISO(t(12)),windowStart:e.secondsISO(t(6)),windowEnd:e.secondsISO(t(18))},{crest:e.secondsISO(t(24)),windowStart:e.secondsISO(t(18)),windowEnd:e.secondsISO(t(30))}];
   old.missingCycles=[{cycleId:e.cycleId(t(24)),crest:e.secondsISO(t(24))}];old.annualCoverage=old.coverage;
@@ -140,6 +140,14 @@ function snapshot(config,weather="weather-v1",suffix="") {
   return {inputs,state:{published:true,deployment:sha256(Buffer.from("deployment"+weather+suffix)),manifest:{files}}};
 }
 function payloads(snap) {return new Map(worker.DATA_PATHS.map(name=>[name,Buffer.from("updated-"+name)]));}
+test("scheduled credentials exclude Cape May Harbor while accepting the previous secret",()=>{
+  const current=connection(), retiredId="flooddashboard--cape-may-harbor";
+  const previous={...current,tokens:{...current.tokens,[retiredId]:"a".repeat(43)}};
+  assert.deepEqual(worker.CONFIG.map(config=>config.id),["flooddashboard--stone-harbor","flooddashboard--sandy-hook"]);
+  assert.deepEqual(worker.normalizeScheduledConnection(previous),current);
+  assert.deepEqual(worker.normalizeScheduledConnection(current),current);
+  assert.throws(()=>worker.normalizeScheduledConnection({...previous,tokens:{...previous.tokens,unrelated:"a".repeat(43)}}),/exact/);
+});
 test("manifest scope preserves weather and refuses extra paths, missing bindings, or foreign credentials",()=>{
   const snap=snapshot(worker.CONFIG[0]), data=payloads(snap), merged=worker.mergeManifest(snap.state,data);
   assert.deepEqual(merged.find(f=>f.path==="data/petss_forecast.json"),{path:"data/petss_forecast.json",...snap.state.manifest.files["data/petss_forecast.json"]});
