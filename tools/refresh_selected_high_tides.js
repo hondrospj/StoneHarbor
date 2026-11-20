@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 
-// Public source/data only. These three existing applications are the complete
+// Public source/data only. These two existing applications are the complete
 // publisher scope. Every other live file (including weather) retains its hash.
 const fs = require("node:fs/promises");
 const os = require("node:os");
@@ -16,6 +16,7 @@ const FUTURE_PATH = "data/future_flood_counts.json", PROJECTIONS_PATH = "data/se
 const DATA_PATHS = Object.freeze([CACHE_PATH, ANNUAL_PATH, FUTURE_PATH, "index.html"]);
 const INPUT_PATHS = Object.freeze([...DATA_PATHS, PROJECTIONS_PATH]);
 const RECEIPT_PATH = "data/refresh_status.json";
+const OBSERVATIONS_PATH = "data/observations.json";
 const CONFIG = Object.freeze([
   {id:"flooddashboard--stone-harbor", town:"stone-harbor", primarySite:"01411360", primaryAgency:"USGS", parameter:"72279", clockStation:"8557380", backupSite:"8557380", isoMilliseconds:false, thresholds:{minorLow:3.44, moderateLow:4.44, majorLow:5.44}},
   {id:"flooddashboard--sandy-hook", town:"sandy-hook", primarySite:"8531680", primaryAgency:"NOAA", clockStation:"8531680", backupSite:null, isoMilliseconds:true, thresholds:{minorLow:3.88, moderateLow:4.88, majorLow:5.88}}
@@ -56,6 +57,36 @@ const day = t => iso(t).slice(0,10).replaceAll("-", "");
 function noaaTime(t) {
   const text = String(t);
   return Date.parse(text.includes("T") ? (/Z$|[+-]\d\d:\d\d$/.test(text) ? text : text + "Z") : text.replace(" ", "T") + "Z");
+}
+async function fetchSandyHookObservations({now = Date.now(), fetchImpl = publicFetch} = {}) {
+  const begin = iso(now - 2 * DAY).slice(0, 10);
+  const params = {product:"water_level", application:"shorelysafe-six-hour-refresh", station:"8531680",
+    begin_date:begin.replaceAll("-", ""), end_date:day(now), datum:"NAVD", time_zone:"gmt", units:"english", format:"json"};
+  const sourceUrl = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?" + new URLSearchParams(params);
+  const response = await fetchImpl(sourceUrl, {signal:AbortSignal.timeout(45000)});
+  if (!response.ok) throw new Error("The Sandy Hook measured observation feed is unavailable.");
+  const raw = Buffer.from(await response.arrayBuffer());
+  if (raw.length > 4 * 1024 * 1024) throw new Error("The Sandy Hook observation response exceeds its size limit.");
+  const json = JSON.parse(raw);
+  if (json.error || String(json.metadata?.id) !== "8531680" || !Array.isArray(json.data) || !json.data.length)
+    throw new Error("The Sandy Hook measured observation source or station is invalid.");
+  let previous = -Infinity;
+  const start = Date.parse(begin + "T00:00:00Z");
+  const rows = [];
+  for (const row of json.data) {
+    const timestamp = noaaTime(row.t), value = row.v;
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(row.t) || !Number.isFinite(timestamp) ||
+        iso(timestamp).slice(0, 16).replace("T", " ") !== row.t || timestamp < start || timestamp > now || timestamp <= previous)
+      throw new Error("The Sandy Hook measured observation response has an invalid or future row.");
+    previous = timestamp;
+    if (!["string", "number"].includes(typeof value) || String(value).trim() === "" || !Number.isFinite(Number(value)) ||
+        Math.abs(Number(value)) >= 100 || String(row.f || "").split(",")[0] === "1") continue;
+    rows.push({t:iso(timestamp).replace(".000Z", "Z"), navd88_ft:Number(value)});
+  }
+  if (!rows.length || now - Date.parse(rows.at(-1).t) > 6 * HOUR)
+    throw new Error("The Sandy Hook measured observations are missing or stale by more than six hours.");
+  return Buffer.from(JSON.stringify({station:"8531680", datum:"NAVD88", units:"ft", checkedAtUtc:iso(now),
+    latestObservationUtc:rows.at(-1).t, sourceUrl, sourceResponseSha256:sha256(raw), data:rows}, null, 2) + "\n");
 }
 async function fetchNOAA({station, product, datum = "NAVD", startISO, endISO, fetchImpl = publicFetch}) {
   const start = Date.parse(startISO), end = Date.parse(endISO), rows = new Map();
@@ -278,9 +309,10 @@ async function updateCache(config, cache, recent, {now = Date.now(), fetchClock 
   if (Array.isArray(cache.expectedHighTideClocks)) result.expectedHighTideClocks = [...new Set([...cache.expectedHighTideClocks.map(t => engine.secondsISO(t)), ...windows.map(w => w.crest)])].sort((a,b) => Date.parse(a) - Date.parse(b));
   return result;
 }
-function mergeManifest(state, payloads) {
+function mergeManifest(state, payloads, config) {
   const old = state?.manifest?.files;
-  const allowedPaths = [...DATA_PATHS, ...(old?.[RECEIPT_PATH] ? [RECEIPT_PATH] : [])];
+  const observationPaths = config === CONFIG[1] && old?.[OBSERVATIONS_PATH] && payloads.has(OBSERVATIONS_PATH) ? [OBSERVATIONS_PATH] : [];
+  const allowedPaths = [...DATA_PATHS, ...(old?.[RECEIPT_PATH] ? [RECEIPT_PATH] : []), ...observationPaths];
   if (!state?.published || !/^[a-f0-9]{64}$/.test(state.deployment || "") || !old ||
       JSON.stringify([...payloads.keys()].sort()) !== JSON.stringify(allowedPaths.sort())) throw new Error("Only the four selected tide-count paths and an existing refresh receipt may be replaced.");
   const files = new Map();
@@ -295,7 +327,8 @@ function mergeManifest(state, payloads) {
 async function serviceJSON(url, options) {try {return JSON.parse(await request(url, options));} catch {throw new Error("Selected high-tide publisher service is unavailable.");}}
 async function loadSnapshot(config, state, {read = request} = {}) {
   const inputs = new Map();
-  const names = [...INPUT_PATHS, ...(state?.manifest?.files?.[RECEIPT_PATH] ? [RECEIPT_PATH] : [])];
+  const names = [...INPUT_PATHS, ...(state?.manifest?.files?.[RECEIPT_PATH] ? [RECEIPT_PATH] : []),
+    ...(config === CONFIG[1] && state?.manifest?.files?.[OBSERVATIONS_PATH] ? [OBSERVATIONS_PATH] : [])];
   await Promise.all(names.map(async name => {
     const entry = state?.manifest?.files?.[name];
     if (!entry || !/^[a-f0-9]{64}$/.test(entry.sha256 || "")) throw new Error("Live canonical tide input is missing from the manifest.");
@@ -307,16 +340,23 @@ async function loadSnapshot(config, state, {read = request} = {}) {
   for (const name of [ANNUAL_PATH, FUTURE_PATH]) if (JSON.parse(inputs.get(name)).sourceSHA256 !== hash) throw new Error("Live tide count/model source binding is inconsistent.");
   return inputs;
 }
-function updateRefreshReceipt(raw, payloads) {
+function updateRefreshReceipt(raw, payloads, config) {
   const receipt = JSON.parse(raw);
   if (!receipt || typeof receipt !== "object" || Array.isArray(receipt)) throw new Error("The existing refresh receipt is invalid.");
   let changed = false;
-  // This receipt can describe an older weather check. Change only existing
-  // tide file fingerprints; no new weather check, timestamp, status or claim.
+  const observation = config === CONFIG[1] && payloads.has(OBSERVATIONS_PATH) && receipt.profile === "dashboard" &&
+    String(receipt.station) === "8531680" && ["NAVD88", "NAVD88 observations; MLLW issued forecast"].includes(receipt.datum)
+    ? JSON.parse(payloads.get(OBSERVATIONS_PATH)) : null;
+  if (observation && Object.hasOwn(receipt, "latestObservationUtc") && receipt.latestObservationUtc !== observation.latestObservationUtc) {
+    receipt.latestObservationUtc = observation.latestObservationUtc;
+    changed = true;
+  }
+  // Preserve the receipt's overall check time, forecast and weather claims.
+  // Only matching existing observation fields and tide fingerprints change.
   for (const key of ["files", "payloads"]) {
     const entries = receipt[key];
     if (!entries || typeof entries !== "object" || Array.isArray(entries)) continue;
-    for (const name of [CACHE_PATH, ANNUAL_PATH, FUTURE_PATH]) {
+    for (const name of [CACHE_PATH, ANNUAL_PATH, FUTURE_PATH, ...(observation ? [OBSERVATIONS_PATH] : [])]) {
       if (!Object.hasOwn(entries, name)) continue;
       const entry = entries[name], data = payloads.get(name);
       if (!entry || typeof entry !== "object" || Array.isArray(entry) || !/^[a-f0-9]{64}$/.test(entry.sha256 || "") ||
@@ -349,7 +389,7 @@ class ConcurrentPublication extends Error {}
 async function publishSnapshot(config, connection, state, payloads, {api = serviceJSON} = {}) {
   allowedConfig(config); validateConnection(connection);
   const base = `${SITE}/wp-json/shorelysafe/v1/apps/${config.id}/`, options = {token:connection.tokens[config.id], maxBytes:32*1024*1024};
-  const files = mergeManifest(state, payloads), hashes = new Map([...payloads.values()].map(data => [sha256(data), data]));
+  const files = mergeManifest(state, payloads, config), hashes = new Map([...payloads.values()].map(data => [sha256(data), data]));
   const plan = await api(base + "plan", {...options, method:"POST", body:{files, commit:"Public individual high tides and bound annual/future count models"}});
   if (!/^[a-f0-9]{64}$/.test(plan.deployment || "") || !Array.isArray(plan.missing) || plan.missing.some(hash => !hashes.has(hash))) throw new Error("Publisher plan requested a file outside the selected tide-count paths and existing receipt.");
   for (const hash of new Set(plan.missing)) {
@@ -369,7 +409,7 @@ async function publishSnapshot(config, connection, state, payloads, {api = servi
       files.some(f => after.manifest.files[f.path]?.sha256 !== f.sha256 || after.manifest.files[f.path]?.size !== f.size)) throw new Error("Published tide-count manifest did not preserve every live application file.");
   return {application:config.id, changed:true, publishedPaths:payloads.size, preservedFiles:files.length-payloads.size};
 }
-async function refreshApplication(config, connection, {api = serviceJSON, read = request, getRecent = fetchRecent, rebuild = rebuildPayloads, now = Date.now(), dryRun = false, retries = 2} = {}) {
+async function refreshApplication(config, connection, {api = serviceJSON, read = request, getRecent = fetchRecent, getGaugeSnapshot = fetchSandyHookObservations, rebuild = rebuildPayloads, now = Date.now(), dryRun = false, retries = 2} = {}) {
   allowedConfig(config); validateConnection(connection);
   const base = `${SITE}/wp-json/shorelysafe/v1/apps/${config.id}/`, options = {token:connection.tokens[config.id], maxBytes:32*1024*1024};
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -381,6 +421,20 @@ async function refreshApplication(config, connection, {api = serviceJSON, read =
       const recent = await getRecent(config, cache, {now}), updated = await updateCache(config, cache, recent, {now});
       const payloads = await rebuild(inputs, updated);
       const summary = {application:config.id, events:updated.events.length, lastProcessedISO:updated.lastProcessedISO, countUnit:updated.countUnit};
+      if (config === CONFIG[1] && inputs.has(OBSERVATIONS_PATH)) {
+        try {
+          const observation = await getGaugeSnapshot({now});
+          const prior = JSON.parse(inputs.get(OBSERVATIONS_PATH)), current = JSON.parse(observation);
+          if ([prior, current].some(value => value.station !== "8531680" || value.datum !== "NAVD88" || value.units !== "ft" ||
+              !Number.isFinite(Date.parse(value.latestObservationUtc))) || Date.parse(current.latestObservationUtc) < Date.parse(prior.latestObservationUtc))
+            throw new Error("The Sandy Hook observation identity or freshness regressed.");
+          payloads.set(OBSERVATIONS_PATH, observation);
+          summary.observationRefresh = {latestObservationUtc:current.latestObservationUtc};
+        } catch {
+          summary.observationRefresh = {error:"Sandy Hook measured observation refresh failed; the prior observation snapshot was retained."};
+        }
+        if (inputs.has(RECEIPT_PATH)) payloads.set(RECEIPT_PATH, updateRefreshReceipt(inputs.get(RECEIPT_PATH), payloads, config));
+      }
       if (dryRun) return {...summary, dryRun:true, changed:true};
       return {...summary, ...await publishSnapshot(config, connection, state, payloads, {api})};
     } catch (error) {if (!(error instanceof ConcurrentPublication) || attempt === retries) throw error;}
@@ -398,9 +452,9 @@ async function main() {
   }
   // Never print connection values, authenticated responses, HTML, or source.
   console.log(JSON.stringify({results}, null, 2));
-  if (results.some(r => r.error)) process.exitCode = 1;
+  if (results.some(r => r.error || r.observationRefresh?.error)) process.exitCode = 1;
 }
-module.exports = {CONFIG, SITE, DATA_PATHS, INPUT_PATHS, CACHE_PATH, ANNUAL_PATH, FUTURE_PATH, PROJECTIONS_PATH, RECEIPT_PATH, LOOKBACK_DAYS,
-  validateConnection, normalizeScheduledConnection, publicFetch, fetchNOAA, stationDatumOffset, fetchNAVD, fetchHourlyBackup, fetchRecent, verifiedHighEvents,
+module.exports = {CONFIG, SITE, DATA_PATHS, INPUT_PATHS, CACHE_PATH, ANNUAL_PATH, FUTURE_PATH, PROJECTIONS_PATH, RECEIPT_PATH, OBSERVATIONS_PATH, LOOKBACK_DAYS,
+  validateConnection, normalizeScheduledConnection, publicFetch, fetchSandyHookObservations, fetchNOAA, stationDatumOffset, fetchNAVD, fetchHourlyBackup, fetchRecent, verifiedHighEvents,
   alignPredictedHighs, updateCache, mergeManifest, loadSnapshot, updateRefreshReceipt, rebuildPayloads, publishSnapshot, refreshApplication, ConcurrentPublication};
 if (require.main === module) main().catch(() => {console.error("The selected high-tide refresh could not start; verify its scoped connection and public inputs."); process.exitCode = 1;});

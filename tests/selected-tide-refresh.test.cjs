@@ -243,3 +243,97 @@ test("concurrent publication retries all inputs and preserves the newest weather
   assert.equal(result.changed,true);assert.equal(rebuilds,2);assert.equal(plans,2);
   assert.equal(committed.manifest.files["data/petss_forecast.json"].sha256,second.state.manifest.files["data/petss_forecast.json"].sha256);
 });
+
+test("Sandy Hook snapshot uses the raw NOAA NAVD response and the native two-day schema",async()=>{
+  const raw = Buffer.from('{"metadata":{"id":"8531680"}, "data":[{"t":"2026-01-02 11:54","v":"-0.382","f":"0,0,0,0"}]}');
+  let source;
+  const result = await worker.fetchSandyHookObservations({now:zero+36*H,fetchImpl:async url=>{source=new URL(url);return new Response(raw);}});
+  const snapshot = JSON.parse(result);
+  assert.equal(source.origin,"https://api.tidesandcurrents.noaa.gov");
+  assert.equal(source.pathname,"/api/prod/datagetter");
+  for (const [name,value] of Object.entries({product:"water_level",station:"8531680",begin_date:"20251231",end_date:"20260102",datum:"NAVD",time_zone:"gmt",units:"english",format:"json"}))
+    assert.equal(source.searchParams.get(name),value);
+  assert.equal(snapshot.sourceUrl,source.href);
+  assert.equal(snapshot.sourceResponseSha256,sha256(raw));
+  assert.equal(snapshot.station,"8531680");assert.equal(snapshot.datum,"NAVD88");assert.equal(snapshot.units,"ft");
+  assert.equal(snapshot.latestObservationUtc,"2026-01-02T11:54:00Z");
+  assert.deepEqual(snapshot.data,[{t:"2026-01-02T11:54:00Z",navd88_ft:-.382}]);
+});
+
+test("Sandy Hook snapshots reject foreign, stale, future, flagged and malformed observations",async()=>{
+  const valid={metadata:{id:"8531680"},data:[{t:"2026-01-02 11:54",v:"-0.382"}]};
+  const cases=[{...valid,metadata:{id:"8536110"}},{...valid,data:[]},{...valid,error:{message:"Unavailable"}},
+    ...["",null,true,[],{},"bad","-999"].map(v=>({...valid,data:[{...valid.data[0],v}]})),
+    ...["2026-01-02 12:06","2026-01-02 05:54","2026-02-30 11:54","malformed","2025-12-30 23:54"].map(t=>({...valid,data:[{...valid.data[0],t}]})),
+    {...valid,data:[{...valid.data[0],f:"1,0,0,0"}]},{...valid,data:[...valid.data,...valid.data]}];
+  for (const value of cases)
+    await assert.rejects(worker.fetchSandyHookObservations({now:zero+36*H,fetchImpl:async()=>new Response(JSON.stringify(value))}));
+  await assert.rejects(worker.fetchSandyHookObservations({now:zero+36*H,fetchImpl:async()=>new Response("invalid JSON")}));
+  await assert.rejects(worker.fetchSandyHookObservations({now:zero+36*H,fetchImpl:async()=>new Response("unavailable",{status:503})}));
+  await assert.rejects(worker.fetchSandyHookObservations({now:zero+36*H,fetchImpl:async()=>({ok:true,arrayBuffer:async()=>Buffer.alloc(4*1024*1024+1)})}),/size limit/);
+});
+
+test("Sandy Hook snapshots retain fresh measured points when NOAA includes flagged or missing readings",async()=>{
+  const raw=bytes({metadata:{id:"8531680"},data:[
+    {t:"2026-01-02 11:30",v:"8.5",f:"1,0,0,0"},
+    {t:"2026-01-02 11:36",v:""},{t:"2026-01-02 11:42"},
+    {t:"2026-01-02 11:48",v:"-0.382",f:"0,0,0,0"},
+    {t:"2026-01-02 11:54",v:"-999",f:"0,0,0,0"}
+  ]});
+  const result=JSON.parse(await worker.fetchSandyHookObservations({now:zero+36*H,fetchImpl:async()=>new Response(raw)}));
+  assert.equal(result.sourceResponseSha256,sha256(raw));
+  assert.equal(result.latestObservationUtc,"2026-01-02T11:48:00Z");
+  assert.deepEqual(result.data,[{t:"2026-01-02T11:48:00Z",navd88_ft:-.382}]);
+  const stale=bytes({metadata:{id:"8531680"},data:[{t:"2026-01-02 05:54",v:"1"},{t:"2026-01-02 11:54",v:"8.5",f:"1,0,0,0"}]});
+  await assert.rejects(worker.fetchSandyHookObservations({now:zero+36*H,fetchImpl:async()=>new Response(stale)}),/stale/);
+});
+
+test("only Sandy Hook can replace its already published gauge snapshot and matching existing receipt fields",()=>{
+  const config=worker.CONFIG[1],snap=snapshot(config),data=payloads(snap),observation=bytes({station:"8531680",datum:"NAVD88",units:"ft",latestObservationUtc:t(36)});
+  data.set(worker.OBSERVATIONS_PATH,observation);
+  assert.throws(()=>worker.mergeManifest(snap.state,data,config),/four selected/);
+  snap.state.manifest.files[worker.OBSERVATIONS_PATH]={sha256:"a".repeat(64),size:123};
+  assert.throws(()=>worker.mergeManifest(snap.state,data,worker.CONFIG[0]),/four selected/);
+  assert.throws(()=>worker.mergeManifest(snap.state,data,{...config}),/four selected/);
+  const merged=worker.mergeManifest(snap.state,data,config);
+  assert.equal(merged.find(f=>f.path===worker.OBSERVATIONS_PATH).sha256,sha256(observation));
+  assert.equal(merged.find(f=>f.path==="data/petss_forecast.json").sha256,snap.state.manifest.files["data/petss_forecast.json"].sha256);
+  const receipt={profile:"dashboard",station:"8531680",datum:"NAVD88 observations; MLLW issued forecast",checkedAtUtc:t(0),latestObservationUtc:t(0),
+    latestUpstreamCycleUtc:t(0),forecastEndUtc:t(80),status:"previous-check",weather:{checkedAtUtc:t(0)},
+    files:{[worker.OBSERVATIONS_PATH]:{sha256:"a".repeat(64),bytes:123,note:"keep"},"weather.json":{sha256:"b".repeat(64),size:5}}};
+  const result=JSON.parse(worker.updateRefreshReceipt(bytes(receipt),data,config));
+  assert.equal(result.latestObservationUtc,t(36));
+  assert.deepEqual(result.files[worker.OBSERVATIONS_PATH],{sha256:sha256(observation),bytes:observation.length,note:"keep"});
+  for (const key of Object.keys(receipt).filter(k=>!["latestObservationUtc","files"].includes(k)))assert.deepEqual(result[key],receipt[key]);
+  assert.deepEqual(result.files["weather.json"],receipt.files["weather.json"]);
+  const foreign={...receipt,station:"8536110"};
+  assert.deepEqual(JSON.parse(worker.updateRefreshReceipt(bytes(foreign),data,config)),foreign);
+  const missing={...receipt};delete missing.latestObservationUtc;delete missing.files;
+  assert.deepEqual(JSON.parse(worker.updateRefreshReceipt(bytes(missing),data,config)),missing);
+});
+
+test("Sandy Hook publishes fresh snapshots atomically with history and keeps old snapshots when the measured feed fails",async()=>{
+  const config=worker.CONFIG[1];
+  for (const failure of [false,true,"regression"]) {
+    const snap=snapshot(config),prior=bytes({station:"8531680",datum:"NAVD88",units:"ft",latestObservationUtc:t(30),data:[]});
+    snap.inputs.set(worker.OBSERVATIONS_PATH,prior);
+    snap.state.manifest.files[worker.OBSERVATIONS_PATH]={sha256:sha256(prior),size:prior.length};
+    let committed,lastFiles,gaugeCalls=0;
+    const read=async url=>snap.inputs.get(new URL(url).pathname.split("/sandy-hook/")[1]);
+    const api=async(url,options={})=>{
+      if(url.endsWith("/state?manifest=1"))return committed||snap.state;
+      if(url.endsWith("/plan")){lastFiles=options.body.files;return {deployment:"d".repeat(64),missing:[]};}
+      if(url.endsWith("/state"))return snap.state;
+      if(url.endsWith("/commit")){committed={published:true,deployment:"d".repeat(64),manifest:{files:Object.fromEntries(lastFiles.map(f=>[f.path,{sha256:f.sha256,size:f.size}]))}};return {};}
+      throw Error("Unexpected API call");
+    };
+    const result=await worker.refreshApplication(config,connection(),{now:zero+36*H,api,read,getRecent:async()=>recent(),rebuild:async()=>payloads(snap),
+      getGaugeSnapshot:async()=>{gaugeCalls++;if(failure===true)throw Error("Measured feed unavailable");return bytes({...JSON.parse(prior),latestObservationUtc:failure==="regression"?t(29):t(36)});}});
+    assert.equal(gaugeCalls,1);assert.equal(result.changed,true);
+    assert.equal(Boolean(result.observationRefresh.error),Boolean(failure));
+    assert.equal(committed.manifest.files[worker.OBSERVATIONS_PATH].sha256===sha256(prior),Boolean(failure));
+    assert.notEqual(committed.manifest.files[worker.CACHE_PATH].sha256,snap.state.manifest.files[worker.CACHE_PATH].sha256);
+    assert.equal(committed.manifest.files["data/petss_forecast.json"].sha256,snap.state.manifest.files["data/petss_forecast.json"].sha256);
+    assert.equal(snap.inputs.get(worker.OBSERVATIONS_PATH),prior);
+  }
+});
