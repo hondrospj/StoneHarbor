@@ -62,6 +62,17 @@ test("a correction to a completed tide survives an older revision with the same 
   assert.equal(vm.runInContext("HIGH_TIDES_NAVD[0].ft",ctx),4.5);
 });
 
+test("an unchanged archive revision without an ETag skips rebuilding its event index",async()=>{
+  const archive={...cache([event("2026-10-10T23:00:00Z",4.2,"first")]),generatedAt:"2026-10-11T04:00:00Z"};
+  const ctx=appContext(archive);
+  const normalizeArchive=ctx.normalizePeaksJson;
+  let reads=0;
+  ctx.normalizePeaksJson=function(json){reads++;return normalizeArchive(json);};
+  await ctx.initJSONBackedHistory();
+  await ctx.initJSONBackedHistory();
+  assert.equal(reads,1);
+});
+
 test("two separate high tides on one local date both count, even in the same AM half-day",()=>{
   const rows=normalize([event("2024-01-04T05:01:00Z",4.2,"clock@2024-01-04T05:00Z"),event("2024-01-04T16:55:00Z",4.3,"clock@2024-01-04T17:00Z")]);
   assert.equal(rows.length,2);assert.equal(tides.localDate(rows[0]),tides.localDate(rows[1]));

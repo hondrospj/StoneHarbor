@@ -8583,8 +8583,12 @@ async function resolvePeaksJsonUrl(){
       const etag = res.headers.get("etag");
       if(etag && u === PEAKS_JSON_URL && etag === HISTORY_ARCHIVE_ETAG) return { unchanged:true };
       const json = await res.json();
+      const revision = json?.generatedAt
+        ? JSON.stringify([json.generatedAt,json.lastCompletedWindowEnd,json.lastProcessedISO,json.events?.length])
+        : null;
+      if(!etag && revision && u === PEAKS_JSON_URL && revision === HISTORY_ARCHIVE_REVISION) return { unchanged:true };
       const events = normalizePeaksJson(json);
-      return { url:u, json, etag, events };
+      return { url:u, json, etag, events, revision };
     }catch(e){
       errs.push(`${u} (${e?.message || e})`);
     }
@@ -8605,12 +8609,8 @@ function normalizePeaksJson(json){
 async function initJSONBackedHistory(){
   if(HISTORY_REFRESH_IN_FLIGHT) return HISTORY_REFRESH_IN_FLIGHT;
   HISTORY_REFRESH_IN_FLIGHT = (async ()=>{
-    const { url, json, etag, unchanged, events } = await resolvePeaksJsonUrl();
+    const { url, json, etag, unchanged, events, revision } = await resolvePeaksJsonUrl();
     if(unchanged) return;
-    const revision = json.generatedAt
-      ? JSON.stringify([json.generatedAt,json.lastCompletedWindowEnd,json.lastProcessedISO,json.events?.length])
-      : null;
-    if(revision && revision === HISTORY_ARCHIVE_REVISION) return;
     const latestTimedEvent = events.find(event=>event.t);
     const completedThrough = [json.lastCompletedWindowEnd,latestTimedEvent?.windowEnd,latestTimedEvent?.t]
       .find(timestamp=>Number.isFinite(Date.parse(timestamp))) || null;
