@@ -2614,7 +2614,7 @@ a.brand *{
   <div style="height:14px"></div>
 <div class="card">
     <div class="hrow paneControlHeader obsHeaderControls">
-      <h2>Observations (USGS) & Predictions (NOAA)</h2>
+      <h2>Observations (USGS) & Predictions (<span id="forecastProvider">Loading…</span>)</h2>
       <div class="paneToggleGroup">
         <button class="btn predictionToggle" id="tsAnnualForecastToggle" type="button" aria-pressed="false">
           <span class="predictionToggleTrack" aria-hidden="true"><span class="predictionToggleKnob"></span></span>
@@ -3901,6 +3901,93 @@ function normalizePetssJsonToPoints(json){
     return {t:p.t ?? p.time ?? p.validTime, ft, minFt:ft, maxFt:ft};
   }).filter(p => Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft) && Math.abs(p.ft)<100)
     .sort((a,b) => Date.parse(a.t)-Date.parse(b.t));
+}
+
+const STONE_HARBOR_V41_PROVIDER = "ShorelySafe V41";
+const STONE_HARBOR_V41_PATH = '/north-wildwood/floodmapper/data/v41/';
+const STONE_HARBOR_V41_PAGES = 'https://hondrospj.github.io/North-Wildwood-floodmapper/data/v41/';
+const STONE_HARBOR_V41_HOUR_MS = 3600000;
+
+function parseStoneHarborV41(manifest, csv, nowMs = Date.now()) {
+  const map = manifest?.mapForecast;
+  const issue = Date.parse(manifest?.issue_utc);
+  const hour = STONE_HARBOR_V41_HOUR_MS;
+  if (manifest?.status !== 'passed' || manifest.experimental !== true || manifest.weather_paths !== 103 ||
+      map?.sourceType !== 'SHORELYSAFE_V41_WEIGHTED_ECMWF_103_PATHS' || map.stationId !== '8535581' ||
+      map.usgsGaugeId !== '01411360' || map.mapDatum !== 'NAVD88' || Date.parse(map.sourceCycleUtc) !== issue ||
+      !Number.isFinite(issue) || issue % (6 * hour) !== 0 || issue > nowMs || nowMs - issue > 24 * hour) {
+    throw new Error('Stone Harbor V41 forecast failed its station, datum, or issue checks');
+  }
+  const [headers, ...lines] = csv.trim().split(/\r?\n/);
+  const columns = headers.split(',');
+  const keys = ['issue_utc', 'valid_time_utc', 'lead_hours', 'weighted_mean_ft_NAVD88',
+                'weighted_p10_ft_NAVD88', 'weighted_p90_ft_NAVD88'];
+  const positions = keys.map(key => columns.indexOf(key));
+  const horizon = new Date(issue).getUTCHours() % 12 === 0 ? 360 : 144;
+  if (positions.includes(-1) || new Set(columns).size !== columns.length ||
+      manifest.forecast_hours !== horizon || lines.length !== horizon) {
+    throw new Error('Stone Harbor V41 forecast has missing columns or hours');
+  }
+  const points = lines.map((line, index) => {
+    const cells = line.split(',');
+    if (cells.length !== columns.length) throw new Error('Malformed Stone Harbor forecast row');
+    const [rowIssue, t, lead, center, low, high] = positions.map(position => cells[position]);
+    const values = [center, low, high].map(Number);
+    if (Date.parse(rowIssue) !== issue || Date.parse(t) !== issue + (index + 1) * hour ||
+        Number(lead) !== index + 1 || ![center, low, high].every(value => value.trim() !== '') ||
+        !values.every(value => Number.isFinite(value) && Math.abs(value) < 50) || values[1] > values[2]) {
+      throw new Error('Invalid Stone Harbor V41 forecast time or level');
+    }
+    const [ft, minFt, maxFt] = values.map(value => value - OFFSET_FROM_MLLW.NAVD88);
+    return {t, ft, minFt, maxFt};
+  });
+  if (Date.parse(points.at(-1).t) < nowMs + 72 * hour) throw new Error('Stone Harbor V41 has under 72 hours remaining');
+  return {points, issuedTime:new Date(issue).toISOString(), provider:STONE_HARBOR_V41_PROVIDER};
+}
+
+async function fetchStoneHarborV41() {
+  const endpoints = location.hostname === 'cupajoe.live'
+    ? [STONE_HARBOR_V41_PATH, STONE_HARBOR_V41_PAGES] : [STONE_HARBOR_V41_PAGES];
+  const query = `?v=${Date.now()}`;
+  for (const base of endpoints) {
+    try {
+      const load = async name => {
+        const response = await fetchWithTimeout(`${base}${name}${query}`, {cache:'no-store'}, 7000);
+        if (!response.ok) throw new Error(`V41 ${name} returned HTTP ${response.status}`);
+        return response;
+      };
+      const [manifest, data] = await Promise.all([
+        load('latest.json').then(response => response.json()),
+        load('latest.csv').then(response => response.arrayBuffer()),
+      ]);
+      const checksum = await crypto.subtle.digest('SHA-256', data);
+      const hex = Array.from(new Uint8Array(checksum), byte => byte.toString(16).padStart(2, '0')).join('');
+      if (manifest.files?.['latest.csv']?.sha256 !== hex || manifest.files['latest.csv'].bytes !== data.byteLength) {
+        throw new Error('Stone Harbor V41 forecast files belong to different releases');
+      }
+      return parseStoneHarborV41(manifest, new TextDecoder().decode(data));
+    } catch (error) {
+      console.warn('V41 forecast source unavailable:', error.message);
+    }
+  }
+  return null;
+}
+
+async function fetchDashboardWaterForecast() {
+  const forecast = await fetchStoneHarborV41();
+  if (forecast) return forecast;
+  const fallback = await fetchPETSSForecast_MLLW();
+  const now = Date.now();
+  const issue = Date.parse(fallback.issuedTime);
+  if (!Number.isFinite(issue) || issue > now || now - issue > 24 * STONE_HARBOR_V41_HOUR_MS) {
+    throw new Error('No current V41 or NOAA PETSS forecast');
+  }
+  return {...fallback, provider:'NOAA PETSS fallback'};
+}
+
+function showDashboardForecastProvider(provider) {
+  STATE.waterForecastProvider = provider;
+  document.getElementById('forecastProvider').textContent = provider || 'Forecast unavailable';
 }
 
 async function fetchPETSSForecast_MLLW(){
@@ -8447,21 +8534,25 @@ async function updateObservedTimeseries(){
 async function updateForecastTimeseries(){
   let forecast;
   try{
-    forecast = await fetchPETSSForecast_MLLW();
+    forecast = await fetchDashboardWaterForecast();
   }catch(e){
     console.warn("Forecast failed:", e);
   }
   const now = Date.now(), issued = Date.parse(STATE.petssIssuedTime);
   const lastPoint = Date.parse(STATE.pred72Mllw?.at(-1)?.t);
   const retainedIsCurrent = now - issued <= 24*3600000 && lastPoint > now;
-  if(forecast && (!retainedIsCurrent || Date.parse(forecast.issuedTime) >= issued)){
+  const sameProvider = forecast?.provider === STATE.waterForecastProvider;
+  const replaceFallback = forecast?.provider === STONE_HARBOR_V41_PROVIDER && !sameProvider;
+  if(forecast && (!retainedIsCurrent || replaceFallback || (sameProvider && Date.parse(forecast.issuedTime) >= issued))){
+    showDashboardForecastProvider(forecast.provider);
     STATE.pred72Mllw = forecast.points;
     STATE.petssIssuedTime = forecast.issuedTime;
     STATE.petssUnavailableReason = null;
   }else if(!retainedIsCurrent){
     STATE.pred72Mllw = [];
     STATE.petssIssuedTime = null;
-    STATE.petssUnavailableReason = "Waiting for a current NOAA/PETSS run";
+    STATE.petssUnavailableReason = "Waiting for a current water-level forecast";
+      showDashboardForecastProvider(null);
   }
   renderTimeseries();
 }
@@ -9503,7 +9594,7 @@ setInterval(refreshDashboard, 5*60*1000);
     {
       title:()=>"Follow observations and predictions",
       needle:"Observations (",
-      body:()=>`<p>The solid line is measured by ${observationAgency()} at ${stationName()}. Turn <strong>Forecast</strong> on for NOAA/PETSS guidance, and hover or tap for exact times and levels.</p>`
+      body:()=>`<p>The solid line is measured by ${observationAgency()} at ${stationName()}. Turn <strong>Forecast</strong> on for the forecast shown in this panel, and hover or tap for exact times and levels.</p>`
     },
     {
       title:()=>"See when flooding happens within a year",
