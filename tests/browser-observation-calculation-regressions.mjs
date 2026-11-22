@@ -67,6 +67,40 @@ await run('the real observed chart retains valid flood readings after a 75-minut
   return values;
 });
 
+const separatedObservations=[
+  {time:'2026-11-03T16:00:00Z',value:3.5},
+  {time:'2026-11-03T16:45:00Z',value:3.6},
+  {time:'2026-11-03T17:30:00Z',value:3.4},
+  {time:'2026-11-03T18:15:00Z',value:2.6},
+  {time:'2026-11-03T18:30:00Z',value:2.7}
+];
+await run('isolated observations are marked and inspectable while continuous observations remain a line',{
+  externalResponse:feeds(separatedObservations)
+},async({page:p})=>{
+  await p.waitForFunction(count=>STATE.obs24Navd?.length===count&&tsChart?.data.datasets[0]?.data.length,separatedObservations.length);
+  await p.locator('#datumSelect').selectOption('NAVD88');
+  const results=await p.evaluate(rows=>{
+    const dataset=tsChart.data.datasets[0], metadata=tsChart.getDatasetMeta(0);
+    return rows.map(row=>{
+      const index=tsChart.data.labels.indexOf(Date.parse(row.time));
+      const point=metadata.data[index];
+      return {index,value:dataset.data[index],radius:point.options.radius,skipped:point.skip};
+    });
+  },separatedObservations);
+  assert.deepEqual(results.map(row=>row.value),separatedObservations.map(row=>row.value));
+  assert.ok(results.every(row=>!row.skipped));
+  assert.ok(results.slice(0,3).every(row=>row.radius>0));
+  assert.ok(results.slice(3).every(row=>row.radius===0));
+  await p.locator('#tsChart').scrollIntoViewIfNeeded();
+  const location=await p.evaluate(index=>{
+    const point=tsChart.getDatasetMeta(0).data[index], rect=tsChart.canvas.getBoundingClientRect();
+    return {x:rect.left+point.x,y:rect.top+point.y};
+  },results[1].index);
+  await p.mouse.move(location.x,location.y);
+  await p.waitForFunction(()=>tsChart.tooltip?.dataPoints?.some(row=>row.dataset.label==='Observed'&&row.parsed.y===3.6));
+  return {results,inspectable:true};
+});
+
 const cache=JSON.parse(fs.readFileSync(new URL('../data/peaks_navd88.json',import.meta.url),'utf8'));
 const exactMatches=cache.events.filter(row=>row.ft===3.44).length;
 assert.ok(exactMatches>0&&exactMatches<=50);

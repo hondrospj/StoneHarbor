@@ -7,6 +7,7 @@ for(const file of files){
  class FixedDate extends Date{static now(){return base;}}
  const node=()=>({textContent:'',innerHTML:'',querySelector:()=>null});
  const ctx={console,Date:FixedDate,THRESH:{MLLW:{minorLow:6,moderateLow:7,majorLow:8}},DISPLAY_DATUM:'MLLW',STATE:{},f48MinorHrsEl:node(),f48ModerHrsEl:node(),f48MajorHrsEl:node(),f48ListEl:node(),f48MetaEl:node(),toDisplayFtFromMllw:x=>x,unitText:()=> 'ft MLLW',fmtNiceDate:x=>x,fmtESTTime:x=>x};vm.createContext(ctx);
+ ctx.fmtESTFull=iso=>iso;
  ctx.formatFloodWindow=(start,end)=>`${new Date(start).toISOString()} → ${new Date(end).toISOString()}`;
  if(source.includes('function petssForecastEndMs('))vm.runInContext(extract('petssForecastEndMs'),ctx);
  if(source.includes('function compareFeet('))vm.runInContext(extract('compareFeet'),ctx);
@@ -24,6 +25,15 @@ for(const file of files){
  check('partial quiet forecast explicitly leaves missing hours unknown',()=>{assert.match(ctx.f48ListEl.innerHTML,/1.0 of 72.0 forecast hours/);assert.match(ctx.f48ListEl.innerHTML,/remaining hours are unknown/);assert.doesNotMatch(ctx.f48ListEl.innerHTML,/Next 72 hours stay flooding free/)});
  ctx.STATE.pred72Mllw=Array.from({length:73},(_,i)=>({t:new Date(base+i*H).toISOString(),ft:5}));ctx.updateFloodOutlook48();
  check('complete quiet forecast retains existing all-clear behavior',()=>{assert.match(ctx.f48ListEl.innerHTML,/No flood periods forecast/);assert.doesNotMatch(ctx.f48ListEl.innerHTML,/unknown|Partial forecast/)});
+ if(source.includes('STATE.waterForecastProvider')){
+  check('outlook names the selected provider and the matching issue',()=>{
+   ctx.STATE.petssIssuedTime=new Date(base).toISOString();
+   for(const provider of ['ShorelySafe V41','NOAA PETSS fallback']){
+    ctx.STATE.waterForecastProvider=provider;ctx.updateFloodOutlook48();
+    assert(ctx.f48MetaEl.textContent.includes(`Based on ${provider} · Issued ${ctx.STATE.petssIssuedTime} ET`));
+   }
+  });
+ }
  ctx.STATE.pred72Mllw=[{t:new Date(base).toISOString(),ft:9},{t:new Date(base+H).toISOString(),ft:9},{t:new Date(base+72*H).toISOString(),ft:9}];ctx.updateFloodOutlook48();
  check('partial flood totals labelled as available periods only',()=>{assert.equal(ctx.f48MajorHrsEl.textContent,'1.0');assert.match(ctx.f48ListEl.innerHTML,/Partial forecast coverage/)});
  results.push({source:file,checks:n,passed:true});

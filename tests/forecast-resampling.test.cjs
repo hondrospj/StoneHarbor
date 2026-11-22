@@ -60,18 +60,19 @@ test('resampling sorts a copy and preserves the input observations', () => {
   assert.equal(JSON.stringify(input),before);
   assert.equal(result[1],8.5);
 });
-test('forecast rendering leaves unsupported gaps disconnected', () => {
-  const begin=html.indexOf('function tsPredictedDataset(');
+for(const name of ['isIsolatedTimeseriesPoint','tsPredictedDataset']){
+  const begin=html.indexOf('function '+name+'(');
+  if(begin<0 && name==='isIsolatedTimeseriesPoint')continue;
   assert.ok(begin>=0);
   vm.runInContext(html.slice(begin,html.indexOf('\n}',begin)+2),context);
+}
+test('forecast rendering leaves unsupported gaps disconnected', () => {
   const values=[5,null,null,8.5,7.625];
   const dataset=context.tsPredictedDataset(values);
   assert.equal(dataset.spanGaps,false);
   assert.deepEqual(Array.from(dataset.data),values);
 });
 test('isolated known forecast samples have visible markers without adding markers to continuous lines', () => {
-  const begin=html.indexOf('function tsPredictedDataset(');
-  vm.runInContext(html.slice(begin,html.indexOf('\n}',begin)+2),context);
   const dataset=context.tsPredictedDataset([5,5,null,8.5,null,0,null,-1.25,null]);
   assert.equal(typeof dataset.pointRadius,'function');
   for(const i of [3,5,7]){

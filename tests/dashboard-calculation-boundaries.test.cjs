@@ -89,6 +89,30 @@ test("actual chart sampling preserves flooding observations after a 75-minute ga
   assert.equal(ctx.tsChart.data.datasets[0].data[index.get(Date.parse("2026-11-03T16:37:30Z"))],null);
 });
 
+test("the flood-stage overlay respects hidden time-series datasets after refresh",()=>{
+  const declaration="const tsFloodLineOverlayPlugin = ";
+  const begin=html.indexOf(declaration)+declaration.length;
+  const end=html.indexOf("\n};",begin)+2;
+  const plugin=vm.runInNewContext("("+html.slice(begin,end)+")",{THRESH,DISPLAY_DATUM:"MLLW"});
+  let visible=false, draws=0;
+  const noop=()=>{};
+  const chart={
+    canvas:{id:"tsChart"},
+    ctx:{save:noop,beginPath:noop,rect:noop,clip:noop,restore:noop},
+    chartArea:{left:0,right:100,top:0,bottom:100},
+    scales:{y:{getPixelForValue:ft=>100-ft*10}},
+    data:{datasets:[{label:"Observed",hidden:true}]},
+    isDatasetVisible:()=>visible,
+    getDatasetMeta:()=>({hidden:null,dataset:{options:{},draw:()=>draws++}})
+  };
+  plugin.afterDatasetsDraw(chart);
+  assert.equal(draws,0);
+  visible=true;
+  chart.data.datasets[0].hidden=false;
+  plugin.afterDatasetsDraw(chart);
+  assert.equal(draws,3);
+});
+
 test("identity datum conversion preserves finite values and their full sensor precision",()=>{
   const ctx=harness();
   for(const datum of Object.keys(OFFSET_FROM_MLLW)){

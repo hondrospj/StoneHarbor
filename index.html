@@ -3707,7 +3707,7 @@ function updateFloodOutlook48(nowMs=Date.now()){
       <div class="event">
         <div class="eventLeft">
           <div class="eventWhen">Forecast unavailable</div>
-          <div class="eventSub">${STATE.petssUnavailableReason || "NOAA/PETSS data did not load"}</div>
+          <div class="eventSub">${STATE.petssUnavailableReason || "Water-level forecast data did not load"}</div>
         </div>
         <div class="eventBadge" style="color:var(--muted)">—</div>
       </div>`;
@@ -3798,8 +3798,9 @@ function updateFloodOutlook48(nowMs=Date.now()){
     f48ListEl.innerHTML += `<div class="event"><div class="eventLeft"><div class="eventWhen">Partial forecast coverage</div><div class="eventSub">${coverageNote} Flood-hour totals include only available periods.</div></div></div>`;
   }
   const issue = STATE.petssIssuedTime ? ` · Issued ${fmtESTFull(STATE.petssIssuedTime)} ET` : "";
+  const source = STATE.waterForecastProvider ? ` · Based on ${STATE.waterForecastProvider}` : "";
   f48MetaEl.textContent =
-    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))} · Based on NOAA/PETSS${issue}`;
+    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))}${source}${issue}`;
 }
 
 
@@ -3905,7 +3906,7 @@ function normalizePetssJsonToPoints(json){
 
 const STONE_HARBOR_V41_PROVIDER = "ShorelySafe V41";
 const STONE_HARBOR_V41_PATH = '/north-wildwood/floodmapper/data/v41/';
-const STONE_HARBOR_V41_PAGES = 'https://hondrospj.github.io/North-Wildwood-floodmapper/data/v41/';
+const STONE_HARBOR_V41_PAGES = new URL('/North-Wildwood-floodmapper/data/v41/', 'https://hondrospj.github.io').href;
 const STONE_HARBOR_V41_HOUR_MS = 3600000;
 
 function parseStoneHarborV41(manifest, csv, nowMs = Date.now()) {
@@ -3949,7 +3950,7 @@ async function fetchStoneHarborV41() {
   const endpoints = location.hostname === 'cupajoe.live'
     ? [STONE_HARBOR_V41_PATH, STONE_HARBOR_V41_PAGES] : [STONE_HARBOR_V41_PAGES];
   const query = `?v=${Date.now()}`;
-  for (const base of endpoints) {
+  const forecasts = await Promise.all(endpoints.map(async base => {
     try {
       const load = async name => {
         const response = await fetchWithTimeout(`${base}${name}${query}`, {cache:'no-store'}, 7000);
@@ -3967,10 +3968,12 @@ async function fetchStoneHarborV41() {
       }
       return parseStoneHarborV41(manifest, new TextDecoder().decode(data));
     } catch (error) {
-      console.warn('V41 forecast source unavailable:', error.message);
+      console.warn('V41 forecast source unavailable:', base, error.message);
+      return null;
     }
-  }
-  return null;
+  }));
+  // Keep the same-origin bundle when both sources carry the same issue.
+  return forecasts.filter(Boolean).sort((a, b) => Date.parse(b.issuedTime) - Date.parse(a.issuedTime))[0] ?? null;
 }
 
 async function fetchDashboardWaterForecast() {
@@ -4501,9 +4504,9 @@ const tsFloodLineOverlayPlugin = {
       const ds = chart.data.datasets[datasetIndex];
       const label = ds?.label === "Observed highs (cached)" ? "Observed" : ds?.label;
       if(label !== "Observed" && label !== "Forecast") continue;
-      if(ds?.showLine === false) continue;
+      if(ds?.showLine === false || !chart.isDatasetVisible(datasetIndex)) continue;
       const meta = chart.getDatasetMeta(datasetIndex);
-      if(!meta || meta.hidden || !meta.dataset?.draw) continue;
+      if(!meta?.dataset?.draw) continue;
       const lineOptions = meta.dataset.options || {};
       const originalBorder = lineOptions.borderColor;
       const originalBackground = lineOptions.backgroundColor;
@@ -6038,18 +6041,24 @@ function formatForecastPlusMinus(ds){
 }
 
 
+function isIsolatedTimeseriesPoint({dataset, dataIndex}){
+  const values = dataset.data || [];
+  return Number.isFinite(values[dataIndex]) &&
+    !Number.isFinite(values[dataIndex-1]) && !Number.isFinite(values[dataIndex+1]);
+}
+
 function tsObservedDataset(data, {cachedHighs=false}={}){
   return {
     label: cachedHighs ? "Observed highs (cached)" : "Observed",
     data:data || [],
     borderWidth: cachedHighs ? 0 : 3,
-    pointRadius: cachedHighs ? 4.6 : 0,
-    pointHoverRadius: cachedHighs ? 6.4 : 0,
-    pointHitRadius: cachedHighs ? 10 : 0,
+    pointRadius: cachedHighs ? 4.6 : context => isIsolatedTimeseriesPoint(context) ? 3 : 0,
+    pointHoverRadius: cachedHighs ? 6.4 : context => isIsolatedTimeseriesPoint(context) ? 4 : 0,
+    pointHitRadius: cachedHighs ? 10 : context => isIsolatedTimeseriesPoint(context) ? 7 : 0,
     tension:0,
     spanGaps:false,
     showLine: !cachedHighs,
-    pointStyle: cachedHighs ? "circle" : "line",
+    pointStyle:"circle",
     borderColor: cachedHighs ? "rgba(234,240,255,.86)" : "rgba(45,212,191,.9)",
     backgroundColor: cachedHighs ? "rgba(234,240,255,.92)" : "rgba(45,212,191,.9)",
     pointBackgroundColor: cachedHighs ? "rgba(234,240,255,.92)" : "rgba(45,212,191,.9)",
@@ -6059,17 +6068,12 @@ function tsObservedDataset(data, {cachedHighs=false}={}){
 }
 
 function tsPredictedDataset(data, label="Forecast", color="rgba(45,212,191,.9)", width=3){
-  const isolatedPoint = context => {
-    const values = context.dataset.data || [];
-    const index = context.dataIndex;
-    return Number.isFinite(values[index]) && !Number.isFinite(values[index-1]) && !Number.isFinite(values[index+1]);
-  };
   return {
     label,
     data:data || [],
     borderWidth:width,
-    pointRadius:context=>isolatedPoint(context) ? 3 : 0,
-    pointHoverRadius:context=>isolatedPoint(context) ? 4 : 0,
+    pointRadius:context=>isIsolatedTimeseriesPoint(context) ? 3 : 0,
+    pointHoverRadius:context=>isIsolatedTimeseriesPoint(context) ? 4 : 0,
     pointHitRadius:0,
     tension:0,
     spanGaps:false,
@@ -8540,10 +8544,11 @@ async function updateForecastTimeseries(){
   }
   const now = Date.now(), issued = Date.parse(STATE.petssIssuedTime);
   const lastPoint = Date.parse(STATE.pred72Mllw?.at(-1)?.t);
-  const retainedIsCurrent = now - issued <= 24*3600000 && lastPoint > now;
+  const retainedIsCurrent = issued <= now && now - issued <= 24 * STONE_HARBOR_V41_HOUR_MS && lastPoint > now;
   const sameProvider = forecast?.provider === STATE.waterForecastProvider;
-  const replaceFallback = forecast?.provider === STONE_HARBOR_V41_PROVIDER && !sameProvider;
-  if(forecast && (!retainedIsCurrent || replaceFallback || (sameProvider && Date.parse(forecast.issuedTime) >= issued))){
+  const sameOrNewer = Date.parse(forecast?.issuedTime) >= issued;
+  const preferredProvider = sameProvider || forecast?.provider === STONE_HARBOR_V41_PROVIDER;
+  if(forecast && (!retainedIsCurrent || (sameOrNewer && preferredProvider))){
     showDashboardForecastProvider(forecast.provider);
     STATE.pred72Mllw = forecast.points;
     STATE.petssIssuedTime = forecast.issuedTime;
@@ -8552,7 +8557,7 @@ async function updateForecastTimeseries(){
     STATE.pred72Mllw = [];
     STATE.petssIssuedTime = null;
     STATE.petssUnavailableReason = "Waiting for a current water-level forecast";
-      showDashboardForecastProvider(null);
+    showDashboardForecastProvider(null);
   }
   renderTimeseries();
 }
