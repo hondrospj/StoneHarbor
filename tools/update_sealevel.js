@@ -5,7 +5,8 @@ const { execFileSync } = require("child_process");
 const GAUGE_TYPE = "USGS";
 const USGS_SITE = "01411360";
 const USGS_PARAM = "72279";
-const NOAA_STATIONS = ["8535581","8536110"];
+const NOAA_MONTHLY_STATIONS = ["8557380"];
+const NOAA_TREND_STATIONS = ["8535581","8536110"];
 const NOAA_MONTHLY_BEGIN_DATE = "19000101";
 const NOAA_OFFICIAL_TRENDS_URL = "https://tidesandcurrents.noaa.gov/sltrends/slmap.xml";
 const OUT = path.join("data", "sealevel.json");
@@ -29,6 +30,12 @@ function decimalYear(month) {
   const y = Number(String(month).slice(0, 4));
   const m = Number(String(month).slice(5, 7));
   return y + (m - 0.5) / 12;
+}
+
+function gaugeNumber(value) {
+  if (typeof value !== "number" && typeof value !== "string") return NaN;
+  if (typeof value === "string" && !value.trim()) return NaN;
+  return Number(value);
 }
 
 function fetchTextWithCurl(url) {
@@ -72,20 +79,34 @@ async function fetchJson(url, opts = {}) {
 }
 
 async function fetchUSGSDailyValues() {
+  const startDate = "2000-01-01";
+  const endDate = ymd(new Date());
   const url = new URL("https://waterservices.usgs.gov/nwis/dv/");
   url.searchParams.set("format", "json");
   url.searchParams.set("sites", USGS_SITE);
   url.searchParams.set("parameterCd", USGS_PARAM);
   url.searchParams.set("statCd", "00003");
-  url.searchParams.set("startDT", "2000-01-01");
-  url.searchParams.set("endDT", ymd(new Date()));
+  url.searchParams.set("startDT", startDate);
+  url.searchParams.set("endDT", endDate);
   url.searchParams.set("siteStatus", "all");
 
   const json = await fetchJson(url);
-  const values = json?.value?.timeSeries?.[0]?.values?.[0]?.value || [];
-  return values
-    .map((p) => ({ date: String(p.dateTime || "").slice(0, 10), ft: Number(p.value) }))
-    .filter((p) => p.date && Number.isFinite(p.ft) && Math.abs(p.ft) < 100);
+  const series = (json?.value?.timeSeries || []).find((row) =>
+    row?.sourceInfo?.siteCode?.some((code) => String(code.value) === USGS_SITE) &&
+    row?.variable?.variableCode?.some((code) => code.value === USGS_PARAM) &&
+    row.variable.unit?.unitCode === "ft");
+  const noDataValue = gaugeNumber(series?.variable?.noDataValue);
+  const readings = new Map();
+  for (const row of series?.values?.[0]?.value || []) {
+    const date = String(row?.dateTime || "").slice(0, 10);
+    const time = Date.parse(date);
+    const ft = gaugeNumber(row?.value);
+    if (!Number.isFinite(time) || ymd(new Date(time)) !== date ||
+        date < startDate || date > endDate || readings.has(date) ||
+        !Number.isFinite(ft) || Math.abs(ft) >= 100 || ft === noDataValue) continue;
+    readings.set(date, { date, ft });
+  }
+  return [...readings.values()];
 }
 
 function noaaMonthlyMeanUrl(station, beginDate, endDate) {
@@ -101,10 +122,18 @@ function noaaMonthlyMeanUrl(station, beginDate, endDate) {
   return url;
 }
 
+function noaaMonthlyRows(json, station) {
+  if (json?.metadata?.id != null && String(json.metadata.id) !== station) {
+    throw new Error("NOAA monthly means are for a different station");
+  }
+  return Array.isArray(json?.data) ? json.data : [];
+}
+
 async function fetchNOAAMonthlyMeans() {
   const errors = [];
   const candidates = [];
-  const stations = [...new Set((NOAA_STATIONS || []).filter(Boolean).map(String))];
+  const stations = NOAA_MONTHLY_STATIONS;
+  const firstYear = Number(NOAA_MONTHLY_BEGIN_DATE.slice(0, 4));
   for (const station of stations) {
     try {
       const rows = [];
@@ -113,13 +142,12 @@ async function fetchNOAAMonthlyMeans() {
       try {
         const fullUrl = noaaMonthlyMeanUrl(station, NOAA_MONTHLY_BEGIN_DATE, ymdCompact(new Date()));
         const fullJson = await fetchJson(fullUrl, { preferCurl: true });
-        rows.push(...(Array.isArray(fullJson?.data) ? fullJson.data : []));
+        rows.push(...noaaMonthlyRows(fullJson, station));
       } catch (fullErr) {
         const fullMessage = String(fullErr?.message || fullErr);
         // A station-level 400 means this product is unavailable; a 403 is a
         // rate limit. Chunk retries cannot repair either and only amplify load.
         if (/returned error:\s*(400|403)\b/i.test(fullMessage)) throw fullErr;
-        const firstYear = Number(NOAA_MONTHLY_BEGIN_DATE.slice(0, 4));
         stationErrors.push(`${firstYear}-current: ${fullErr.message || fullErr}`);
         for (let startYear = firstYear; startYear <= currentYear; startYear += 5) {
           const endYear = Math.min(startYear + 4, currentYear);
@@ -130,7 +158,7 @@ async function fetchNOAAMonthlyMeans() {
               endYear === currentYear ? ymdCompact(new Date()) : `${endYear}1231`
             );
             const json = await fetchJson(url, { preferCurl: true });
-            rows.push(...(Array.isArray(json?.data) ? json.data : []));
+            rows.push(...noaaMonthlyRows(json, station));
           } catch (err) {
             stationErrors.push(`${startYear}-${endYear}: ${err.message || err}`);
           }
@@ -138,10 +166,11 @@ async function fetchNOAAMonthlyMeans() {
       }
       const monthlyByMonth = new Map(rows
         .map((r) => {
-          const y = Number(r.year);
-          const m = Number(r.month);
-          const ft = Number(r.MSL);
-          if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(ft) || Math.abs(ft) >= 100) return null;
+          const y = gaugeNumber(r?.year);
+          const m = gaugeNumber(r?.month);
+          const ft = gaugeNumber(r?.MSL);
+          if (!Number.isInteger(y) || y < firstYear || y > currentYear || !Number.isInteger(m) || m < 1 || m > 12 ||
+              !Number.isFinite(ft) || Math.abs(ft) >= 100) return null;
           const month = `${y}-${String(m).padStart(2, "0")}`;
           return { month, ft: Number(ft.toFixed(4)), days: null };
         })
@@ -205,8 +234,8 @@ function parseNOAAOfficialTrend(xml, station) {
   const block = (xml.match(/<location>[\s\S]*?<\/location>/g) || [])
     .find((location) => xmlValue(location, "stationid") === String(station));
   if (!block) return null;
-  const millimetersPerYear = Number(xmlValue(block, "slt"));
-  const standardErrorMillimetersPerYear = Number(xmlValue(block, "sterr"));
+  const millimetersPerYear = gaugeNumber(xmlValue(block, "slt"));
+  const standardErrorMillimetersPerYear = gaugeNumber(xmlValue(block, "sterr"));
   if (!Number.isFinite(millimetersPerYear)) return null;
   return {
     station: String(station),
@@ -338,7 +367,7 @@ async function main() {
       daily = [];
       monthly = [];
     }
-    if (monthly.length < 24 && NOAA_STATIONS.length) {
+    if (monthly.length < 24 && NOAA_MONTHLY_STATIONS.length) {
       const noaa = await fetchNOAAMonthlyMeans();
       station = noaa.station;
       daily = [];
@@ -350,11 +379,11 @@ async function main() {
   }
 
   const calculatedRegression = regression(monthly);
-  if (stationSelection || NOAA_STATIONS.length) {
+  if (stationSelection || NOAA_TREND_STATIONS.length) {
     try {
       officialTrend = stationSelection
         ? fetchNOAAOfficialTrend(station)
-        : fetchFirstNOAAOfficialTrend(NOAA_STATIONS);
+        : fetchFirstNOAAOfficialTrend(NOAA_TREND_STATIONS);
     } catch (err) {
       console.warn(`NOAA official trend lookup failed: ${err.message || err}`);
     }

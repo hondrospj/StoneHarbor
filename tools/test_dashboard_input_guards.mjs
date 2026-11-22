@@ -26,7 +26,7 @@ for(const file of files){
  const hilo=await ctx.fetchNOAAHiloHighs({station:'test',beginYMD:'20261021',endYMD:'20261022'});
  check('one invalid NOAA high clock cannot discard valid batch',()=>assert.deepEqual(Array.from(hilo,p=>p.ft),[0,7.5]));
  check('NOAA high clocks canonical UTC',()=>assert.deepEqual(Array.from(hilo,p=>p.t),['2026-10-21T03:00:00.000Z','2026-10-21T04:00:00.000Z']));
- payload={value:{timeSeries:[{variable:{noDataValue:-9},values:[{value:[null,{dateTime:'bad date',value:'3'},{dateTime:'2026-10-21T01:00:00Z',value:''},{dateTime:'2026-10-21T02:00:00Z',value:-9},{dateTime:'2026-10-21T03:00:00Z',value:'0'},{dateTime:'2026-10-21T04:00:00Z',value:'-1.25'}]}]}]}};
+ payload={value:{timeSeries:[{sourceInfo:{siteCode:[{value:'test'}]},variable:{variableCode:[{value:'62620'}],unit:{unitCode:'ft'},noDataValue:-9},values:[{value:[null,{dateTime:'bad date',value:'3'},{dateTime:'2026-10-21T01:00:00Z',value:''},{dateTime:'2026-10-21T02:00:00Z',value:-9},{dateTime:'2026-10-21T03:00:00Z',value:'0'},{dateTime:'2026-10-21T04:00:00Z',value:'-1.25'}]}]}]}};
  const daily=await ctx.fetchUSGSDailySeaLevel();
  check('USGS declared finite sentinel and invalid times excluded',()=>assert.deepEqual(Array.from(daily,p=>p.ft),[0,-1.25]));
  payload={data:[null,{year:2026,month:0,MSL:1},{year:2026,month:13,MSL:1},{year:2026,month:1.5,MSL:1},{year:'',month:1,MSL:1},{year:2026.5,month:1,MSL:1},{year:2026,month:1,MSL:null},{year:2026,month:1,MSL:''},{year:2026,month:1,MSL:[]},{year:2026,month:1,MSL:'0'},{year:'2026',month:'2',MSL:'-0.1'},{year:2026,month:3,MSL:0.2}]};

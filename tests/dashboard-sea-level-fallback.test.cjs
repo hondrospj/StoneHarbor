@@ -16,7 +16,7 @@ function source(name,optional=false){
   }
   throw Error("Cannot extract "+name);
 }
-function harness({cacheBody=null,dailyRows=null,dailyEmpty=false,monthly=true,monthlyBody=monthlyMeanResponse,gauge="USGS",now="2026-08-04T16:00:00Z"}={}){
+function harness({cacheBody=null,dailyRows=null,dailyBody=null,dailyEmpty=false,monthly=true,monthlyBody=monthlyMeanResponse,gauge="USGS",now="2026-08-04T16:00:00Z"}={}){
   const calls=[],warnings=[];let rendered=0;
   class FixedDate extends Date { constructor(...args){super(...(args.length?args:[now]));} }
   const ctx=vm.createContext({Date:FixedDate,URL,AbortSignal,console:{warn:(...args)=>warnings.push(args.map(String).join(" "))},
@@ -29,7 +29,10 @@ function harness({cacheBody=null,dailyRows=null,dailyEmpty=false,monthly=true,mo
   const transport=async resource=>{
     const url=new URL(String(resource),"https://fixture.invalid/dashboard/");calls.push(url);
     if(url.hostname==="fixture.invalid")return {ok:cacheBody!==null,status:cacheBody?200:404,json:async()=>cacheBody};
-    if(url.hostname==="waterservices.usgs.gov")return {ok:dailyRows!==null||dailyEmpty,status:dailyRows!==null||dailyEmpty?200:503,json:async()=>dailyPayload(dailyRows||[])};
+    if(url.hostname==="waterservices.usgs.gov"){
+      const ok=dailyBody!==null||dailyRows!==null||dailyEmpty;
+      return {ok,status:ok?200:503,json:async()=>dailyBody||dailyPayload(dailyRows||[])};
+    }
     assert.equal(url.hostname,"api.tidesandcurrents.noaa.gov");
     assert.equal(url.searchParams.get("product"),"monthly_mean");
     return {ok:monthly,status:monthly?200:503,json:async()=>monthlyBody};
@@ -84,6 +87,15 @@ test("retained daily values retain the existing daily aggregation and quality pa
   assert.equal(state.source,"USGS daily values");
   assert(state.monthly.every(row=>row.days>=20));
   assert.equal(h.calls.filter(url=>url.searchParams.get("product")==="monthly_mean").length,0);
+});
+test("the full USGS daily fallback selects the configured gauge even when another series comes first",async()=>{
+  const dailyBody=dailyPayload(cached.daily);
+  const wrongSeries=dailyPayload(cached.daily.map(row=>({...row,ft:5.2}))).value.timeSeries[0];
+  wrongSeries.sourceInfo.siteCode[0].value="01408168";
+  dailyBody.value.timeSeries.unshift(wrongSeries);
+  const state=await harness({dailyBody}).update();
+  assert.equal(state.source,"USGS daily values");
+  assert(Math.abs(state.monthly[0].ft-cached.monthly[0].ft)<0.0001);
 });
 test("the cached trend keeps its slope and adopts the same zero point as the observations",async()=>{
   const h=harness({cacheBody:cached}),state=await h.update();

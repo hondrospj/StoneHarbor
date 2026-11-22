@@ -44,6 +44,13 @@ test("qualified primary downward revisions remain authoritative during backup or
   assert.equal(revised.lastCompletedWindowEnd,"2026-01-02T06:00:00Z");
   assert.equal(revised.generatedAt,t(36));
 });
+test("an older but still fresh feed cannot move the published tide archive backward",async()=>{
+  const config=worker.CONFIG[0],old={...cache(config),lastCompletedWindowEnd:t(30),observedThrough:t(30)};
+  const rows=series().slice(0,30);
+  await assert.rejects(worker.updateCache(config,old,recent(rows),{now:zero+34*H}),/older than the published archive/);
+  assert.equal(old.observedThrough,t(30));
+  assert.equal(old.lastCompletedWindowEnd,t(30));
+});
 test("a truncated successful clock cannot advance exposure past missing clocks, and the next complete table recovers",async()=>{
   const config=worker.CONFIG[0],old=cache(config),original=JSON.stringify(old);
   const measured=end=>Array.from({length:end+1},(_,h)=>({t:t(h),ft:h%12===0?4:1}));

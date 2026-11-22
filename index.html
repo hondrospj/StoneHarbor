@@ -581,17 +581,13 @@ option{
       font-weight:950;
       font-size:13px;
       letter-spacing:.1px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      overflow-wrap:anywhere;
     }
     .eventSub{
       color:var(--muted);
       font-size:12px;
       line-height:1.2;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      overflow-wrap:anywhere;
     }
     .eventBadge{
       font-weight:950;
@@ -613,7 +609,6 @@ option{
     .floodMore[open] .floodMoreOpen{display:inline}
     @media(max-width:520px){
       .event{align-items:flex-start}
-      .eventWhen,.eventSub{white-space:normal}
       .eventBadge{margin-left:auto}
     }
 
@@ -1449,7 +1444,7 @@ thead th{
 
     
     #f48Meta:not(:empty){display:block;}
-    #curMeta{display:none !important;}
+    #curMeta:not(:empty){display:block;}
 
     
     details.acc{
@@ -2486,8 +2481,8 @@ a.brand *{
     title="What do these datums mean?"
   >?</button>
 
-  <div class="datumHelpPop" id="datumHelpPop" role="dialog" aria-hidden="true">
-    <div class="datumHelpTitle">Datum quick definitions</div>
+  <div class="datumHelpPop" id="datumHelpPop" role="dialog" aria-labelledby="datumHelpTitle" aria-hidden="true">
+    <div class="datumHelpTitle" id="datumHelpTitle">Datum quick definitions</div>
     <div class="datumHelpLine"><b>MLLW</b>: Mean Lower Low Water — the average of the lower of the two daily low tides.</div>
     <div class="datumHelpLine"><b>MSL</b>: Mean Sea Level — the long-term average sea level over a standard period.</div>
     <div class="datumHelpLine"><b>NAVD88</b>: North American Vertical Datum of 1988 — a geodetic land-based elevation reference used on maps and surveys.</div>
@@ -2519,7 +2514,7 @@ a.brand *{
 
         <div class="todayTop">
           <div class="curBox">
-            <div class="curLabel">Current water elevation</div>
+            <div class="curLabel" id="curLabel">Current water elevation</div>
 
             <div class="curRow">
             <div class="curVal" id="curValWrap">
@@ -2532,7 +2527,7 @@ a.brand *{
               <div class="levelFill" id="curFill"></div>
             </div>
 
-            <div class="curMeta" id="curMeta">Updated: —</div>
+            <div class="curMeta" id="curMeta"></div>
             <div class="curMeta" id="nearMeta" style="display:none"></div>
           </div>
 
@@ -2832,9 +2827,9 @@ a.brand *{
       <div class="filterRow historicControls">
         <input class="input" id="minElev" type="number" step="0.01" placeholder="Min (ft)" />
         <input class="input" id="maxElev" type="number" step="0.01" placeholder="Max (ft)" />
-        <input class="input" id="fromDate" type="date" autocomplete="off" />
-        <input class="input" id="toDate" type="date" autocomplete="off" />
-        <select id="sortMode">
+        <input class="input" id="fromDate" type="date" autocomplete="off" aria-label="From date" />
+        <input class="input" id="toDate" type="date" autocomplete="off" aria-label="To date" />
+        <select id="sortMode" aria-label="Sort historic tides">
           <option value="desc">Highest first</option>
           <option value="asc">Lowest first</option>
           <option value="recent">Most recent</option>
@@ -3071,7 +3066,7 @@ function hookGaugeMapAccordion(){
 const $=id=>document.getElementById(id);
 
 const brandKickerEl=$("brandKicker"), brandNameEl=$("brandName");
-const curFtEl=$("curFt"), curMetaEl=$("curMeta");
+const curFtEl=$("curFt"), curLabelEl=$("curLabel"), curMetaEl=$("curMeta");
 const dayMaxFtEl = $("dayMaxFt"),
       dayMinFtEl = $("dayMinFt"),
       dayMaxWhenEl = $("dayMaxWhen"),
@@ -3872,18 +3867,26 @@ function dashboardNoaaTimeIsValid(value){
 
 function renderLiveReadingStatus(){
   const point = STATE.lastNavd, sourceLabel = liveFeedLabel();
-  if(!point || (STATE.liveObservationError && !STATE.lastObservationIsCachedHighTide)){
+  const cached = STATE.lastObservationIsCachedHighTide;
+  const stale = point && hoursSinceISO(point.t) > 6;
+  const lastReadingOnly = point && (cached || stale || STATE.liveObservationError);
+  curLabelEl.textContent = lastReadingOnly
+    ? (cached ? "Latest cached high tide" : "Last water elevation")
+    : "Current water elevation";
+  curMetaEl.textContent = lastReadingOnly ? fmtESTFull(point.t) + " ET" : "";
+
+  if(!point || (STATE.liveObservationError && !cached)){
     lastPill.textContent = point ? `Last ${sourceLabel} reading: ${fmtESTFull(point.t)}` : "Last updated: —";
-    stageTextEl.textContent = point && hoursSinceISO(point.t) > 6 ? "LIVE DATA STALE" : "LIVE DATA UNAVAILABLE";
+    stageTextEl.textContent = stale ? "LIVE DATA STALE" : "LIVE DATA UNAVAILABLE";
     stageDotEl.style.background = "var(--minor)";
     stageDotEl.style.boxShadow = "0 0 0 4px rgba(251,191,36,.18)";
-  }else if(STATE.lastObservationIsCachedHighTide){
+  }else if(cached){
     const category = classifyByNavd(point.ft);
     lastPill.textContent = `Live ${sourceLabel} feed unavailable; latest cached high tide: ${fmtESTFull(point.t)}`;
     stageTextEl.textContent = `CACHED HIGH: ${category.short.toUpperCase()}`;
     stageDotEl.style.background = category.color;
     stageDotEl.style.boxShadow = `0 0 0 4px ${category.glow}`;
-  }else if(hoursSinceISO(point.t) > 6){
+  }else if(stale){
     lastPill.textContent = `Last ${sourceLabel} reading: ${fmtESTFull(point.t)}`;
     stageTextEl.textContent = "LIVE DATA STALE";
     stageDotEl.style.background = "var(--minor)";
@@ -4050,16 +4053,17 @@ function validatePetssForecast(json, meta, nowMs=Date.now()){
 
 
 async function fetchIV({startISO=null,endISO=null,period=null}={}){
+  const end = endISO ? new Date(endISO) : new Date();
+  const endMs = end.getTime();
+  if(!Number.isFinite(endMs)) throw new Error("Invalid USGS observation date range");
+  const periodStart = startFromPeriod(period, end.toISOString());
+  const start = startISO ? new Date(startISO) : new Date(periodStart || endMs - 7*86400000);
+  const startMs = start.getTime();
+  if(!Number.isFinite(startMs) || startMs > endMs) throw new Error("Invalid USGS observation date range");
+
   // Use the current USGS Water Data API for live observations. WaterServices is
   // retained as a fallback while the old endpoint remains available.
   try{
-    const end = endISO ? new Date(endISO) : new Date();
-    const periodStart = startFromPeriod(period, end.toISOString());
-    const start = startISO ? new Date(startISO) : new Date(periodStart || end.getTime() - 7*86400000);
-    if(!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start > end){
-      throw new Error("Invalid USGS observation date range");
-    }
-
     const url = new URL("https://api.waterdata.usgs.gov/ogcapi/v1/collections/continuous/items");
     url.searchParams.set("monitoring_location_id", `USGS-${USGS_SITE}`);
     url.searchParams.set("parameter_code", USGS_PARAM_PRIMARY);
@@ -4079,64 +4083,55 @@ async function fetchIV({startISO=null,endISO=null,period=null}={}){
         if(String(p.unit_of_measure || "").toLowerCase() !== "ft") continue;
         const ft = dashboardGaugeNumber(p.value);
         const time = Date.parse(p.time);
-        if(!Number.isFinite(time) || time < start.getTime() || time > end.getTime() ||
-           !Number.isFinite(ft) || Math.abs(ft) >= 9999) continue;
-        readings.set(time, {dateTime:p.time, value:String(ft)});
+        if(!Number.isFinite(time) || time < startMs || time > endMs ||
+           !Number.isFinite(ft) || Math.abs(ft) >= 100) continue;
+        readings.set(time, {t:p.time, ft});
       }
       next = json?.links?.find(link => link.rel === "next")?.href || null;
     }
     if(next) throw new Error("USGS observation pages exceeded safety limit");
     if(!readings.size) throw new Error("USGS Water Data API returned no tidal elevation observations");
-    const values = [...readings.values()].sort((a,b) => Date.parse(a.dateTime) - Date.parse(b.dateTime));
-    return {value:{timeSeries:[{
-      sourceInfo:{siteCode:[{value:String(USGS_SITE)}]},
-      variable:{variableCode:[{value:USGS_PARAM_PRIMARY}],unit:{unitCode:"ft"}},
-      values:[{value:values}]
-    }]}};
+    return [...readings.values()].sort((a,b) => Date.parse(a.t) - Date.parse(b.t));
   }catch(modernError){
     console.warn("Current USGS feed unavailable; trying legacy WaterServices", modernError);
-    return fetchLegacyIV({startISO,endISO,period});
+    const json = await fetchLegacyIV({startISO:start.toISOString(),endISO:end.toISOString()});
+    return extractWaterLevelSeries_NAVD88(json, startMs, endMs);
   }
 }
 
-async function fetchLegacyIV({startISO=null,endISO=null,period=null}={}){
+async function fetchLegacyIV({startISO,endISO}){
   const url=new URL("https://waterservices.usgs.gov/nwis/iv/");
   url.searchParams.set("format","json");
   url.searchParams.set("sites",USGS_SITE);
   url.searchParams.set("parameterCd",USGS_PARAM_PRIMARY);
   url.searchParams.set("siteStatus","all");
   url.searchParams.set("agencyCd","USGS");
-  if(period) url.searchParams.set("period",period);
-  if(startISO) url.searchParams.set("startDT",startISO);
-  if(endISO) url.searchParams.set("endDT",endISO);
+  url.searchParams.set("startDT",startISO);
+  url.searchParams.set("endDT",endISO);
 
   const res=await fetchWithTimeout(url.toString(),{cache:"no-store"},7000);
   if(!res.ok) throw new Error("USGS IV failed "+res.status);
   return res.json();
 }
 
-function extractWaterLevelSeries_NAVD88(json){
-  const tss = json?.value?.timeSeries || [];
-  const candidates = tss.filter(ts => {
-    const code = ts?.variable?.variableCode?.[0]?.value || null;
-    if(code !== USGS_PARAM_PRIMARY) return false;
-    const unit = (ts?.variable?.unit?.unitCode || "").toLowerCase();
-    return (unit === "" || unit.includes("ft"));
-  });
-
-  if(!candidates.length){
-    const have = tss.map(ts=>ts?.variable?.variableCode?.[0]?.value).filter(Boolean);
-    throw new Error(`USGS returned no tidal elevation series for ${USGS_PARAM_PRIMARY}. Returned: ${[...new Set(have)].join(", ")}`);
-  }
-
+function extractWaterLevelSeries_NAVD88(json, startMs, endMs){
+  const series = json?.value?.timeSeries || [];
   let best=[];
-  for(const ts of candidates){
+  for(const ts of series){
+    const matchesSite = ts?.sourceInfo?.siteCode?.some(code => String(code.value) === USGS_SITE);
+    const matchesParameter = ts?.variable?.variableCode?.some(code => code.value === USGS_PARAM_PRIMARY);
+    if(!matchesSite || !matchesParameter || String(ts.variable.unit?.unitCode || "").toLowerCase() !== "ft") continue;
     const vals = ts?.values?.[0]?.value || [];
     const pts = vals
-      .map(v=>({t:v.dateTime, ft:dashboardGaugeNumber(v.value, ts?.variable?.noDataValue)}))
-      .filter(p=>Number.isFinite(Date.parse(p.t)) && Number.isFinite(p.ft));
+      .map(v=>({t:v?.dateTime, ft:dashboardGaugeNumber(v?.value, ts.variable.noDataValue)}))
+      .filter(p=>{
+        const time = Date.parse(p.t);
+        return Number.isFinite(time) && time >= startMs && time <= endMs &&
+          Number.isFinite(p.ft) && Math.abs(p.ft) < 100;
+      });
     if(pts.length > best.length) best = pts;
   }
+  if(!best.length) throw new Error(`USGS WaterServices returned no usable tidal elevation observations for ${USGS_SITE}`);
   return best.sort((a,b) => Date.parse(a.t) - Date.parse(b.t));
 }
 
@@ -4226,8 +4221,7 @@ async function fetchNOAAObservedSeries({startISO=null,endISO=null,period=null}={
 
 async function fetchObservedSeries({startISO=null,endISO=null,period=null}={}){
   if(GAUGE_TYPE === "NOAA") return fetchNOAAObservedSeries({startISO,endISO,period});
-  const j = await fetchIV({startISO,endISO,period});
-  return extractWaterLevelSeries_NAVD88(j);
+  return fetchIV({startISO,endISO,period});
 }
 
 
@@ -4455,7 +4449,7 @@ const floodBandsPlugin = {
     if (!ctx || !chartArea || !scales?.y) return;
 
     const y = scales.y;
-    const left = chartArea.left, right = chartArea.right;
+    const {left, right, top, bottom} = chartArea;
 
     const T = THRESH[DISPLAY_DATUM];
     const yMinor = y.getPixelForValue(T.minorLow);
@@ -4465,6 +4459,9 @@ const floodBandsPlugin = {
     if (![yMinor, yModer, yMajor].every(Number.isFinite)) return;
 
     ctx.save();
+    ctx.beginPath();
+    ctx.rect(left, top, right - left, bottom - top);
+    ctx.clip();
 
 
 
@@ -4475,7 +4472,7 @@ ctx.fillStyle = "rgba(251,113,133,.14)";
 ctx.fillRect(left, yMajor, right - left, yModer - yMajor);
 
 ctx.fillStyle = "rgba(167,139,250,.14)";
-ctx.fillRect(left, chartArea.top, right - left, yMajor - chartArea.top);
+ctx.fillRect(left, top, right - left, yMajor - top);
 
     
 
@@ -5011,6 +5008,7 @@ let HIGH_TIDES_NAVD=[];
 let monthlyCoverage = [];
 let HISTORY_COMPLETED_THROUGH = null;
 let HISTORY_ARCHIVE_REVISION = null;
+let HISTORY_ARCHIVE_GENERATED_AT = NaN;
 let HISTORY_ARCHIVE_ETAG = null;
 let HISTORY_REFRESH_IN_FLIGHT = null;
 let annualChart=null, tsChart=null, monthAvgChart=null;
@@ -5403,9 +5401,11 @@ function annualCoverageNote(year){
 
 function annualTooltipFooter(items, total){
   const chart = items?.[0]?.chart;
+  const year = items?.[0]?.label;
   const label = chart?.data?.datasets?.some((_, index)=>!chart.isDatasetVisible(index)) ? "Visible total" : "Total";
-  const lines=[`${label}: ${Math.floor(total)} flooding high tides`];
-  const note=annualCoverageNote(items?.[0]?.label);
+  const count = annualPredictionLookup.has(Number(year)) ? `${total.toFixed(2)} expected` : Math.floor(total);
+  const lines=[`${label}: ${count} flooding high tides`];
+  const note=annualCoverageNote(year);
   if(note) lines.push(note);
   return lines;
 }
@@ -5471,7 +5471,7 @@ function ensureAnnual(){
               const v = ctx.parsed?.y;
               if (!Number.isFinite(v)) return null;
               const year = ctx.label;
-              const value = Math.floor(v);
+              const value = annualPredictionLookup.has(Number(year)) ? `${v.toFixed(2)} expected` : Math.floor(v);
               const bounds = annualPredictionBounds(year, ctx.dataset.label, v);
               return bounds
                 ? `${ctx.dataset.label}: ${value} flooding high tides (${bounds.low} - ${bounds.high} flooding high tides)`
@@ -6766,11 +6766,11 @@ async function fetchUSGSDailySeaLevel(startDate="2000-01-01", endDate=null){
   if(!res.ok) throw new Error("USGS daily sea level failed " + res.status);
   const json = await res.json();
   const timeSeries = json?.value?.timeSeries || [];
-  const ts = endDate ? timeSeries.find(series=>
-    series.sourceInfo?.siteCode?.some(code=>String(code.value) === String(USGS_SITE)) &&
-    series.variable?.variableCode?.some(code=>String(code.value) === String(USGS_PARAM_PRIMARY)) &&
-    series.variable?.unit?.unitCode === "ft"
-  ) : timeSeries[0];
+  const ts = timeSeries.find(series=>
+    series?.sourceInfo?.siteCode?.some(code=>String(code.value) === String(USGS_SITE)) &&
+    series?.variable?.variableCode?.some(code=>String(code.value) === String(USGS_PARAM_PRIMARY)) &&
+    series.variable.unit?.unitCode === "ft"
+  );
   const series = ts?.values?.[0]?.value || [];
   return series
     .filter(p => p && Number.isFinite(Date.parse(p.dateTime)))
@@ -6922,12 +6922,13 @@ async function updateSeaLevelTrends(){
 }
 
 let DOY_CACHE = null;   
-let DOY_HISTORY_LOAD_STATE = "loading";
+let HISTORY_LOAD_STATE = "loading";
 let doyCumChart = null;
 let DOY_YEAR_RANGE_KEY = "";
 let DOY_RANGE_START = null;
 let DOY_RANGE_END = null;
 let DOY_PAST_SELECTED_YEAR = null;
+const DOY_PAST_HIDDEN_OBSERVED_YEARS = new Set();
 let DOY_SELECTED_YEARS = new Set();
 let DOY_CONTROL_YEARS = [];
 let DOY_VIEW_MODE = "years";
@@ -6941,6 +6942,7 @@ let DOY_HISTORIC_RANGE_VISIBLE = true;
 function resetDOYForecastVisibility(){
   const { y: curYear } = getESTParts(new Date());
   DOY_SELECTED_YEARS = new Set([curYear]);
+  DOY_PAST_HIDDEN_OBSERVED_YEARS.clear();
   DOY_YEAR_VISIBILITY_INITIALIZED = true;
   DOY_VISIBILITY_CURRENT_YEAR = curYear;
   DOY_FORECAST_DOT_VISIBLE = true;
@@ -7489,7 +7491,7 @@ function renderDOYYearTable(years, curYear, selected){
   }
 }
 
-function renderDOYVisibleSummary(years, curYear){
+function renderDOYVisibleSummary(years, curYear, showCurrentObservations){
   if(!doyVisibleBadge) return;
   const selectable = getDOYSelectableYears(years, curYear);
   const selected = normalizeDOYSelectedRange(years, curYear);
@@ -7537,7 +7539,8 @@ function renderDOYVisibleSummary(years, curYear){
   const end = selected[selected.length - 1];
   if(DOY_VIEW_MODE === "past"){
     doyVisibleBadge.textContent = String(start);
-    if(doyRangeNote) doyRangeNote.textContent = `${start} forecast · ${curYear} observed in red · 2026 onward`;
+    const observedNote = showCurrentObservations ? ` · ${curYear} observed in red` : "";
+    if(doyRangeNote) doyRangeNote.textContent = `${start} forecast${observedNote} · 2026 onward`;
     renderDOYYearTable(years, curYear, selected);
     return;
   }
@@ -7549,9 +7552,9 @@ function renderDOYVisibleSummary(years, curYear){
   renderDOYYearTable(years, curYear, selected);
 }
 
-function renderDOYYearControls(years, curYear){
+function renderDOYYearControls(years, curYear, showCurrentObservations){
   if(!years?.length) return;
-  renderDOYVisibleSummary(years, curYear);
+  renderDOYVisibleSummary(years, curYear, showCurrentObservations);
 }
 
 function setDOYRange(start, end, source){
@@ -7764,9 +7767,9 @@ function renderDOYCumPanel(){
 
   if(!DOY_CACHE){
     if(meta){
-      meta.textContent = DOY_HISTORY_LOAD_STATE === "loaded"
+      meta.textContent = HISTORY_LOAD_STATE === "loaded"
         ? "No recorded high tides available."
-        : DOY_HISTORY_LOAD_STATE === "unavailable"
+        : HISTORY_LOAD_STATE === "unavailable"
           ? "Tide history unavailable."
           : "Loading flood-event history…";
     }
@@ -7783,7 +7786,8 @@ function renderDOYCumPanel(){
   DOY_CONTROL_YEARS = controlYears;
   ensureDOYSelectedRange(controlYears, CUR_Y);
   const selectedYears = getDOYEffectiveSelectedYears(controlYears, CUR_Y);
-  renderDOYYearControls(controlYears, CUR_Y);
+  const showCurrentObservations = isPastMode && !DOY_PAST_HIDDEN_OBSERVED_YEARS.has(CUR_Y) && ytd.some(Number.isFinite);
+  renderDOYYearControls(controlYears, CUR_Y, showCurrentObservations);
 
   if(meta){
     const through = HISTORY_COMPLETED_THROUGH ? ` · Archive through ${fmtESTFull(HISTORY_COMPLETED_THROUGH)} ET` : "";
@@ -7814,7 +7818,9 @@ function renderDOYCumPanel(){
     const isCurrent = yr.y === CUR_Y;
     const isPastObserved = isPastMode && !isCurrent && selectedYears.has(yr.y);
     const color = isCurrent ? observedRed : (isPastObserved ? "rgba(96,165,250,1)" : doyYearColor(yr.y, minYear, maxYear, .55));
-    const selected = DOY_SELECTED_YEARS.has(yr.y);
+    const selected = isPastMode
+      ? !DOY_PAST_HIDDEN_OBSERVED_YEARS.has(yr.y)
+      : DOY_SELECTED_YEARS.has(yr.y);
     return {
       label:isCurrent ? "Current Year" : (isPastObserved ? "Observed" : String(yr.y)),
       data:isCurrent ? (ytd || new Array(365).fill(null)) : yr.cum,
@@ -8067,8 +8073,11 @@ function renderDOYCumPanel(){
           if(!chart || !ds) return;
 
           if(ds._kind === "current" || ds._kind === "year" || ds._kind === "pastObserved"){
-            if(DOY_SELECTED_YEARS.has(ds._year)) DOY_SELECTED_YEARS.delete(ds._year);
-            else DOY_SELECTED_YEARS.add(ds._year);
+            if(isPastMode){
+              if(!DOY_PAST_HIDDEN_OBSERVED_YEARS.delete(ds._year)) DOY_PAST_HIDDEN_OBSERVED_YEARS.add(ds._year);
+            }else if(!DOY_SELECTED_YEARS.delete(ds._year)){
+              DOY_SELECTED_YEARS.add(ds._year);
+            }
             renderDOYCumPanel();
             return;
           }
@@ -8190,8 +8199,8 @@ function renderDOYCumPanel(){
 }
 
 function refreshDOYFromHistory(){
+  if(HISTORY_LOAD_STATE !== "loaded") return;
   DOY_CACHE = computeDOYStatsFromEvents(HIGH_TIDES_NAVD);
-  DOY_HISTORY_LOAD_STATE = "loaded";
   renderDOYCumPanel();
 }
 
@@ -8218,6 +8227,7 @@ function renderHist(rowsNavd){
 }
 
 function applyFilter(){
+  if(HISTORY_LOAD_STATE !== "loaded") return;
   const minDisplay = parseFloat(minElevEl.value);
   const maxDisplay = parseFloat(maxElevEl.value);
 
@@ -8302,7 +8312,7 @@ const monthAvgTotalLabelPlugin = {
 
       chart.data.datasets.forEach((dataset, datasetIndex)=>{
         if(!chart.isDatasetVisible(datasetIndex)) return;
-        const value = Number(dataset?.data?.[i]);
+        const value = dataset.data[i];
         if(!Number.isFinite(value)) return;
         visibleTotal += value;
         visibleCount += 1;
@@ -8314,7 +8324,7 @@ const monthAvgTotalLabelPlugin = {
         }
       });
 
-      const trueTotal = Number(chart.$monthAvgTotals?.[i]);
+      const trueTotal = chart.$monthAvgTotals?.[i];
       const labelValue = visibleCount === chart.data.datasets.length && Number.isFinite(trueTotal) ? trueTotal : visibleTotal;
       if(!visibleCount || !Number.isFinite(labelValue) || labelValue <= 0 || x === null) continue;
 
@@ -8368,15 +8378,14 @@ function ensureMonthAvgChart(){
               return `${ctx.dataset.label}: ${formatMonthAverage(v)}`;
             },
             footer:(items)=>{
-              const index = items?.[0]?.dataIndex;
-              const trueTotal = Number(monthAvgChart?.$monthAvgTotals?.[index]);
-              if(Number.isFinite(trueTotal)) return `Total: ${formatMonthAverage(trueTotal)}`;
-
-              const visibleTotal = (items || []).reduce((sum,it)=>{
-                const v = it.parsed?.y;
-                return sum + (Number.isFinite(v) ? v : 0);
-              },0);
-              return `Total: ${formatMonthAverage(visibleTotal)}`;
+              const values = items.map(item => item.parsed?.y).filter(Number.isFinite);
+              if(!values.length) return "";
+              const {chart, dataIndex} = items[0];
+              const trueTotal = chart.$monthAvgTotals?.[dataIndex];
+              const total = values.length === chart.data.datasets.length && Number.isFinite(trueTotal)
+                ? trueTotal
+                : values.reduce((sum, value) => sum + value, 0);
+              return `Total: ${formatMonthAverage(total)}`;
             }
           }
         }
@@ -8425,6 +8434,7 @@ function renderMonthAveragesChart(monthStats){
 }
 
 function updateMonthAveragesFromHistory(){
+  if(HISTORY_LOAD_STATE !== "loaded") return;
   const stats = computeMonthlyAveragesFromEvents(HIGH_TIDES_NAVD);
   monthAvgMeta.textContent = "Averages use completed months with full tide-cycle coverage, including calibrated backup observations where available.";
   renderMonthAveragesChart(stats);
@@ -8454,9 +8464,7 @@ async function updateLiveConditions(){
   const usingCachedHighTides = STATE.lastObservationIsCachedHighTide;
   const isStale = STATE.lastNavd && hoursSinceISO(STATE.lastNavd.t) > 6;
   const last = STATE.lastNavd;
-  const readingLabel = usingCachedHighTides ? "Cached high tide: " : STATE.liveObservationError || isStale ? "Last reading: " : "Updated: ";
   curFtEl.textContent = last ? toDisplayFtFromNavd(last.ft).toFixed(2) : "—";
-  curMetaEl.textContent = readingLabel + (last ? fmtESTFull(last.t) : "—");
   renderLiveReadingStatus();
   if(last) setCurrentNumberColorByNavd(last.ft);
 
@@ -8575,7 +8583,8 @@ async function resolvePeaksJsonUrl(){
       const etag = res.headers.get("etag");
       if(etag && u === PEAKS_JSON_URL && etag === HISTORY_ARCHIVE_ETAG) return { unchanged:true };
       const json = await res.json();
-      return { url:u, json, etag };
+      const events = normalizePeaksJson(json);
+      return { url:u, json, etag, events };
     }catch(e){
       errs.push(`${u} (${e?.message || e})`);
     }
@@ -8587,29 +8596,37 @@ function normalizePeaksJson(json){
   if ((json?.site && String(json.site) !== USGS_SITE) || (json?.datum && json.datum !== "NAVD88")){
     throw new Error("High-tide archive belongs to a different gauge or datum.");
   }
+  if([json?.coverage,json?.monthlyCoverage].some(value=>value != null && !Array.isArray(value))){
+    throw new Error("Invalid high-tide archive coverage.");
+  }
   return IndividualHighTides.normalizeCache(json, {primaryAgency:GAUGE_TYPE});
 }
 
 async function initJSONBackedHistory(){
   if(HISTORY_REFRESH_IN_FLIGHT) return HISTORY_REFRESH_IN_FLIGHT;
   HISTORY_REFRESH_IN_FLIGHT = (async ()=>{
-    const { url, json, etag, unchanged } = await resolvePeaksJsonUrl();
+    const { url, json, etag, unchanged, events } = await resolvePeaksJsonUrl();
     if(unchanged) return;
     const revision = json.generatedAt
       ? JSON.stringify([json.generatedAt,json.lastCompletedWindowEnd,json.lastProcessedISO,json.events?.length])
       : null;
     if(revision && revision === HISTORY_ARCHIVE_REVISION) return;
-    // Only validated high-tide events contribute to historical counts.
-    const events = normalizePeaksJson(json);
     const latestTimedEvent = events.find(event=>event.t);
     const completedThrough = [json.lastCompletedWindowEnd,latestTimedEvent?.windowEnd,latestTimedEvent?.t]
       .find(timestamp=>Number.isFinite(Date.parse(timestamp))) || null;
-    if(HISTORY_COMPLETED_THROUGH && (!completedThrough || Date.parse(completedThrough) < Date.parse(HISTORY_COMPLETED_THROUGH))) return;
+    const completedAt = Date.parse(completedThrough);
+    const heldCompletedAt = Date.parse(HISTORY_COMPLETED_THROUGH);
+    const generatedAt = Date.parse(json.generatedAt);
+    if(Number.isFinite(heldCompletedAt) && (!Number.isFinite(completedAt) || completedAt < heldCompletedAt)) return;
+    if(completedAt === heldCompletedAt && generatedAt < HISTORY_ARCHIVE_GENERATED_AT) return;
+    const coverageYears = inferStationAnnualCoverageYears(json, events);
+    const coverageByYear = new Map((json.coverage || []).filter(r=>r && Number.isFinite(Number(r.year))).map(r=>[Number(r.year),r]));
     HISTORY_COMPLETED_THROUGH = completedThrough;
     HIGH_TIDES_NAVD = events;
-    stationAnnualCoverageYears = inferStationAnnualCoverageYears(json, events);
-    annualCoverageByYear = new Map((json.coverage || []).filter(r=>r && Number.isFinite(Number(r.year))).map(r=>[Number(r.year),r]));
-    monthlyCoverage = Array.isArray(json.monthlyCoverage) ? json.monthlyCoverage : [];
+    stationAnnualCoverageYears = coverageYears;
+    annualCoverageByYear = coverageByYear;
+    monthlyCoverage = json.monthlyCoverage || [];
+    HISTORY_LOAD_STATE = "loaded";
     applyFilter();
     updateMonthAveragesFromHistory();
     buildAnnualArrays();
@@ -8618,6 +8635,7 @@ async function initJSONBackedHistory(){
     PEAKS_JSON_URL = url;
     HISTORY_ARCHIVE_ETAG = etag;
     HISTORY_ARCHIVE_REVISION = revision;
+    HISTORY_ARCHIVE_GENERATED_AT = generatedAt;
   })();
   try{
     await HISTORY_REFRESH_IN_FLIGHT;
@@ -9010,17 +9028,16 @@ function openAllAccordionsOnLoad(){
 }
 
 const pendingRefreshes = new Set();
-let hasLoadedHistory = false;
 
 function runDashboardRefresh(task){
   if(pendingRefreshes.has(task)) return;
   pendingRefreshes.add(task);
   Promise.resolve().then(task).catch(error => {
     console.warn("Dashboard refresh failed:", task.name, error);
-    if(task === refreshDashboardHistory && !hasLoadedHistory){
+    if(task === refreshDashboardHistory && HISTORY_LOAD_STATE !== "loaded"){
+      HISTORY_LOAD_STATE = "unavailable";
       if(histMeta) histMeta.textContent = "Tide history unavailable";
       if(monthAvgMeta) monthAvgMeta.textContent = "Monthly averages unavailable";
-      DOY_HISTORY_LOAD_STATE = "unavailable";
       if(doyMeta) doyMeta.textContent = "Tide history unavailable";
     }
   }).finally(() => pendingRefreshes.delete(task));
@@ -9028,7 +9045,6 @@ function runDashboardRefresh(task){
 
 async function refreshDashboardHistory(){
   await initJSONBackedHistory();
-  hasLoadedHistory = true;
   if(STATE.liveObservationError) runDashboardRefresh(updateLiveConditions);
   if(!STATE.obs24Navd?.length) runDashboardRefresh(updateObservedTimeseries);
 }
@@ -9266,9 +9282,8 @@ setInterval(refreshDashboard, 5*60*1000);
     const from = document.getElementById("fromDate");
     const to = document.getElementById("toDate");
     if(!from || !to) return;
-    const now = new Date();
-    const yyyy = String(now.getFullYear());
-    const today = now.toISOString().slice(0, 10);
+    const today = historicDateKey({t:new Date()});
+    const yyyy = today.slice(0, 4);
     let changed = false;
     if(!from.value){
       from.value = yyyy + "-01-01";

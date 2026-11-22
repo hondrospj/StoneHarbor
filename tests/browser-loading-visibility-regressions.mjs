@@ -95,4 +95,30 @@ await run('an early native datum selection keeps the time-series legend through 
   const p=h.page;await p.locator('#datumSelect').selectOption('NAVD88');await h.ready();await p.waitForFunction(()=>tsChart?.data.labels.length>0);
   assert.ok(await p.locator('#shorelyLegend-tsChart button').count()>0);assert.equal(await p.locator('#datumSelect').inputValue(),'NAVD88');await p.locator('#tsAnnualForecastToggle').click();await p.waitForTimeout(100);assert.ok(await p.locator('#shorelyLegend-tsChart button').count()>0);return{earlySelectionAndLaterLegendPreserved:true};
 });
+
+let archiveAvailable=false;
+await run('history controls preserve an archive outage until a successful refresh',{
+  clock:true,
+  responseForRequest:({url})=>new URL(url).pathname.endsWith('/peaks_navd88.json')&&!archiveAvailable
+    ?{status:503,body:{error:'Controlled archive outage'}}:undefined
+},async h=>{
+  const p=h.page;
+  await p.waitForFunction(()=>document.querySelector('#histMeta').textContent==='Tide history unavailable');
+  const messages=()=>p.evaluate(()=>['histMeta','doyMeta','monthAvgMeta'].map(id=>document.getElementById(id).textContent));
+  const unavailable=['Tide history unavailable','Tide history unavailable','Monthly averages unavailable'];
+  assert.deepEqual(await messages(),unavailable);
+  await p.locator('#datumSelect').selectOption('NAVD88');
+  await p.locator('#applyBtn').click();
+  await p.locator('#resetBtn').click();
+  await p.locator('#histLimit').selectOption('25');
+  assert.equal(await p.locator('#datumSelect').inputValue(),'NAVD88');
+  assert.deepEqual(await messages(),unavailable);
+  archiveAvailable=true;
+  await p.clock.fastForward(300001);
+  await h.ready({settleMs:0});
+  const recovered=await messages();
+  assert.ok(recovered.every(message=>!message.includes('unavailable')));
+  assert.ok(await p.locator('#histBody tr').count()>0);
+  return {unavailable,recovered};
+});
 writeReport(report);if(report.errors.length||report.checks.some(c=>!c.passed))process.exitCode=1;

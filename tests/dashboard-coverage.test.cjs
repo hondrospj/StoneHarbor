@@ -12,7 +12,7 @@ function extract(name){
 function context(coverage){
   const ctx=vm.createContext({IndividualHighTides:tides,THRESH:{NAVD88:threshold},getESTParts:()=>({y:2026,m:10,d:29}),doyStageLabel:()=>"≥ 4 ft",console});
   ctx.coverage=coverage;
-  vm.runInContext("let annualCoverageByYear=new Map(coverage.map(row=>[row.year,row])),DOY_CACHE=null;",ctx);
+  vm.runInContext("let annualCoverageByYear=new Map(coverage.map(row=>[row.year,row])),annualPredictionLookup=new Map(),DOY_CACHE=null;",ctx);
   for(const name of ["doyCompleteHistoricalYear","annualCoverageNote","annualTooltipFooter","buildDOYYearDailyCountsFromEvents","computeDOYStatsFromEvents","buildDoyAverageSeriesFromYearSeries","seasonalHistoricForecastInfo"]){vm.runInContext(extract(name),ctx);}
   return ctx;
 }

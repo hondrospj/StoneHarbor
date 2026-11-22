@@ -22,7 +22,7 @@ const THRESH=constant("THRESH"),OFFSET_FROM_MLLW=constant("OFFSET_FROM_MLLW");
 function harness(){
   const ctx=vm.createContext({Date,console,Math,Number,THRESH,OFFSET_FROM_MLLW,DISPLAY_DATUM:"NAVD88",
     TS_STEP_MS:900000,TS_MAX_DELTA_FT:.75,HOUR_MS:3600000,TS_ANNUAL_FORECAST_ENABLED:false,
-    IndividualHighTides:tides});
+    IndividualHighTides:tides,HISTORY_LOAD_STATE:"loaded"});
   vm.runInContext(source("compareFeet",true),ctx);
   for(const name of ["mllwToDatum","datumToMllw","datumToDatum","toDisplayFtFromNavd","toDisplayFtFromMllw",
     "fromDisplayToNavd","classifyByNavd","stageNameFromDisplayFt","colorForFtDisplay","interpFtAtMs","stageRank",

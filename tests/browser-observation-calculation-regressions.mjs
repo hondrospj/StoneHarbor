@@ -52,6 +52,27 @@ await run('missing modern and unavailable legacy feeds retain the explicit cache
   assert.match(await p.locator('#lastPill').textContent(),/feed unavailable/);return result;
 });
 
+let liveReadingAvailable = false;
+await run('the reading card distinguishes cached and retained levels from a recovered live level',{
+  externalResponse:args=>liveReadingAvailable ? feeds([valid])(args) : undefined
+},async({page:p})=>{
+  const label=p.locator('.curLabel'), time=p.locator('#curMeta');
+  assert.equal(await label.textContent(),'Latest cached high tide');
+  assert.ok(await time.isVisible());
+  assert.match(await time.textContent(),/ ET$/);
+
+  liveReadingAvailable=true;
+  await p.evaluate(()=>updateLiveConditions());
+  assert.equal(await label.textContent(),'Current water elevation');
+  assert.equal(await time.isVisible(),false);
+
+  liveReadingAvailable=false;
+  await p.evaluate(()=>updateLiveConditions());
+  assert.equal(await label.textContent(),'Last water elevation');
+  assert.ok(await time.isVisible());
+  assert.equal((await liveState(p)).last.t,valid.time);
+});
+
 const gap=[{time:'2026-11-03T16:00:00Z',value:3.2},
   ...[4,4.1,4.2,4.3,4.4,4.5].map((value,i)=>({time:new Date(Date.parse('2026-11-03T17:15:00Z')+i*900000).toISOString(),value}))];
 await run('the real observed chart retains valid flood readings after a 75-minute gap',{
@@ -136,6 +157,28 @@ function forecastFixture(points,issuedTime='2026-11-03T18:00:00Z'){
     ? {body:{points,model_time_utc:issuedTime,stid:'8535581',datum:'MLLW'}}
     : undefined;
 }
+
+await run('flood outlook shows the end of a midnight window and incomplete coverage at smaller widths',{
+  now:'2026-11-04T03:00:00Z',
+  viewport:{width:900,height:800},
+  responseForRequest:forecastFixture([9,9,9,5].map((ft,index)=>({
+    t:new Date(Date.parse('2026-11-04T03:00:00Z')+index*3600000).toISOString(),
+    source_twl_mean:ft,twl:ft
+  })))
+},async({page:p})=>{
+  await p.waitForFunction(()=>STATE.pred72Mllw?.length===4);
+  const when=p.locator('#f48List .eventWhen').first();
+  const note=p.locator('#f48List .eventSub').last();
+  assert.match(await when.textContent(),/November 3rd.*November 4th/);
+  assert.match(await note.textContent(),/remaining hours are unknown/);
+  for(const width of [900,1440,390]){
+    await p.setViewportSize({width,height:800});
+    for(const text of [when,note]){
+      const {client,scroll}=await text.evaluate(el=>({client:el.clientWidth,scroll:el.scrollWidth}));
+      assert.ok(client>=scroll,`Flood outlook clips text on a ${width}px viewport (${client}px of ${scroll}px visible)`);
+    }
+  }
+});
 
 let releaseHistory;
 const historyGate=new Promise(resolve=>{releaseHistory=resolve;});

@@ -20,7 +20,8 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / ".shorelysafe"))
-from publish import FORECAST_PATHS, TIDE_PATHS, _forecast_bundle, _tide_bundle, _tide_time
+from publish import FORECAST_PATHS, TIDE_PATHS, _forecast_bundle, _tide_bundle
+from sync_canonical_tide_history import timestamp
 
 
 PUBLIC_DASHBOARD = "https://cupajoe.live/stone-harbor/flooddashboard/"
@@ -49,15 +50,14 @@ def download(path, previous):
 
 def validate_history(bodies):
     archive = json.loads(bodies[TIDE_PATHS[0]])
-    cursor = _tide_time(archive.get("lastProcessedISO"))
     if (archive.get("site") != "01411360" or archive.get("datum") != "NAVD88"
             or archive.get("method") != "individual_high_tides_v3"
-            or archive.get("countUnit") != "individual-high-tide" or cursor is None):
+            or archive.get("countUnit") != "individual-high-tide"):
         raise ValueError("Public tide archive does not match Stone Harbor")
     annual, future = (json.loads(bodies[path]) for path in TIDE_PATHS[1:])
     _tide_bundle(bodies[TIDE_PATHS[0]], annual, future)
     json.dumps(future["scenarios"], allow_nan=False)
-    return cursor
+    return timestamp(archive)
 
 
 class LiveBundle:

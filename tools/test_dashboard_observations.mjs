@@ -27,6 +27,7 @@ const context={console,URL,Date,AbortController,setTimeout,clearTimeout,STATE:st
   DATUMS:['MLLW','NAVD88'],THRESH:{MLLW:{minorLow:6},NAVD88:{minorLow:4}},
   DISPLAY_DATUM:'MLLW',datumSelect:node(),minElevEl:Object.assign(node(),{value:'6'}),maxElevEl:node(),
   datumToDatum:v=>v,toDisplayFtFromNavd:v=>v,curFtEl:node(),dayMaxFtEl:node(),dayMinFtEl:node(),dayMaxWhenEl:node(),dayMinWhenEl:node(),
+  curLabelEl:node(),curMetaEl:node(),
   maxPoint:points=>points.reduce((a,b)=>a.ft>b.ft?a:b),minPoint:points=>points.reduce((a,b)=>a.ft<b.ft?a:b),
   USGS_SITE:'TEST',NorthWildwoodStoneHarbor:{stationId:'STONE-HARBOR',adjustValue:v=>v+1},USGS_PARAM_PRIMARY:'62620',NOAA_STATION_CANDIDATES:['TEST'],NOAA_OBS_STATION:'TEST',COOPS_STATION:'TEST',COOPS_APP:'regression',
   startOfUTCDate:d=>new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())),addDaysUTC:(d,n)=>new Date(d.getTime()+n*86400000),
@@ -42,11 +43,12 @@ for(const value of [0,'0',-1.25,'-1.25',2.75,'2.75'])check('retain valid gauge s
 check('reject declared USGS sentinel',()=>assert(Number.isNaN(context.dashboardGaugeNumber('-999999','-999999'))));
 check('zero sentinel honored when declared',()=>assert(Number.isNaN(context.dashboardGaugeNumber(0,0))));
 for(const t of ['bad date','2026-02-31 00:00','2026-10-19 24:00'])check('reject malformed NOAA clock',()=>assert.equal(context.dashboardNoaaTimeIsValid(t),false));
-const usgs={value:{timeSeries:[{variable:{variableCode:[{value:'62620'}],unit:{unitCode:'ft'},noDataValue:-999999},values:[{value:[
+const usgs={value:{timeSeries:[{sourceInfo:{siteCode:[{value:'TEST'}]},variable:{variableCode:[{value:'62620'}],unit:{unitCode:'ft'},noDataValue:-999999},values:[{value:[
   {dateTime:'2026-10-19T00:00:00Z',value:''},{dateTime:'2026-10-19T00:06:00Z',value:null},
   {dateTime:'2026-10-19T00:12:00Z',value:'-999999'},{dateTime:'bad date',value:'3'},
   {dateTime:'2026-10-19T00:18:00Z',value:'0'},{dateTime:'2026-10-19T00:24:00Z',value:'-1.25'}]}]}]}};
-check('actual USGS reader keeps only valid timed observations',()=>assert.deepEqual(Array.from(context.extractWaterLevelSeries_NAVD88(usgs),p=>p.ft),[0,-1.25]));
+check('actual USGS reader keeps only valid timed observations',()=>assert.deepEqual(Array.from(context.extractWaterLevelSeries_NAVD88(
+  usgs, Date.parse('2026-10-19T00:00:00Z'), Date.parse('2026-10-19T01:00:00Z')),p=>p.ft),[0,-1.25]));
 const noaa=[{t:'2026-10-19 00:00',v:''},{t:'2026-10-19 00:06',v:null},{t:'2026-10-19 00:12',v:true},
   {t:'bad date',v:'5'},{t:'2026-10-19 00:18',v:'0'},{t:'2026-10-19 00:24',v:'-1.25'},{t:'2026-10-19 00:30',v:'2.75'}];
 context.fetch=async()=>({ok:true,json:async()=>({data:noaa})});

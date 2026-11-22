@@ -235,6 +235,8 @@ async function updateCache(config, cache, recent, {now = Date.now(), fetchClock 
   const primaryLatest = latestUsable(primary), backupLatest = latestUsable(backup);
   const latest = Math.max(primaryLatest, backupLatest, latestUsable(hourly), latestUsable(verified));
   if (!Number.isFinite(latest) || now - latest > 6*HOUR) throw new Error("Observed feeds are missing or stale by more than six hours; cache and cursor were not advanced.");
+  if (latest < Date.parse(cache.lastProcessedISO) || latest < Date.parse(cache.observedThrough))
+    throw new Error("Observed feeds are older than the published archive; cache and cursor were retained.");
   const startISO = recent.startISO || iso(Date.parse(cache.lastProcessedISO) - LOOKBACK_DAYS*DAY);
   const alignedHighs = alignPredictedHighs(engine, recent.highs, cache);
   const clockTimes = alignedHighs.map(high => Date.parse(high.t));
@@ -244,8 +246,11 @@ async function updateCache(config, cache, recent, {now = Date.now(), fetchClock 
   if (clockTimes.length < 3 || clockTimes[0] > Date.parse(startISO) || clockTimes.at(-1) < latest)
     throw new Error("The astronomical tide clock does not bracket the requested observation interval; cache and cursor were not advanced.");
   const windows = engine.buildWindows(alignedHighs, {startISO, latestObservedISO:iso(latest)});
-  if (!windows.length || latest - Math.max(...windows.map(w => Date.parse(w.windowEnd))) > 16*HOUR)
+  const completedEnd = Math.max(...windows.map(w => Date.parse(w.windowEnd)));
+  if (latest - completedEnd > 16*HOUR)
     throw new Error("No recent complete neighboring astronomical tide window; cache and cursor were not advanced.");
+  if (completedEnd < Date.parse(cache.lastCompletedWindowEnd))
+    throw new Error("Completed tide windows are older than the published archive; cache and cursor were retained.");
   const p = engine.buildEvents({series:primary, windows});
   let primaryEvents = p.events, backupEvents = [], rejected = p.rejected;
   if (config.primaryAgency === "NOAA") {
@@ -270,7 +275,6 @@ async function updateCache(config, cache, recent, {now = Date.now(), fetchClock 
     rejected = rejected.map(w => ({...w, backupReason:b.rejected.find(bw => bw.cycleId === w.cycleId)?.reason || null}));
   }
   const events = engine.mergeEvents(cache.events, primaryEvents, backupEvents);
-  const completedEnd = Math.max(...windows.map(w => Date.parse(w.windowEnd)));
   const lastProcessedISO = engine.secondsISO(Math.max(Date.parse(cache.lastProcessedISO), latest)), fullYearExpected = {};
   for (const year of new Set(windows.map(w => engine.localParts(w.crest).year))) {
     if (cache.coverage.find(r => Number(r.year) === year)?.fullYearExpectedCycles != null) continue;
