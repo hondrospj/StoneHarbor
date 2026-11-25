@@ -2586,7 +2586,7 @@ a.brand *{
           </div>
         </div>
 
-        <div class="rangeMeta" id="f48Meta"></div>
+        <div class="rangeMeta" id="f48Meta" hidden></div>
       </div>
     </div>
 
@@ -3792,10 +3792,7 @@ function updateFloodOutlook48(nowMs=Date.now()){
   if(!hasFullCoverage && segs.length){
     f48ListEl.innerHTML += `<div class="event"><div class="eventLeft"><div class="eventWhen">Partial forecast coverage</div><div class="eventSub">${coverageNote} Flood-hour totals include only available periods.</div></div></div>`;
   }
-  const issue = STATE.petssIssuedTime ? ` · Issued ${fmtESTFull(STATE.petssIssuedTime)} ET` : "";
-  const source = STATE.waterForecastProvider ? ` · Based on ${STATE.waterForecastProvider}` : "";
-  f48MetaEl.textContent =
-    `${fmtNiceDate(isoFromMs(t0))} → ${fmtNiceDate(isoFromMs(t1))}${source}${issue}`;
+  f48MetaEl.textContent = "";
 }
 
 
@@ -3979,9 +3976,60 @@ async function fetchStoneHarborV41() {
   return forecasts.filter(Boolean).sort((a, b) => Date.parse(b.issuedTime) - Date.parse(a.issuedTime))[0] ?? null;
 }
 
+const STONE_HARBOR_GEFS_URL =
+  'https://hondrospj.github.io/statewide-service/data/stone_harbor_gefs_mllw.json';
+const STONE_HARBOR_BLEND_PROVIDER = 'ShorelySafe V41 + GEFS';
+const STONE_HARBOR_GEFS_WEIGHT = 0.20;
+
+function blendStoneHarborGEFS(forecast, guidance, now = Date.now()) {
+  const hour = STONE_HARBOR_V41_HOUR_MS;
+  const v41Issue = Date.parse(forecast.issuedTime);
+  const gefsIssue = Date.parse(guidance?.model_time_utc);
+  if (guidance?.schema_version !== 1 || guidance.station_id !== '8535581' ||
+      guidance.gauge_id !== '01411360' || guidance.source !== 'NOAA P-ETSS GEFS' ||
+      guidance.datum !== 'MLLW' || guidance.units !== 'ft' ||
+      !Number.isFinite(gefsIssue) || gefsIssue % (6 * hour) !== 0 ||
+      gefsIssue > now || now - gefsIssue > 24 * hour ||
+      Math.abs(gefsIssue - v41Issue) > 6 * hour || !Array.isArray(guidance.points)) {
+    throw new Error('GEFS guidance has an invalid station, datum, or forecast cycle');
+  }
+  const byTime = new Map(guidance.points.map(({t, twl}, i) => {
+    const time = Date.parse(t);
+    if (time !== gefsIssue + (i + 1) * hour || !Number.isFinite(twl) || twl <= -10 || twl >= 30) {
+      throw new Error('GEFS guidance has an invalid water level or forecast hour');
+    }
+    return [time, twl];
+  }));
+  const points = forecast.points.flatMap(point => {
+    const g = byTime.get(Date.parse(point.t));
+    if (g === undefined) return [];
+    const blend = value => (1 - STONE_HARBOR_GEFS_WEIGHT) * value + STONE_HARBOR_GEFS_WEIGHT * g;
+    return [{...point, ft: blend(point.ft), minFt: blend(point.minFt), maxFt: blend(point.maxFt)}];
+  });
+  if (!points.length || Date.parse(points[0].t) > Math.ceil(now / hour) * hour ||
+      Date.parse(points.at(-1).t) < now + 72 * hour) {
+    throw new Error('V41 and GEFS do not overlap for the next 72 hours');
+  }
+  return {...forecast, points, provider: STONE_HARBOR_BLEND_PROVIDER};
+}
+
+async function fetchStoneHarborGEFS() {
+  const response = await fetchWithTimeout(`${STONE_HARBOR_GEFS_URL}?v=${Date.now()}`, {cache:'no-store'}, 7000);
+  if (!response.ok) throw new Error(`GEFS returned HTTP ${response.status}`);
+  return response.json();
+}
+
+
 async function fetchDashboardWaterForecast() {
   const forecast = await fetchStoneHarborV41();
-  if (forecast) return forecast;
+  if (forecast) {
+    try {
+      return blendStoneHarborGEFS(forecast, await fetchStoneHarborGEFS());
+    } catch (error) {
+      console.warn('Stone Harbor GEFS blend unavailable:', error.message);
+      return forecast;
+    }
+  }
   const fallback = await fetchPETSSForecast_MLLW();
   const now = Date.now();
   const issue = Date.parse(fallback.issuedTime);
@@ -8555,7 +8603,10 @@ async function updateForecastTimeseries(){
   const retainedIsCurrent = issued <= now && now - issued <= 24 * STONE_HARBOR_V41_HOUR_MS && lastPoint > now;
   const sameProvider = forecast?.provider === STATE.waterForecastProvider;
   const sameOrNewer = Date.parse(forecast?.issuedTime) >= issued;
-  const preferredProvider = sameProvider || forecast?.provider === STONE_HARBOR_V41_PROVIDER;
+  const heldBlend = STATE.waterForecastProvider === STONE_HARBOR_BLEND_PROVIDER &&
+    lastPoint >= now + 72 * STONE_HARBOR_V41_HOUR_MS;
+  const preferredProvider = sameProvider || forecast?.provider === STONE_HARBOR_BLEND_PROVIDER ||
+    (forecast?.provider === STONE_HARBOR_V41_PROVIDER && (!heldBlend || Date.parse(forecast.issuedTime) > issued));
   if(forecast && (!retainedIsCurrent || (sameOrNewer && preferredProvider))){
     showDashboardForecastProvider(forecast.provider);
     STATE.pred72Mllw = forecast.points;
